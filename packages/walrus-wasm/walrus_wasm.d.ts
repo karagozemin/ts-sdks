@@ -29,6 +29,11 @@ export class BlobEncoder {
   free(): void;
   constructor(n_shards: number);
   /**
+   * WASM wrapper for [walrus_core::encoding::blob_encoding::BlobEncoder::encoded_length].
+   * Returns the length of the encoded blob.
+   */
+  encoded_length(unencoded_length: bigint): any;
+  /**
    * WASM wrapper for [walrus_core::encoding::blob_encoding::BlobEncoder::encode].
    * Returns a vector of [walrus_core::encoding::slivers::SliverPair]´s.
    */

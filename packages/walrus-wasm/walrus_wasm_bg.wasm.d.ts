@@ -3,6 +3,7 @@
 export const memory: WebAssembly.Memory;
 export const __wbg_blobencoder_free: (a: number, b: number) => void;
 export const blobencoder_new: (a: number) => [number, number, number];
+export const blobencoder_encoded_length: (a: number, b: bigint) => [number, number, number];
 export const blobencoder_encode: (a: number, b: number, c: number) => [number, number, number];
 export const blobencoder_encode_with_metadata: (a: number, b: number, c: number) => [number, number, number];
 export const blobencoder_compute_metadata: (a: number, b: number, c: number) => [number, number, number];

@@ -332,6 +332,19 @@ class BlobEncoder {
         return this;
     }
     /**
+     * WASM wrapper for [walrus_core::encoding::blob_encoding::BlobEncoder::encoded_length].
+     * Returns the length of the encoded blob.
+     * @param {bigint} unencoded_length
+     * @returns {any}
+     */
+    encoded_length(unencoded_length) {
+        const ret = wasm.blobencoder_encoded_length(this.__wbg_ptr, unencoded_length);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return takeFromExternrefTable0(ret[0]);
+    }
+    /**
      * WASM wrapper for [walrus_core::encoding::blob_encoding::BlobEncoder::encode].
      * Returns a vector of [walrus_core::encoding::slivers::SliverPair]´s.
      * @param {Uint8Array} data
