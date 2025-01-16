@@ -39,3 +39,28 @@ const BYTES_PER_UNIT_SIZE = 1024 * 1024;
 export function storageUnitsFromSize(size: number): number {
 	return Math.ceil(size / BYTES_PER_UNIT_SIZE);
 }
+
+function rotationOffset(bytes: Uint8Array, modulus: number): number {
+	return bytes.reduce((acc, byte) => (acc * 256 + byte) % modulus, 0);
+}
+export function toShardIndex(index: number, blobId: Uint8Array, numShards: number): number {
+	return (index + rotationOffset(blobId, numShards)) % numShards;
+}
+
+export function signersToBitmap(signers: number[], committeeSize: number): Uint8Array {
+	const bitmapSize = Math.ceil(committeeSize / 8);
+	const bitmap = new Uint8Array(bitmapSize);
+
+	for (const signer of signers) {
+		const byteIndex = Math.floor(signer / 8);
+		const bitIndex = signer % 8;
+		bitmap[byteIndex] |= 1 << bitIndex;
+
+		console.log(signer, byteIndex, bitIndex);
+	}
+
+	console.log(
+		[...bitmap].map((b) => b.toString(2).padStart(8, '0').split('').reverse().join('')).join(''),
+	);
+	return bitmap;
+}

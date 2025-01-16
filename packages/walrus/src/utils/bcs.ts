@@ -40,3 +40,18 @@ export const BlobMetadataV1 = bcs.struct('BlobMetadataV1', {
 export const BlobMetadata = bcs.enum('BlobMetadata', {
 	V1: BlobMetadataV1,
 });
+
+const Symbols = bcs.struct('Symbols', {
+	data: bcs.vector(bcs.u8()),
+	symbol_size: bcs.u16(),
+});
+
+export const SliverData = bcs.struct('SliverData', {
+	symbols: Symbols,
+	index: bcs.u16(),
+});
+
+export const Sliver = bcs.enum('Sliver', {
+	Primary: SliverData,
+	Secondary: SliverData,
+});
