@@ -47,6 +47,10 @@ export function toShardIndex(index: number, blobId: Uint8Array, numShards: numbe
 	return (index + rotationOffset(blobId, numShards)) % numShards;
 }
 
+export function toPairIndex(index: number, blobID: Uint8Array, numShards: number): number {
+	return (numShards + index - rotationOffset(blobID, numShards)) % numShards;
+}
+
 export function signersToBitmap(signers: number[], committeeSize: number): Uint8Array {
 	const bitmapSize = Math.ceil(committeeSize / 8);
 	const bitmap = new Uint8Array(bitmapSize);
