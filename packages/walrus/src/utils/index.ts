@@ -43,6 +43,7 @@ export function storageUnitsFromSize(size: number): number {
 function rotationOffset(bytes: Uint8Array, modulus: number): number {
 	return bytes.reduce((acc, byte) => (acc * 256 + byte) % modulus, 0);
 }
+
 export function toShardIndex(index: number, blobId: Uint8Array, numShards: number): number {
 	return (index + rotationOffset(blobId, numShards)) % numShards;
 }

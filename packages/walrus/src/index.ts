@@ -126,7 +126,6 @@ async function uploadFile() {
 					tx.object(systemObjectId),
 					await storageWithSize({
 						size: file.length,
-						owner: keypair.toSuiAddress(),
 						endEpoch: systemState.committee.epoch + 3,
 					}),
 					BigInt(bcs.u256().parse(new Uint8Array(metadata.blob_id))),
@@ -512,16 +511,7 @@ async function getFundedKeypair() {
 	return keypair;
 }
 
-async function storageWithSize({
-	size,
-	owner,
-	endEpoch,
-}: {
-	size: number;
-	owner: string;
-
-	endEpoch: number;
-}) {
+async function storageWithSize({ size, endEpoch }: { size: number; endEpoch: number }) {
 	const systemObject = await loadObject(systemObjectId, System());
 	const systemState = await loadFieldObject(
 		systemObjectId,
