@@ -1,6 +1,9 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
 import * as storage_node from "./storage_node.js";
 import * as pending_values from "./pending_values.js";

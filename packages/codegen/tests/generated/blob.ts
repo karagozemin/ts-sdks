@@ -1,8 +1,10 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
-import * as option from "./deps/0x0000000000000000000000000000000000000000000000000000000000000001/option.js";
 import * as storage_resource from "./storage_resource.js";
 export function Blob() {
     return bcs.struct("Blob", ({
@@ -11,7 +13,7 @@ export function Blob() {
         blob_id: bcs.u256(),
         size: bcs.u64(),
         encoding_type: bcs.u8(),
-        certified_epoch: option.Option(bcs.u32()),
+        certified_epoch: bcs.option(bcs.u32()),
         storage: storage_resource.Storage(),
         deletable: bcs.bool()
     }));

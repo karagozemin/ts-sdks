@@ -1,10 +1,12 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
-import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 export function ActiveSetEntry() {
     return bcs.struct("ActiveSetEntry", ({
-        node_id: object.ID(),
+        node_id: bcs.Address,
         staked_amount: bcs.u64()
     }));
 }

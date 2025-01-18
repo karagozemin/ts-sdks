@@ -1,3 +1,6 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs, type BcsType } from "@mysten/sui/bcs";
 export function PriorityQueue<T0 extends BcsType<any>>(...typeParameters: [
     T0

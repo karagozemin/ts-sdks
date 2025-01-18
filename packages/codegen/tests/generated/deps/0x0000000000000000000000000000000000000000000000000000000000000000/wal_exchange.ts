@@ -1,3 +1,6 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import * as object from "../0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
 import * as balance from "../0x0000000000000000000000000000000000000000000000000000000000000002/balance.js";
@@ -7,7 +10,7 @@ export function Exchange() {
         wal: balance.Balance(),
         sui: balance.Balance(),
         rate: ExchangeRate(),
-        admin: object.ID()
+        admin: bcs.Address
     }));
 }
 export function AdminCap() {

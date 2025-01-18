@@ -1,13 +1,16 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
-import * as object from "./object.js";
 import * as vec_set from "./vec_set.js";
 import * as type_name from "../0x0000000000000000000000000000000000000000000000000000000000000001/type_name.js";
+import * as object from "./object.js";
 import * as balance from "./balance.js";
 export function TransferRequest() {
     return bcs.struct("TransferRequest", ({
-        item: object.ID(),
+        item: bcs.Address,
         paid: bcs.u64(),
-        from: object.ID(),
+        from: bcs.Address,
         receipts: vec_set.VecSet(type_name.TypeName())
     }));
 }
@@ -21,17 +24,17 @@ export function TransferPolicy() {
 export function TransferPolicyCap() {
     return bcs.struct("TransferPolicyCap", ({
         id: object.UID(),
-        policy_id: object.ID()
+        policy_id: bcs.Address
     }));
 }
 export function TransferPolicyCreated() {
     return bcs.struct("TransferPolicyCreated", ({
-        id: object.ID()
+        id: bcs.Address
     }));
 }
 export function TransferPolicyDestroyed() {
     return bcs.struct("TransferPolicyDestroyed", ({
-        id: object.ID()
+        id: bcs.Address
     }));
 }
 export function RuleKey() {

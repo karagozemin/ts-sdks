@@ -5,8 +5,8 @@ import { normalizeSuiAddress } from '@mysten/sui/utils';
 
 import type { DeserializedModule, TypeSignature } from './types.js';
 
-const MOVE_STDLIB_ADDRESS = normalizeSuiAddress('0x1').slice(2);
-const SUI_FRAMEWORK_ADDRESS = normalizeSuiAddress('0x2').slice(2);
+const MOVE_STDLIB_ADDRESS = normalizeSuiAddress('0x1');
+const SUI_FRAMEWORK_ADDRESS = normalizeSuiAddress('0x2');
 
 type TypeSignatureFormat = 'typescriptArg' | 'bcs' | 'typeTag';
 interface RenderTypeSignatureOptions {
@@ -155,7 +155,9 @@ function isPureDataType(type: number, options: RenderTypeSignatureOptions) {
 	const typeName = options.moduleDef.identifiers[handle.name];
 
 	const moduleHandle = options.moduleDef.module_handles[handle.module];
-	const moduleAddress = options.moduleDef.address_identifiers[moduleHandle.address];
+	const moduleAddress = normalizeSuiAddress(
+		options.moduleDef.address_identifiers[moduleHandle.address],
+	);
 	const moduleName = options.moduleDef.identifiers[moduleHandle.name];
 
 	if (moduleAddress === MOVE_STDLIB_ADDRESS) {

@@ -1,6 +1,9 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs, type BcsType } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 import * as uq64_64 from "./deps/0x0000000000000000000000000000000000000000000000000000000000000001/uq64_64.js";
 export function ApportionmentQueue<T0 extends BcsType<any>>(...typeParameters: [
     T0

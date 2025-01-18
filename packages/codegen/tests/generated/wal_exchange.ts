@@ -1,6 +1,9 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
 import * as balance from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js";
 export function Exchange() {
@@ -9,7 +12,7 @@ export function Exchange() {
         wal: balance.Balance(),
         sui: balance.Balance(),
         rate: ExchangeRate(),
-        admin: object.ID()
+        admin: bcs.Address
     }));
 }
 export function AdminCap() {

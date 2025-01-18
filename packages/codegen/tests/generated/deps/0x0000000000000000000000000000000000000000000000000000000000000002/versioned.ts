@@ -1,3 +1,6 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import * as object from "./object.js";
 export function Versioned() {
@@ -8,7 +11,7 @@ export function Versioned() {
 }
 export function VersionChangeCap() {
     return bcs.struct("VersionChangeCap", ({
-        versioned_id: object.ID(),
+        versioned_id: bcs.Address,
         old_version: bcs.u64()
     }));
 }

@@ -1,11 +1,13 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 import * as vec_map from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/vec_map.js";
-import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
 export function Committee() {
     return bcs.struct("Committee", ({
-        pos0: vec_map.VecMap(object.ID(), bcs.vector(bcs.u16()))
+        pos0: vec_map.VecMap(bcs.Address, bcs.vector(bcs.u16()))
     }));
 }
 export function init(packageAddress: string) {

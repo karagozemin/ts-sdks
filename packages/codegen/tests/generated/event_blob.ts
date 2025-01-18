@@ -1,7 +1,9 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
-import * as option from "./deps/0x0000000000000000000000000000000000000000000000000000000000000001/option.js";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 import * as vec_map from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/vec_map.js";
 export function EventBlobAttestation() {
     return bcs.struct("EventBlobAttestation", ({
@@ -17,7 +19,7 @@ export function EventBlob() {
 }
 export function EventBlobCertificationState() {
     return bcs.struct("EventBlobCertificationState", ({
-        latest_certified_blob: option.Option(EventBlob()),
+        latest_certified_blob: bcs.option(EventBlob()),
         aggregate_weight_per_blob: vec_map.VecMap(bcs.u256(), bcs.u16())
     }));
 }

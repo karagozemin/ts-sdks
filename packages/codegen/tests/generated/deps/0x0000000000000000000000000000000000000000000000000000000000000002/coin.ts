@@ -1,9 +1,9 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import * as object from "./object.js";
 import * as balance from "./balance.js";
-import * as string from "../0x0000000000000000000000000000000000000000000000000000000000000001/string.js";
-import * as ascii from "../0x0000000000000000000000000000000000000000000000000000000000000001/ascii.js";
-import * as option from "../0x0000000000000000000000000000000000000000000000000000000000000001/option.js";
 import * as url from "./url.js";
 export function Coin() {
     return bcs.struct("Coin", ({
@@ -15,17 +15,17 @@ export function CoinMetadata() {
     return bcs.struct("CoinMetadata", ({
         id: object.UID(),
         decimals: bcs.u8(),
-        name: string.String(),
-        symbol: ascii.String(),
-        description: string.String(),
-        icon_url: option.Option(url.Url())
+        name: bcs.string(),
+        symbol: bcs.string(),
+        description: bcs.string(),
+        icon_url: bcs.option(url.Url())
     }));
 }
 export function RegulatedCoinMetadata() {
     return bcs.struct("RegulatedCoinMetadata", ({
         id: object.UID(),
-        coin_metadata_object: object.ID(),
-        deny_cap_object: object.ID()
+        coin_metadata_object: bcs.Address,
+        deny_cap_object: bcs.Address
     }));
 }
 export function TreasuryCap() {

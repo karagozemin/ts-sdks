@@ -1,17 +1,19 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs, type BcsType } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
-import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 export function Authenticated() {
     return bcs.enum("Authenticated", ({
         Sender: bcs.Address,
-        Object: object.ID()
+        Object: bcs.Address
     }));
 }
 export function Authorized() {
     return bcs.enum("Authorized", ({
         Address: bcs.Address,
-        ObjectID: object.ID()
+        ObjectID: bcs.Address
     }));
 }
 export function init(packageAddress: string) {

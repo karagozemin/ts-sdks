@@ -1,6 +1,8 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import * as object from "./object.js";
-import * as string from "../0x0000000000000000000000000000000000000000000000000000000000000001/string.js";
 export function AuthenticatorState() {
     return bcs.struct("AuthenticatorState", ({
         id: object.UID(),
@@ -15,16 +17,16 @@ export function AuthenticatorStateInner() {
 }
 export function JWK() {
     return bcs.struct("JWK", ({
-        kty: string.String(),
-        e: string.String(),
-        n: string.String(),
-        alg: string.String()
+        kty: bcs.string(),
+        e: bcs.string(),
+        n: bcs.string(),
+        alg: bcs.string()
     }));
 }
 export function JwkId() {
     return bcs.struct("JwkId", ({
-        iss: string.String(),
-        kid: string.String()
+        iss: bcs.string(),
+        kid: bcs.string()
     }));
 }
 export function ActiveJwk() {

@@ -1,6 +1,9 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 import * as vec_set from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/vec_set.js";
 import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
 import * as _package from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/package.js";
@@ -16,7 +19,7 @@ export function UpgradeProposal() {
         digest: PackageDigest(),
         version: bcs.u64(),
         voting_weight: bcs.u16(),
-        voters: vec_set.VecSet(object.ID())
+        voters: vec_set.VecSet(bcs.Address)
     }));
 }
 export function UpgradeManager() {
@@ -29,7 +32,7 @@ export function UpgradeManager() {
 export function EmergencyUpgradeCap() {
     return bcs.struct("EmergencyUpgradeCap", ({
         id: object.UID(),
-        upgrade_manager_id: object.ID()
+        upgrade_manager_id: bcs.Address
     }));
 }
 export function init(packageAddress: string) {

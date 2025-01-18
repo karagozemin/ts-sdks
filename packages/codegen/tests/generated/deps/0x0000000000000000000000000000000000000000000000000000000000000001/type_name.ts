@@ -1,7 +1,9 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
-import * as ascii from "./ascii.js";
 export function TypeName() {
     return bcs.struct("TypeName", ({
-        name: ascii.String()
+        name: bcs.string()
     }));
 }

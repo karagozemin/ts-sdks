@@ -1,7 +1,9 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
-import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 export function BlobRegistered() {
     return bcs.struct("BlobRegistered", ({
         epoch: bcs.u32(),
@@ -10,7 +12,7 @@ export function BlobRegistered() {
         encoding_type: bcs.u8(),
         end_epoch: bcs.u32(),
         deletable: bcs.bool(),
-        object_id: object.ID()
+        object_id: bcs.Address
     }));
 }
 export function BlobCertified() {
@@ -19,7 +21,7 @@ export function BlobCertified() {
         blob_id: bcs.u256(),
         end_epoch: bcs.u32(),
         deletable: bcs.bool(),
-        object_id: object.ID(),
+        object_id: bcs.Address,
         is_extension: bcs.bool()
     }));
 }
@@ -28,7 +30,7 @@ export function BlobDeleted() {
         epoch: bcs.u32(),
         blob_id: bcs.u256(),
         end_epoch: bcs.u32(),
-        object_id: object.ID(),
+        object_id: bcs.Address,
         was_certified: bcs.bool()
     }));
 }
@@ -68,7 +70,7 @@ export function ShardRecoveryStart() {
 export function ContractUpgraded() {
     return bcs.struct("ContractUpgraded", ({
         epoch: bcs.u32(),
-        package_id: object.ID(),
+        package_id: bcs.Address,
         version: bcs.u64()
     }));
 }
@@ -77,7 +79,7 @@ export function RegisterDenyListUpdate() {
         epoch: bcs.u32(),
         root: bcs.u256(),
         sequence_number: bcs.u64(),
-        node_id: object.ID()
+        node_id: bcs.Address
     }));
 }
 export function DenyListUpdate() {
@@ -85,7 +87,7 @@ export function DenyListUpdate() {
         epoch: bcs.u32(),
         root: bcs.u256(),
         sequence_number: bcs.u64(),
-        node_id: object.ID()
+        node_id: bcs.Address
     }));
 }
 export function DenyListBlobDeleted() {

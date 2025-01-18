@@ -1,3 +1,6 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import * as object from "./object.js";
 import * as bag from "./bag.js";
@@ -32,7 +35,7 @@ export function GlobalPauseKey() {
 export function PerTypeConfigCreated() {
     return bcs.struct("PerTypeConfigCreated", ({
         key: ConfigKey(),
-        config_id: object.ID()
+        config_id: bcs.Address
     }));
 }
 export function PerTypeList() {

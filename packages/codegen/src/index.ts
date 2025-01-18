@@ -176,8 +176,8 @@ class ModuleBuilder {
 			const name = this.moduleDef.identifiers[handle.name];
 			const fnName = getSafeName(name);
 
-			this.addImport('./utils/index.ts', 'normalizeMoveArguments');
-			this.addImport('./utils/index.ts', 'type RawTransactionArgument');
+			this.addImport('./utils/index.js', 'normalizeMoveArguments');
+			this.addImport('./utils/index.js', 'type RawTransactionArgument');
 
 			names.push(fnName);
 
@@ -280,7 +280,9 @@ class ModuleBuilder {
 			([name, module]) => parseTS`import * as ${name} from '${modulePath(module)}'`,
 		);
 
-		return printStatements([...importStatements, ...starImportStatements, ...this.statements]);
+		const header = '// Copyright (c) Mysten Labs, Inc.\n// SPDX-License-Identifier: Apache-2.0\n\n';
+
+		return `${header}${printStatements([...importStatements, ...starImportStatements, ...this.statements])}`;
 
 		function modulePath(mod: string) {
 			const sourcePath = resolve(modDir, filePath);
@@ -288,11 +290,6 @@ class ModuleBuilder {
 			const sourceDirectory = sourcePath.split('/').slice(0, -1).join('/');
 			const relativePath = relative(sourceDirectory, destPath);
 			if (mod.startsWith('./')) {
-				console.log({
-					sourcePath,
-					destPath,
-					relativePath,
-				});
 				return relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
 			}
 
@@ -354,7 +351,7 @@ async function generatePackage(path: string, name: string) {
 }
 
 Promise.all(
-	['paywalrus', 'wal', 'wal_exchange', 'walrus'].map((name) =>
+	['wal', 'wal_exchange', 'walrus'].map((name) =>
 		generatePackage(join(__dirname, '..', 'tests', 'move', name), name),
 	),
 ).then(console.log, console.error);

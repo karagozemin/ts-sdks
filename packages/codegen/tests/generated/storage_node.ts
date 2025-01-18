@@ -1,19 +1,20 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
-import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.ts";
-import * as string from "./deps/0x0000000000000000000000000000000000000000000000000000000000000001/string.js";
-import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
+import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 import * as group_ops from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/group_ops.js";
-import * as option from "./deps/0x0000000000000000000000000000000000000000000000000000000000000001/option.js";
 import * as extended_field from "./extended_field.js";
+import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
 import * as event_blob from "./event_blob.js";
 export function StorageNodeInfo() {
     return bcs.struct("StorageNodeInfo", ({
-        name: string.String(),
-        node_id: object.ID(),
-        network_address: string.String(),
+        name: bcs.string(),
+        node_id: bcs.Address,
+        network_address: bcs.string(),
         public_key: group_ops.Element(),
-        next_epoch_public_key: option.Option(group_ops.Element()),
+        next_epoch_public_key: bcs.option(group_ops.Element()),
         network_public_key: bcs.vector(bcs.u8()),
         metadata: extended_field.ExtendedField()
     }));
@@ -21,9 +22,9 @@ export function StorageNodeInfo() {
 export function StorageNodeCap() {
     return bcs.struct("StorageNodeCap", ({
         id: object.UID(),
-        node_id: object.ID(),
+        node_id: bcs.Address,
         last_epoch_sync_done: bcs.u32(),
-        last_event_blob_attestation: option.Option(event_blob.EventBlobAttestation()),
+        last_event_blob_attestation: bcs.option(event_blob.EventBlobAttestation()),
         deny_list_root: bcs.u256(),
         deny_list_sequence: bcs.u64(),
         deny_list_size: bcs.u64()
