@@ -10,7 +10,13 @@ import { Staking } from './contracts/staking.js';
 import { SystemStateInnerV1 } from './contracts/system_state_inner.js';
 import { System } from './contracts/system.js';
 import { BlobMetadataWithId, SliverData } from './utils/bcs.js';
-import { getPrimarySourceSymbols, getShardIndicesByNodeId, toShardIndex } from './utils/index.js';
+import {
+	getMaxConcurrentSliverReads,
+	getShardIndicesByNodeId,
+	getSliverSizeForBlob,
+	getSourceSymbols,
+	toShardIndex,
+} from './utils/index.js';
 import { SuiObjectDataLoader } from './utils/object-loader.js';
 import { TaskPool } from './utils/task-pool.js';
 import { decodePrimarySlivers } from './wasm.js';
@@ -20,6 +26,11 @@ export interface WalrusPackageConfig {
 	systemObjectId: string;
 	stakingPoolId: string;
 	exchangeIds?: string[];
+}
+
+export interface WalrusCommunicationConfig {
+	maxDataInFlight?: number;
+	maxConcurrentSliverReads?: number;
 }
 
 type SuiClientOrRpcUrl =
@@ -42,7 +53,10 @@ type WalrusNetworkOrPackageConfig =
 			packageConfig: WalrusPackageConfig;
 	  };
 
-export type WalrusClientConfig = WalrusNetworkOrPackageConfig & SuiClientOrRpcUrl;
+export type WalrusClientConfig = {
+	communicationConfig?: WalrusCommunicationConfig;
+} & WalrusNetworkOrPackageConfig &
+	SuiClientOrRpcUrl;
 
 interface StorageNode {
 	networkAddress: string;
@@ -51,7 +65,9 @@ interface StorageNode {
 }
 
 export class WalrusClient {
+	#communicationConfig?: WalrusCommunicationConfig;
 	#packageConfig: WalrusPackageConfig;
+
 	#suiClient: SuiClient;
 	#objectLoader: SuiObjectDataLoader;
 	#nodes?:
@@ -77,6 +93,8 @@ export class WalrusClient {
 		} else {
 			this.#packageConfig = config.packageConfig!;
 		}
+
+		this.#communicationConfig = config.communicationConfig;
 
 		this.#suiClient =
 			config.suiClient ??
@@ -228,16 +246,16 @@ export class WalrusClient {
 	}
 
 	async readBlob(blobId: string) {
-		// TODO: calculate this using the unencoded_length and primary source symbols + other data
-		const concurrencyLimit = 20;
-
 		const systemState = await this.systemState();
 		const numShards = systemState.committee.n_shards;
-		const minSymbols = getPrimarySourceSymbols(numShards);
+		const { primary: minSymbols } = getSourceSymbols(numShards);
 
-		const taskPool = new TaskPool(concurrencyLimit);
 		const slivers: (typeof SliverData.$inferType)[] = [];
 		const blobMetadata = await this.getBlobMetadata(blobId);
+
+		const unencodedLength = Number(blobMetadata.metadata.V1.unencoded_length);
+		const concurrencyLimit = this.#getConcurrencyLimitForSliverReads(unencodedLength, numShards);
+		const taskPool = new TaskPool(concurrencyLimit);
 
 		// TODO: implement better shard selection logic
 		const sliverPromises = new Array(numShards).fill(null).map((_, sliverPairIndex) =>
@@ -269,5 +287,16 @@ export class WalrusClient {
 		}
 
 		return decodePrimarySlivers(numShards, blobMetadata.metadata.V1.unencoded_length, slivers);
+	}
+
+	#getConcurrencyLimitForSliverReads(unencodedLength: number, nShards: number) {
+		const maxDataInFlight = this.#communicationConfig?.maxDataInFlight ?? 12_500_000;
+		const requestSize = getSliverSizeForBlob(unencodedLength, nShards);
+		const sizeBasedLimit = maxDataInFlight / requestSize;
+
+		const maxConcurrentSliverReads = this.#communicationConfig?.maxConcurrentSliverReads;
+		const defaultLimit = maxConcurrentSliverReads ?? getMaxConcurrentSliverReads(nShards);
+
+		return Math.max(1, Math.min(sizeBasedLimit, defaultLimit));
 	}
 }

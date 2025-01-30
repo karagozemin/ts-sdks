@@ -10,12 +10,7 @@ const DIGEST_LEN = 32;
 const BLOB_ID_LEN = 32;
 
 export function encodedBlobLength(unencodedLength: number, nShards: number): number {
-	const safetyLimit = decodingSafetyLimit(nShards);
-	const maxFaulty = Math.floor((nShards - 1) / 3);
-	const minCorrect = nShards - maxFaulty;
-	const primary = minCorrect - maxFaulty - safetyLimit;
-	const secondary = minCorrect - safetyLimit;
-
+	const { primary, secondary } = getSourceSymbols(nShards);
 	const size = Math.floor((Math.max(unencodedLength, 1) - 1) / (primary * secondary)) + 1;
 
 	const sliversSize = (primary + secondary) * size * nShards;
@@ -23,12 +18,37 @@ export function encodedBlobLength(unencodedLength: number, nShards: number): num
 	return nShards * metadata + sliversSize;
 }
 
-export function getPrimarySourceSymbols(nShards: number): number {
+export function getSliverSizeForBlob(blobSize: number, nShards: number): number {
+	const { primary } = getSourceSymbols(nShards);
+	const symbolSizeForBlob = computeSymbolSize(blobSize, nShards);
+	return primary * symbolSizeForBlob;
+}
+
+export function getMaxConcurrentSliverReads(nShards: number): number {
+	const maxFaulty = getMaxFaultyNodes(nShards);
+	return nShards - 2 * maxFaulty;
+}
+
+export function computeSymbolSize(blobSize: number, nShards: number): number {
+	const { primary, secondary } = getSourceSymbols(nShards);
+	const numSymbolsPerBlob = primary * secondary;
+	const dataLength = Math.max(blobSize, 1);
+	return (dataLength - 1) / (numSymbolsPerBlob + 1);
+}
+
+export function getMaxFaultyNodes(nShards: number): number {
+	return Math.floor((nShards - 1) / 3);
+}
+
+export function getSourceSymbols(nShards: number) {
 	const safetyLimit = decodingSafetyLimit(nShards);
-	const maxFaulty = Math.floor((nShards - 1) / 3);
+	const maxFaulty = getMaxFaultyNodes(nShards);
 	const minCorrect = nShards - maxFaulty;
-	const primary = minCorrect - maxFaulty - safetyLimit;
-	return primary;
+
+	return {
+		primary: minCorrect - maxFaulty - safetyLimit,
+		secondary: minCorrect - safetyLimit,
+	};
 }
 
 function decodingSafetyLimit(nShards: number): number {
