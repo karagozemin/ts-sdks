@@ -20,7 +20,7 @@ export function weightedRandomSample<T>(array: WeightedItem<T>[]): T[] {
 		let randomValue = Math.random() * totalWeight;
 		let cumulativeWeight = 0;
 
-		for (let j = 0; j < remainingItems.length; j++) {
+		for (let j = 0; j < remainingItems.length; j += 1) {
 			const { value, weight } = remainingItems[j];
 			cumulativeWeight += weight;
 

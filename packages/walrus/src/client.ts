@@ -15,6 +15,13 @@ import { Staking } from './contracts/staking.js';
 import { Storage } from './contracts/storage_resource.js';
 import { SystemStateInnerV1 } from './contracts/system_state_inner.js';
 import { init as initSystemContract, System } from './contracts/system.js';
+import {
+	WalrusBlobBlockedError,
+	WalrusBlobCertificationError,
+	WalrusBlobDecodingVerificationError,
+	WalrusBlobDoesNotExistError,
+	WalrusClientError,
+} from './error.js';
 import { StorageNodeClient } from './storage-node/client.js';
 import { LegallyUnavailableError, NotFoundError } from './storage-node/error.js';
 import type { GetSliverResponse } from './storage-node/types.js';
@@ -157,11 +164,9 @@ export class WalrusClient {
 		);
 
 		const getSliverTasks: { key: string; executor: () => Promise<GetSliverResponse> }[] = [];
-		const controller = new AbortController();
 
-		signal?.addEventListener('abort', () => {
-			controller.abort();
-		});
+		const controller = new AbortController();
+		signal?.addEventListener('abort', () => controller.abort());
 
 		for (const node of randomStorageNodes) {
 			for (const shard of node.shardIndices) {
@@ -179,69 +184,71 @@ export class WalrusClient {
 		}
 
 		const results: GetSliverResponse[] = [];
+		const initialTasks = getSliverTasks.slice(0, minSymbols);
+		const retryTasks = getSliverTasks.slice(minSymbols);
 		const triedRequests = new Set<string>();
 
-		let numErrors = 0;
+		let numMiscErrors = 0;
 		let numBlockedErrors = 0;
 		let numNotFoundErrors = 0;
 
 		await new Promise((resolve, reject) => {
-			getSliverTasks.slice(0, minSymbols).forEach((task) => {
-				if (!triedRequests.add(task.key)) return;
+			const onFulfilled = (value: GetSliverResponse) => {
+				results.push(value);
+				if (results.length === minSymbols) {
+					resolve(results);
+				}
+			};
 
-				const onFulfilled = (value: GetSliverResponse) => {
-					results.push(value);
-					if (results.length === minSymbols) {
-						resolve(results);
-					}
-				};
+			const onRejected = (reason: unknown) => {
+				if (reason instanceof LegallyUnavailableError) {
+					numBlockedErrors += 1;
+				} else if (reason instanceof NotFoundError) {
+					numNotFoundErrors += 1;
+				} else {
+					numMiscErrors += 1;
+				}
 
-				const onRejected = (reason: unknown) => {
-					if (reason instanceof LegallyUnavailableError) {
-						numBlockedErrors += 1;
-					} else if (reason instanceof NotFoundError) {
-						console.log(numNotFoundErrors);
-						numNotFoundErrors += 1;
+				const maxErrorCount = Math.max(
+					Math.max(numNotFoundErrors, numBlockedErrors),
+					numMiscErrors,
+				);
+				const totalErrorCount = numBlockedErrors + numNotFoundErrors + numMiscErrors;
+
+				if (isQuorom(totalErrorCount, numShards)) {
+					if (maxErrorCount === numBlockedErrors) {
+						reject(new WalrusBlobBlockedError(`The provided blob ${blobId} is blocked.`));
+					} else if (maxErrorCount === numNotFoundErrors) {
+						reject(new WalrusBlobDoesNotExistError(`The provided blob ${blobId} does not exist.`));
 					} else {
-						numErrors += 1;
+						reject(new WalrusClientError('Failed to retrieve enough slivers to decode the blob.'));
 					}
+				}
 
-					if (isQuorom(numBlockedErrors + numNotFoundErrors + numErrors, numShards)) {
-						console.log(numBlockedErrors, numNotFoundErrors, numErrors);
-						if (numBlockedErrors > numNotFoundErrors && numBlockedErrors > numErrors) {
-							reject(new Error('Content blocked'));
-						} else if (numNotFoundErrors > numBlockedErrors && numNotFoundErrors > numErrors) {
-							reject(new Error('Content not found'));
-						} else {
-							reject(new Error('Too many errors'));
-						}
-					}
+				const retryTask = retryTasks.find((retryTask) => {
+					const hasBeenTriedBefore = triedRequests.has(retryTask.key);
+					return !hasBeenTriedBefore;
+				});
 
-					for (let i = minSymbols; i < getSliverTasks.length; i += 1) {
-						const differentTask = getSliverTasks[i];
+				if (retryTask) {
+					triedRequests.add(retryTask.key);
 
-						if (!triedRequests.has(differentTask.key)) {
-							triedRequests.add(differentTask.key);
+					retryTask
+						.executor()
+						.then(onFulfilled, onRejected)
+						.finally(() => controller.abort());
+				}
+			};
 
-							differentTask
-								.executor()
-								.then(onFulfilled, onRejected)
-								.finally(() => {
-									controller.abort();
-								});
-
-							break;
-						}
-					}
-				};
+			for (const task of initialTasks) {
+				if (triedRequests.has(task.key)) return;
+				triedRequests.add(task.key);
 
 				task
 					.executor()
 					.then(onFulfilled, onRejected)
-					.finally(() => {
-						controller.abort();
-					});
-			});
+					.finally(() => controller.abort());
+			}
 		});
 
 		const decodedBytes = decodePrimarySlivers(
@@ -252,7 +259,9 @@ export class WalrusClient {
 
 		const reconstructedBlobMetadata = computeMetadata(numShards, decodedBytes);
 		if (reconstructedBlobMetadata.blob_id !== blobId) {
-			throw new Error('decoding verification error type');
+			throw new WalrusBlobDecodingVerificationError(
+				'The provided blob ID does not match the expected metadata.',
+			);
 		}
 
 		return new globalThis.Blob([decodedBytes]);
