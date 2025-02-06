@@ -48,13 +48,8 @@ import {
 	toShardIndex,
 } from './utils/index.js';
 import { SuiObjectDataLoader } from './utils/object-loader.js';
-<<<<<<< HEAD
 import { getRandom, weightedRandomSample } from './utils/randomness.js';
 import { combineSignatures, computeMetadata, decodePrimarySlivers, encodeBlob } from './wasm.js';
-=======
-import { getRandom } from './utils/randomness.js';
-import { combineSignatures, decodePrimarySlivers, encodeBlob } from './wasm.js';
->>>>>>> origin/main
 
 export class WalrusClient {
 	#storageNodeClient: StorageNodeClient;
@@ -154,31 +149,12 @@ export class WalrusClient {
 			{ nodeUrl: randomStorageNode.networkUrl, signal },
 		);
 
-<<<<<<< HEAD
 		const randomStorageNodes = weightedRandomSample(
 			storageNodes.committee.map((storageNode) => ({
 				value: storageNode,
 				weight: storageNode.shardIndices.length,
 			})),
 		);
-=======
-		// TODO: implement better shard selection logic
-		const sliverPromises = Array.from({ length: minSymbols }).map(async (_, shardIndex) => {
-			const storageNode = await this.#getNodeByShardIndex(shardIndex);
-			const sliverPairIndex = toPairIndex(shardIndex, blobId, numShards);
-
-			return await this.#storageNodeClient.getSliver(
-				{ blobId, sliverPairIndex, sliverType: 'primary' },
-				{ nodeUrl: storageNode.networkUrl, signal },
-			);
-		});
-
-		// TODO: implement retry/scheduling logic
-		const sliverResults = await Promise.allSettled(sliverPromises);
-		const slivers = sliverResults
-			.map((result) => (result.status === 'fulfilled' ? result.value : null))
-			.filter((sliver) => !!sliver);
->>>>>>> origin/main
 
 		const getSliverTasks: { key: string; executor: () => Promise<GetSliverResponse> }[] = [];
 		const controller = new AbortController();
@@ -553,17 +529,6 @@ export class WalrusClient {
 		return { digest };
 	}
 
-<<<<<<< HEAD
-	async writeSliver({ blobId, sliverPairIndex, sliverType, sliver, signal }: WriteSliverOptions) {
-		const systemState = await this.systemState();
-		const shardIndex = toShardIndex(sliverPairIndex, blobId, systemState.committee.n_shards);
-		const node = await this.#getNodeByShardIndex(shardIndex);
-
-		return await this.#storageNodeClient.storeSliver(
-			{ blobId, sliverPairIndex, sliverType, sliver },
-			{ nodeUrl: node.networkUrl, signal },
-		);
-=======
 	deleteBlob({ blobObjectId }: DeleteBlobOptions) {
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -673,7 +638,6 @@ export class WalrusClient {
 			{ blobId, sliverPairIndex, sliverType, sliver },
 			{ nodeUrl: node.networkUrl, signal },
 		);
->>>>>>> origin/main
 	}
 
 	async writeMetadataToNode({ nodeIndex, blobId, metadata, signal }: WriteMetadataOptions) {
@@ -759,19 +723,6 @@ export class WalrusClient {
 			controller.abort();
 		});
 
-<<<<<<< HEAD
-		await Promise.all(
-			slivers.primary.map((sliver) =>
-				this.writeSliver({
-					blobId,
-					sliverPairIndex: sliver.sliverIndex,
-					sliverType: 'primary',
-					sliver: sliver.sliver,
-					signal: controller.signal,
-				}),
-			),
-		).catch((error) => {
-=======
 		const primarySliverWrites = slivers.primary.map(({ sliverPairIndex, sliver }) => {
 			return this.writeSliver({
 				blobId,
@@ -793,7 +744,6 @@ export class WalrusClient {
 		});
 
 		await Promise.all([...primarySliverWrites, ...secondarySliverWrites]).catch((error) => {
->>>>>>> origin/main
 			controller.abort();
 			throw error;
 		});
