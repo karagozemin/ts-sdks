@@ -20,6 +20,8 @@ import { LegallyUnavailableError, NotFoundError } from './storage-node/error.js'
 import type { GetSliverResponse } from './storage-node/types.js';
 import type {
 	CertifyBlobOptions,
+	DeleteBlobOptions,
+	ExtendBlobOptions,
 	GetStorageConfirmationOptions,
 	ReadBlobOptions,
 	RegisterBlobOptions,
@@ -46,8 +48,13 @@ import {
 	toShardIndex,
 } from './utils/index.js';
 import { SuiObjectDataLoader } from './utils/object-loader.js';
+<<<<<<< HEAD
 import { getRandom, weightedRandomSample } from './utils/randomness.js';
 import { combineSignatures, computeMetadata, decodePrimarySlivers, encodeBlob } from './wasm.js';
+=======
+import { getRandom } from './utils/randomness.js';
+import { combineSignatures, decodePrimarySlivers, encodeBlob } from './wasm.js';
+>>>>>>> origin/main
 
 export class WalrusClient {
 	#storageNodeClient: StorageNodeClient;
@@ -147,12 +154,31 @@ export class WalrusClient {
 			{ nodeUrl: randomStorageNode.networkUrl, signal },
 		);
 
+<<<<<<< HEAD
 		const randomStorageNodes = weightedRandomSample(
 			storageNodes.committee.map((storageNode) => ({
 				value: storageNode,
 				weight: storageNode.shardIndices.length,
 			})),
 		);
+=======
+		// TODO: implement better shard selection logic
+		const sliverPromises = Array.from({ length: minSymbols }).map(async (_, shardIndex) => {
+			const storageNode = await this.#getNodeByShardIndex(shardIndex);
+			const sliverPairIndex = toPairIndex(shardIndex, blobId, numShards);
+
+			return await this.#storageNodeClient.getSliver(
+				{ blobId, sliverPairIndex, sliverType: 'primary' },
+				{ nodeUrl: storageNode.networkUrl, signal },
+			);
+		});
+
+		// TODO: implement retry/scheduling logic
+		const sliverResults = await Promise.allSettled(sliverPromises);
+		const slivers = sliverResults
+			.map((result) => (result.status === 'fulfilled' ? result.value : null))
+			.filter((sliver) => !!sliver);
+>>>>>>> origin/main
 
 		const getSliverTasks: { key: string; executor: () => Promise<GetSliverResponse> }[] = [];
 		const controller = new AbortController();
@@ -256,21 +282,34 @@ export class WalrusClient {
 		return new globalThis.Blob([decodedBytes]);
 	}
 
-	async createStorage({ size, epochs }: StorageWithSizeOptions) {
+	async storageCost(size: number, epochs: number) {
+		const systemState = await this.systemState();
+		const encodedSize = encodedBlobLength(size, systemState.committee.n_shards);
+		const storageUnits = storageUnitsFromSize(encodedSize);
+		const storageCost =
+			BigInt(storageUnits) * BigInt(systemState.storage_price_per_unit_size) * BigInt(epochs);
+		BigInt(epochs);
+
+		const writeCost = BigInt(storageUnits) * BigInt(systemState.write_price_per_unit_size);
+
+		return { storageCost, writeCost, totalCost: storageCost + writeCost };
+	}
+
+	async createStorage({ size, epochs, walCoin }: StorageWithSizeOptions) {
 		const systemObject = await this.systemObject();
 		const systemState = await this.systemState();
 		const encodedSize = encodedBlobLength(size, systemState.committee.n_shards);
+		const { storageCost } = await this.storageCost(size, epochs);
 
 		return (tx: Transaction) => {
-			const coin = tx.add(
-				coinWithBalance({
-					balance:
-						BigInt(storageUnitsFromSize(encodedSize)) *
-						BigInt(systemState.storage_price_per_unit_size) *
-						BigInt(epochs),
-					type: this.walType,
-				}),
-			);
+			const coin = walCoin
+				? tx.splitCoins(walCoin, [storageCost])[0]
+				: tx.add(
+						coinWithBalance({
+							balance: storageCost,
+							type: this.walType,
+						}),
+					);
 
 			const storage = tx.add(
 				this.systemContract.reserve_space({
@@ -335,21 +374,19 @@ export class WalrusClient {
 		};
 	}
 
-	async registerBlob({ size, epochs, blobId, rootHash, deletable }: RegisterBlobOptions) {
-		const systemState = await this.systemState();
-		const storage = await this.createStorage({ size, epochs });
+	async registerBlob({ size, epochs, blobId, rootHash, deletable, walCoin }: RegisterBlobOptions) {
+		const storage = await this.createStorage({ size, epochs, walCoin });
+		const { writeCost } = await this.storageCost(size, epochs);
 
 		return (tx: Transaction) => {
-			const encodedLength = encodedBlobLength(size, systemState.committee.n_shards);
-
-			const writeCoin = tx.add(
-				coinWithBalance({
-					balance:
-						BigInt(storageUnitsFromSize(encodedLength)) *
-						BigInt(systemState.write_price_per_unit_size),
-					type: this.walType,
-				}),
-			);
+			const writeCoin = walCoin
+				? tx.splitCoins(walCoin, [writeCost])[0]
+				: tx.add(
+						coinWithBalance({
+							balance: writeCost,
+							type: this.walType,
+						}),
+					);
 
 			const blob = tx.add(
 				this.systemContract.register_blob({
@@ -391,13 +428,13 @@ export class WalrusClient {
 	async executeRegisterBlobTransaction({
 		signer,
 		...options
-	}: RegisterBlobOptions & { transaction?: Transaction; signer: Signer }): Promise<{
+	}: RegisterBlobOptions & { transaction?: Transaction; signer: Signer; owner?: string }): Promise<{
 		blob: ReturnType<typeof Blob>['$inferType'];
 		digest: string;
 	}> {
 		const transaction = await this.registerBlobTransaction({
 			...options,
-			owner: options.transaction?.getData().sender ?? signer.toSuiAddress(),
+			owner: options.owner ?? options.transaction?.getData().sender ?? signer.toSuiAddress(),
 		});
 
 		const { digest, effects } = await this.#executeTransaction(
@@ -516,6 +553,7 @@ export class WalrusClient {
 		return { digest };
 	}
 
+<<<<<<< HEAD
 	async writeSliver({ blobId, sliverPairIndex, sliverType, sliver, signal }: WriteSliverOptions) {
 		const systemState = await this.systemState();
 		const shardIndex = toShardIndex(sliverPairIndex, blobId, systemState.committee.n_shards);
@@ -525,6 +563,117 @@ export class WalrusClient {
 			{ blobId, sliverPairIndex, sliverType, sliver },
 			{ nodeUrl: node.networkUrl, signal },
 		);
+=======
+	deleteBlob({ blobObjectId }: DeleteBlobOptions) {
+		return (tx: Transaction) =>
+			tx.moveCall({
+				package: this.packageConfig.systemObjectId,
+				module: 'system',
+				function: 'delete_blob',
+				arguments: [tx.object(this.packageConfig.systemObjectId), tx.object(blobObjectId)],
+			});
+	}
+
+	deleteBlobTransaction({
+		owner,
+		blobObjectId,
+		transaction = new Transaction(),
+	}: DeleteBlobOptions & { transaction?: Transaction; owner: string }) {
+		transaction.transferObjects([this.deleteBlob({ blobObjectId })], owner);
+
+		return transaction;
+	}
+
+	async executeDeleteBlobTransaction({
+		signer,
+		transaction = new Transaction(),
+		blobObjectId,
+	}: DeleteBlobOptions & { signer: Signer; transaction?: Transaction }) {
+		const { digest } = await this.#executeTransaction(
+			this.deleteBlobTransaction({
+				blobObjectId,
+				transaction,
+				owner: transaction.getData().sender ?? signer.toSuiAddress(),
+			}),
+			signer,
+			'delete blob',
+		);
+
+		return { digest };
+	}
+
+	async extendBlob({ blobObjectId, epochs, endEpoch, walCoin }: ExtendBlobOptions) {
+		const blob = await this.#objectLoader.load(blobObjectId, Blob());
+		const numEpochs = typeof epochs === 'number' ? epochs : endEpoch - blob.storage.end_epoch;
+
+		if (numEpochs <= 0) {
+			return (_tx: Transaction) => {};
+		}
+
+		const { storageCost } = await this.storageCost(Number(blob.storage.storage_size), numEpochs);
+
+		return (tx: Transaction) => {
+			const coin = walCoin
+				? tx.splitCoins(walCoin, [storageCost])[0]
+				: tx.add(
+						coinWithBalance({
+							balance: storageCost,
+
+							type: this.walType,
+						}),
+					);
+
+			tx.add(
+				this.systemContract.extend_blob({
+					arguments: [
+						tx.object(this.packageConfig.systemObjectId),
+						tx.object(blobObjectId),
+						numEpochs,
+						coin,
+					],
+				}),
+			);
+
+			tx.moveCall({
+				target: '0x2::coin::destroy_zero',
+				typeArguments: [this.walType],
+				arguments: [coin],
+			});
+		};
+	}
+
+	async extendBlobTransaction({
+		transaction = new Transaction(),
+		...options
+	}: ExtendBlobOptions & { transaction?: Transaction }) {
+		transaction.add(await this.extendBlob(options));
+
+		return transaction;
+	}
+
+	async executeExtendBlobTransaction({
+		signer,
+		...options
+	}: ExtendBlobOptions & { signer: Signer; transaction?: Transaction }) {
+		const { digest } = await this.#executeTransaction(
+			await this.extendBlobTransaction(options),
+			signer,
+			'extend blob',
+		);
+
+		return { digest };
+	}
+
+	async writeSliver({ blobId, sliverPairIndex, sliverType, sliver, signal }: WriteSliverOptions) {
+		const systemState = await this.systemState();
+		const shardIndex = toShardIndex(sliverPairIndex, blobId, systemState.committee.n_shards);
+		const node = await this.#getNodeByShardIndex(shardIndex);
+
+		return await this.#storageNodeClient.storeSliver(
+			{ blobId, sliverPairIndex, sliverType, sliver },
+			{ nodeUrl: node.networkUrl, signal },
+		);
+>>>>>>> origin/main
 	}
 
 	async writeMetadataToNode({ nodeIndex, blobId, metadata, signal }: WriteMetadataOptions) {
@@ -562,44 +711,34 @@ export class WalrusClient {
 
 	async encodeBlob(blob: Uint8Array) {
 		const systemState = await this.systemState();
-		const { blobId, metadata, sliverPairs, rootHash } = encodeBlob(
-			systemState.committee.n_shards,
-			blob,
-		);
+		const numShards = systemState.committee.n_shards;
+		const { blobId, metadata, sliverPairs, rootHash } = encodeBlob(numShards, blob);
 
 		const sliversByNodeMap = new Map<number, SliversForNode>();
 
 		while (sliverPairs.length > 0) {
 			// remove from list so we don't preserve references to the original data
 			const { primary, secondary } = sliverPairs.pop()!;
+			const sliverPairIndex = primary.index;
 
-			const primaryShardIndex = toShardIndex(primary.index, blobId, systemState.committee.n_shards);
-			const secondaryShardIndex = toShardIndex(
-				secondary.index,
-				blobId,
-				systemState.committee.n_shards,
-			);
+			const shardIndex = toShardIndex(sliverPairIndex, blobId, numShards);
+			const node = await this.#getNodeByShardIndex(shardIndex);
 
-			const primaryNode = await this.#getNodeByShardIndex(primaryShardIndex);
-			const secondaryNode = await this.#getNodeByShardIndex(secondaryShardIndex);
-
-			if (!sliversByNodeMap.has(primaryNode.nodeIndex)) {
-				sliversByNodeMap.set(primaryNode.nodeIndex, { primary: [], secondary: [] });
+			if (!sliversByNodeMap.has(node.nodeIndex)) {
+				sliversByNodeMap.set(node.nodeIndex, { primary: [], secondary: [] });
 			}
 
-			if (!sliversByNodeMap.has(secondaryNode.nodeIndex)) {
-				sliversByNodeMap.set(secondaryNode.nodeIndex, { primary: [], secondary: [] });
-			}
-
-			sliversByNodeMap.get(primaryNode.nodeIndex)!.primary.push({
+			sliversByNodeMap.get(node.nodeIndex)!.primary.push({
 				sliverIndex: primary.index,
-				shardIndex: primaryShardIndex,
+				sliverPairIndex,
+				shardIndex,
 				sliver: SliverData.serialize(primary).toBytes(),
 			});
 
-			sliversByNodeMap.get(secondaryNode.nodeIndex)!.secondary.push({
+			sliversByNodeMap.get(node.nodeIndex)!.secondary.push({
 				sliverIndex: secondary.index,
-				shardIndex: secondaryShardIndex,
+				sliverPairIndex,
+				shardIndex,
 				sliver: SliverData.serialize(secondary).toBytes(),
 			});
 		}
@@ -620,6 +759,7 @@ export class WalrusClient {
 			controller.abort();
 		});
 
+<<<<<<< HEAD
 		await Promise.all(
 			slivers.primary.map((sliver) =>
 				this.writeSliver({
@@ -631,6 +771,29 @@ export class WalrusClient {
 				}),
 			),
 		).catch((error) => {
+=======
+		const primarySliverWrites = slivers.primary.map(({ sliverPairIndex, sliver }) => {
+			return this.writeSliver({
+				blobId,
+				sliverPairIndex,
+				sliverType: 'primary',
+				sliver,
+				signal: controller.signal,
+			});
+		});
+
+		const secondarySliverWrites = slivers.secondary.map(({ sliverPairIndex, sliver }) => {
+			return this.writeSliver({
+				blobId,
+				sliverPairIndex,
+				sliverType: 'secondary',
+				sliver,
+				signal: controller.signal,
+			});
+		});
+
+		await Promise.all([...primarySliverWrites, ...secondarySliverWrites]).catch((error) => {
+>>>>>>> origin/main
 			controller.abort();
 			throw error;
 		});
@@ -660,7 +823,7 @@ export class WalrusClient {
 		});
 	}
 
-	async writeBlob({ blob, deletable, epochs, signer, signal }: WriteBlobOptions) {
+	async writeBlob({ blob, deletable, epochs, signer, signal, owner }: WriteBlobOptions) {
 		const systemState = await this.systemState();
 		const nodes = await this.#getNodes();
 		const controller = new AbortController();
@@ -678,6 +841,7 @@ export class WalrusClient {
 			blobId,
 			rootHash,
 			deletable,
+			owner,
 		});
 
 		const blobObjectId = suiBlobObject.blob.id.id;
@@ -715,7 +879,10 @@ export class WalrusClient {
 			confirmations,
 		});
 
-		return { blobId, blobObjectId };
+		return {
+			blobId,
+			blobObject: await this.#objectLoader.load(blobObjectId, Blob()),
+		};
 	}
 
 	async #executeTransaction(transaction: Transaction, signer: Signer, action: string) {
