@@ -31,6 +31,11 @@ export function getPrimarySourceSymbols(nShards: number): number {
 	return primary;
 }
 
+export function isQuorom(size: number, nShards: number): boolean {
+	const maxFaulty = Math.floor((nShards - 1) / 3);
+	return size > 2 * maxFaulty + 1;
+}
+
 function decodingSafetyLimit(nShards: number): number {
 	switch (true) {
 		case nShards <= 15: // f=5, 3f+1=16, 0.2*f=1
