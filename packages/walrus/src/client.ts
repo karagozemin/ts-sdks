@@ -164,6 +164,7 @@ export class WalrusClient {
 		);
 
 		const getSliverTasks: { key: string; executor: () => Promise<GetSliverResponse> }[] = [];
+		const triedRequests = new Set<string>();
 
 		const controller = new AbortController();
 		signal?.addEventListener('abort', () => controller.abort());
@@ -171,9 +172,12 @@ export class WalrusClient {
 		for (const node of randomStorageNodes) {
 			for (const shard of node.shardIndices) {
 				const sliverPairIndex = toPairIndex(shard, blobId, numShards);
+				const key = `${node.networkUrl}-${sliverPairIndex}`;
+
 				getSliverTasks.push({
-					key: `${node.networkUrl}-${sliverPairIndex}`,
+					key,
 					executor: () => {
+						triedRequests.add(key);
 						return this.#storageNodeClient.getSliver(
 							{ blobId, sliverPairIndex, sliverType: 'primary' },
 							{ nodeUrl: node.networkUrl, signal },
@@ -186,7 +190,6 @@ export class WalrusClient {
 		const results: GetSliverResponse[] = [];
 		const initialTasks = getSliverTasks.slice(0, minSymbols);
 		const retryTasks = getSliverTasks.slice(minSymbols);
-		const triedRequests = new Set<string>();
 
 		let numMiscErrors = 0;
 		let numBlockedErrors = 0;
@@ -229,27 +232,13 @@ export class WalrusClient {
 					const hasBeenTriedBefore = triedRequests.has(retryTask.key);
 					return !hasBeenTriedBefore;
 				});
-
-				if (retryTask) {
-					triedRequests.add(retryTask.key);
-
-					retryTask
-						.executor()
-						.then(onFulfilled, onRejected)
-						.finally(() => controller.abort());
-				}
+				retryTask?.executor().then(onFulfilled, onRejected);
 			};
 
 			for (const task of initialTasks) {
-				if (triedRequests.has(task.key)) return;
-				triedRequests.add(task.key);
-
-				task
-					.executor()
-					.then(onFulfilled, onRejected)
-					.finally(() => controller.abort());
+				task.executor().then(onFulfilled, onRejected);
 			}
-		});
+		}).finally(() => controller.abort());
 
 		const decodedBytes = decodePrimarySlivers(
 			numShards,
