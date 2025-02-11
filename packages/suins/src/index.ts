@@ -14,3 +14,4 @@ export {
 	getRenewalPricelistConfigType,
 	getCoinDiscountConfigType,
 } from './helpers.js';
+export { SuiPriceServiceConnection, SuiPythClient } from './pyth/pyth.js';
