@@ -51,6 +51,7 @@
 		"@mysten/bcs": "workspace:*",
 		"@mysten/sui": "workspace:*",
 		"@mysten/walrus-wasm": "workspace:*",
-		"dataloader": "^2.2.3"
+		"dataloader": "^2.2.3",
+		"effect": "^3.12.11"
 	}
 }

@@ -1,6 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { exec } from 'child_process';
 import { bcs, fromBase64 } from '@mysten/bcs';
 import { SuiClient } from '@mysten/sui/client';
 import type { Signer } from '@mysten/sui/cryptography';
@@ -16,6 +17,8 @@ import { Storage } from './contracts/storage_resource.js';
 import { SystemStateInnerV1 } from './contracts/system_state_inner.js';
 import { init as initSystemContract, System } from './contracts/system.js';
 import { StorageNodeClient } from './storage-node/client.js';
+import { LegallyUnavailableError, NotFoundError } from './storage-node/error.js';
+import { BlobMetadataWithId } from './storage-node/types.js';
 import type {
 	CertifyBlobOptions,
 	DeleteBlobOptions,
@@ -34,18 +37,20 @@ import type {
 	WriteSliverOptions,
 	WriteSliversToNodeOptions,
 } from './types.js';
+import { runTasks } from './utils/async.js';
 import { blobIdToInt, IntentType, SliverData, StorageConfirmation } from './utils/bcs.js';
 import {
 	encodedBlobLength,
 	getPrimarySourceSymbols,
 	getShardIndicesByNodeId,
+	isQuorum,
 	signersToBitmap,
 	storageUnitsFromSize,
 	toPairIndex,
 	toShardIndex,
 } from './utils/index.js';
 import { SuiObjectDataLoader } from './utils/object-loader.js';
-import { getRandom } from './utils/randomness.js';
+import { getRandom, shuffle } from './utils/randomness.js';
 import { combineSignatures, decodePrimarySlivers, encodeBlob } from './wasm.js';
 
 export class WalrusClient {
@@ -133,18 +138,83 @@ export class WalrusClient {
 		);
 	}
 
+	async #retrieveBlobMetadata({ blobId, signal }: ReadBlobOptions) {
+		const systemState = await this.systemState();
+		const nodes = await this.#getNodes();
+
+		const numShards = systemState.committee.n_shards;
+		const randomizedNodes = shuffle(nodes.committee);
+
+		let numNotFoundErrors = 0;
+		let numBlockedErrors = 0;
+
+		const controller = new AbortController();
+		signal?.addEventListener('abort', () => {
+			controller.abort();
+		});
+
+		const executors = randomizedNodes.map((node) => {
+			return {
+				node,
+				executor: () =>
+					this.#storageNodeClient.getBlobMetadata(
+						{ blobId },
+						{ nodeUrl: node.networkUrl, signal: controller.signal },
+					),
+			};
+		});
+		const iterator = executors.entries();
+		const concurrencyLimit = 15;
+
+		async function doWork() {
+			for (let [_, item] of iterator) {
+				try {
+					return await item.executor();
+				} catch (error) {
+					if (error instanceof NotFoundError) {
+						numNotFoundErrors += item.node.shardIndices.length;
+					} else if (error instanceof LegallyUnavailableError) {
+						numBlockedErrors += item.node.shardIndices.length;
+					}
+
+					if (isQuorum(numBlockedErrors + numNotFoundErrors, numShards)) {
+						if (numNotFoundErrors > numBlockedErrors) {
+							throw new Error('customize dis (not found)');
+						} else {
+							throw new Error('customize dis (blocked)');
+						}
+					}
+				}
+			}
+
+			console.log('ITER EMPTY???');
+
+			throw new Error('WTF');
+		}
+
+		try {
+			const attemptGetMetadata = iterator.next().value![1].executor;
+			return await attemptGetMetadata?.();
+		} catch (error) {
+			return new Promise((resolve, reject) => {
+				const workers = Array(concurrencyLimit).fill(iterator).map(doWork);
+				workers.forEach((worker) => {
+					worker
+						.then(resolve)
+						.catch(reject)
+						.finally(() => controller.abort());
+				});
+			});
+		}
+	}
+
 	async readBlob({ blobId, signal }: ReadBlobOptions) {
 		const systemState = await this.systemState();
 		const numShards = systemState.committee.n_shards;
 		const minSymbols = getPrimarySourceSymbols(numShards);
 
-		const storageNodes = await this.#getNodes();
-		const randomStorageNode = getRandom(storageNodes.committee);
-
-		const blobMetadata = await this.#storageNodeClient.getBlobMetadata(
-			{ blobId },
-			{ nodeUrl: randomStorageNode.networkUrl, signal },
-		);
+		const blobMetadata = await this.#retrieveBlobMetadata({ blobId, signal });
+		console.log('META', blobMetadata);
 
 		// TODO: implement better shard selection logic
 		const sliverPromises = Array.from({ length: minSymbols }).map(async (_, shardIndex) => {

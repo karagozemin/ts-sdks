@@ -32,7 +32,7 @@ export async function retrieveBlob(blobId: string) {
 }
 
 (async function main() {
-	const blob = await retrieveBlob('cUTGpAG6MixSTbM8-KHvUoK_eGn4bXJP1a8U5cQq9yw');
+	const blob = await retrieveBlob('coTGpAG6MixSTbM8-KHvUoK_eGn4bXJP1a8U5cQq9yw');
 
 	// Convert Uint8Array to string using TextDecoder
 	const textDecoder = new TextDecoder('utf-8'); // Specify encoding, e.g., "utf-8"
