@@ -1,7 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { exec } from 'child_process';
 import { bcs, fromBase64 } from '@mysten/bcs';
 import { SuiClient } from '@mysten/sui/client';
 import type { Signer } from '@mysten/sui/cryptography';
@@ -18,7 +17,6 @@ import { SystemStateInnerV1 } from './contracts/system_state_inner.js';
 import { init as initSystemContract, System } from './contracts/system.js';
 import { StorageNodeClient } from './storage-node/client.js';
 import { LegallyUnavailableError, NotFoundError } from './storage-node/error.js';
-import { BlobMetadataWithId } from './storage-node/types.js';
 import type {
 	CertifyBlobOptions,
 	DeleteBlobOptions,
@@ -37,7 +35,6 @@ import type {
 	WriteSliverOptions,
 	WriteSliversToNodeOptions,
 } from './types.js';
-import { runTasks } from './utils/async.js';
 import { blobIdToInt, IntentType, SliverData, StorageConfirmation } from './utils/bcs.js';
 import {
 	encodedBlobLength,
@@ -50,7 +47,7 @@ import {
 	toShardIndex,
 } from './utils/index.js';
 import { SuiObjectDataLoader } from './utils/object-loader.js';
-import { getRandom, shuffle } from './utils/randomness.js';
+import { shuffle } from './utils/randomness.js';
 import { combineSignatures, decodePrimarySlivers, encodeBlob } from './wasm.js';
 
 export class WalrusClient {
@@ -143,7 +140,8 @@ export class WalrusClient {
 		const nodes = await this.#getNodes();
 
 		const numShards = systemState.committee.n_shards;
-		const randomizedNodes = shuffle(nodes.committee);
+		// TODO: Fix in-place shuffle
+		const randomizedNodes = shuffle([...nodes.committee]);
 
 		let numNotFoundErrors = 0;
 		let numBlockedErrors = 0;
@@ -153,59 +151,55 @@ export class WalrusClient {
 			controller.abort();
 		});
 
-		const executors = randomizedNodes.map((node) => {
-			return {
-				node,
-				executor: () =>
-					this.#storageNodeClient.getBlobMetadata(
-						{ blobId },
-						{ nodeUrl: node.networkUrl, signal: controller.signal },
-					),
-			};
-		});
-		const iterator = executors.entries();
-		const concurrencyLimit = 15;
+		function chunk(array: any[], size: number) {
+			return Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
+				array.slice(i * size, (i + 1) * size),
+			);
+		}
 
-		async function doWork() {
-			for (let [_, item] of iterator) {
-				try {
-					return await item.executor();
-				} catch (error) {
-					if (error instanceof NotFoundError) {
-						numNotFoundErrors += item.node.shardIndices.length;
-					} else if (error instanceof LegallyUnavailableError) {
-						numBlockedErrors += item.node.shardIndices.length;
-					}
+		// Chunk an array of nodes into arrays of size 15
+		const chunkedNodes = chunk(randomizedNodes, 15);
 
-					if (isQuorum(numBlockedErrors + numNotFoundErrors, numShards)) {
-						if (numNotFoundErrors > numBlockedErrors) {
-							throw new Error('customize dis (not found)');
-						} else {
-							throw new Error('customize dis (blocked)');
+		const result = await Promise.any(
+			chunkedNodes.map(async (nodes) => {
+				for (const node of nodes) {
+					controller.signal.throwIfAborted();
+					try {
+						return await this.#storageNodeClient.getBlobMetadata(
+							{ blobId },
+							{ nodeUrl: node.networkUrl, signal: controller.signal },
+						);
+					} catch (error) {
+						if (error instanceof NotFoundError) {
+							numNotFoundErrors += node.shardIndices.length;
+						} else if (error instanceof LegallyUnavailableError) {
+							numBlockedErrors += node.shardIndices.length;
+						} else if (controller.signal.aborted) {
+							throw error;
+						}
+
+						if (isQuorum(numBlockedErrors + numNotFoundErrors, numShards)) {
+							if (numNotFoundErrors > numBlockedErrors) {
+								const abortError = new Error('customize dis (not found)');
+								controller.abort(abortError);
+								throw abortError;
+							} else {
+								const abortError = new Error('customize dis (blocked)');
+								controller.abort(abortError);
+								throw abortError;
+							}
 						}
 					}
 				}
-			}
 
-			console.log('ITER EMPTY???');
+				throw new Error('TODO: Write error message');
+			}),
+		);
 
-			throw new Error('WTF');
-		}
+		// Cancel any existing in-flight requests:
+		controller.abort();
 
-		try {
-			const attemptGetMetadata = iterator.next().value![1].executor;
-			return await attemptGetMetadata?.();
-		} catch (error) {
-			return new Promise((resolve, reject) => {
-				const workers = Array(concurrencyLimit).fill(iterator).map(doWork);
-				workers.forEach((worker) => {
-					worker
-						.then(resolve)
-						.catch(reject)
-						.finally(() => controller.abort());
-				});
-			});
-		}
+		return result;
 	}
 
 	async readBlob({ blobId, signal }: ReadBlobOptions) {
