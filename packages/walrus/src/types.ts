@@ -61,6 +61,11 @@ export interface StorageNode {
 	id: string;
 }
 
+export interface CommitteeInfo {
+	byShardIndex: Map<number, StorageNode>;
+	nodes: StorageNode[];
+}
+
 export interface StorageWithSizeOptions {
 	size: number;
 	epochs: number;

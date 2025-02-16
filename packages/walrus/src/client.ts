@@ -30,6 +30,7 @@ import { NotFoundError, UserAbortError } from './storage-node/error.js';
 import type { BlobStatus } from './storage-node/types.js';
 import type {
 	CertifyBlobOptions,
+	CommitteeInfo,
 	DeleteBlobOptions,
 	ExtendBlobOptions,
 	GetCertificationEpochOptions,
@@ -71,15 +72,7 @@ export class WalrusClient {
 	packageConfig: WalrusPackageConfig;
 	#suiClient: SuiClient;
 	#objectLoader: SuiObjectDataLoader;
-	activeCommittee?:
-		| {
-				byShardIndex: Map<number, StorageNode>;
-				nodes: StorageNode[];
-		  }
-		| Promise<{
-				byShardIndex: Map<number, StorageNode>;
-				nodes: StorageNode[];
-		  }>;
+	activeCommittee?: CommitteeInfo | Promise<CommitteeInfo>;
 
 	constructor(config: WalrusClientConfig) {
 		if (config.network && !config.packageConfig) {
@@ -169,7 +162,7 @@ export class WalrusClient {
 
 		// TODO: implement better shard selection logic
 		const sliverPromises = Array.from({ length: minSymbols }).map(async (_, shardIndex) => {
-			const storageNode = await this.#getNodeByShardIndex(shardIndex);
+			const storageNode = await this.#getNodeByShardIndex(committee, shardIndex);
 			const sliverPairIndex = toPairIndex(shardIndex, blobId, numShards);
 
 			return await this.#storageNodeClient.getSliver(
@@ -275,6 +268,8 @@ export class WalrusClient {
 		}, new Map());
 
 		console.log('ff', uniqueResults);
+
+		return statuses[0].status;
 	}
 
 	async getCertificationEpoch({ blobId, signal }: GetCertificationEpochOptions) {
@@ -283,7 +278,7 @@ export class WalrusClient {
 
 		if (stakingState.epoch_state.$kind === 'EpochChangeSync') {
 			const status = await this.getVerifiedBlobStatus({ blobId, signal });
-			if (typeof status !== 'object' || 'invalid' in status) {
+			if (status === 'nonexistent' || 'invalid' in status) {
 				throw new BlobNotCertifiedError(
 					`The specified blob ${blobId} is either non-existent or invalid.`,
 				);
@@ -693,8 +688,10 @@ export class WalrusClient {
 
 	async writeSliver({ blobId, sliverPairIndex, sliverType, sliver, signal }: WriteSliverOptions) {
 		const systemState = await this.systemState();
+		const committee = await this.#getActiveCommittee();
+
 		const shardIndex = toShardIndex(sliverPairIndex, blobId, systemState.committee.n_shards);
-		const node = await this.#getNodeByShardIndex(shardIndex);
+		const node = await this.#getNodeByShardIndex(committee, shardIndex);
 
 		return await this.#storageNodeClient.storeSliver(
 			{ blobId, sliverPairIndex, sliverType, sliver },
@@ -962,14 +959,11 @@ export class WalrusClient {
 		return this.#objectLoader.loadManyOrThrow(nodeIds, StakingPool());
 	}
 
-	async #getNodeByShardIndex(index: number) {
-		const nodes = await this.#getActiveCommittee();
-		const node = nodes.byShardIndex.get(index);
-
+	async #getNodeByShardIndex(committeeInfo: CommitteeInfo, index: number) {
+		const node = committeeInfo.byShardIndex.get(index);
 		if (!node) {
 			throw new WalrusClientError(`Node for shard index ${index} not found`);
 		}
-
 		return node;
 	}
 
