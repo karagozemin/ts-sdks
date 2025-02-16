@@ -21,6 +21,7 @@ import {
 	BehindCurrentEpochError,
 	BlobNotCertifiedError,
 	NoBlobMetadataReceivedError,
+	NoBlobStatusReceivedError,
 	NotEnoughBlobConfirmationsError,
 	NotEnoughSliversReceivedError,
 	WalrusClientError,
@@ -196,11 +197,10 @@ export class WalrusClient {
 		// Read from the latest committee because, during epoch change, it is the committee
 		// that will have the most up-to-date information on old and newly certified blobs:
 		const committee = await this.#getActiveCommittee();
-
 		const stakingState = await this.stakingState();
 		const numShards = stakingState.n_shards;
 
-		const queue = new PromiseQueue<BlobStatus>({ maxConcurrency: 10 });
+		const queue = new PromiseQueue<BlobStatus>({ maxConcurrency: 20 });
 		const executors = committee.nodes.map((node) => ({
 			weight: node.shardIndices.length,
 			executor: async () => {
@@ -224,7 +224,7 @@ export class WalrusClient {
 						.add(executor)
 						.then((status) => {
 							if (isQuorum(successWeight, numShards)) {
-								controller.abort('Blob statuses retrieved successfully.');
+								controller.abort('Quorum of blob statuses retrieved successfully.');
 								resolve(results);
 							} else {
 								successWeight += weight;
@@ -239,7 +239,7 @@ export class WalrusClient {
 							}
 
 							if (isQuorum(numNotFoundWeight, numShards)) {
-								const abortError = new BlobNotCertifiedError('Blob does not exist');
+								const abortError = new BlobNotCertifiedError('The blob does not exist.');
 								controller.abort(abortError);
 								reject(abortError);
 							}
@@ -247,7 +247,11 @@ export class WalrusClient {
 						.finally(() => {
 							settledCount += 1;
 							if (settledCount === executors.length) {
-								reject(new NoBlobMetadataReceivedError('fb'));
+								reject(
+									new NoBlobStatusReceivedError(
+										'Not enough statuses were retrieved to achieve quorum.',
+									),
+								);
 							}
 						});
 				});
@@ -272,6 +276,9 @@ export class WalrusClient {
 		return statuses[0].status;
 	}
 
+	/**
+	 * Returns the epoch at which a blob was certified at.
+	 */
 	async getCertificationEpoch({ blobId, signal }: GetCertificationEpochOptions) {
 		const stakingState = await this.stakingState();
 		const currentEpoch = stakingState.epoch;
@@ -734,6 +741,8 @@ export class WalrusClient {
 
 	async encodeBlob(blob: Uint8Array) {
 		const systemState = await this.systemState();
+		const committee = await this.#getActiveCommittee();
+
 		const numShards = systemState.committee.n_shards;
 		const { blobId, metadata, sliverPairs, rootHash } = encodeBlob(numShards, blob);
 
@@ -745,7 +754,7 @@ export class WalrusClient {
 			const sliverPairIndex = primary.index;
 
 			const shardIndex = toShardIndex(sliverPairIndex, blobId, numShards);
-			const node = await this.#getNodeByShardIndex(shardIndex);
+			const node = await this.#getNodeByShardIndex(committee, shardIndex);
 
 			if (!sliversByNodeMap.has(node.nodeIndex)) {
 				sliversByNodeMap.set(node.nodeIndex, { primary: [], secondary: [] });

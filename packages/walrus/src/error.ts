@@ -6,6 +6,9 @@ export class WalrusClientError extends Error {}
 /** Thrown when the client could not retrieve blob metadata from any storage node. */
 export class NoBlobMetadataReceivedError extends Error {}
 
+/** Thrown when the client could not retrieve the status of a blob from any storage node. */
+export class NoBlobStatusReceivedError extends Error {}
+
 /** Thrown when the client could not retrieve enough slivers to reconstruct the blob. */
 export class NotEnoughSliversReceivedError extends Error {}
 
