@@ -37,24 +37,30 @@ export type Invalid = {
 
 export type Permanent = {
 	permanent: {
-		deletable_counts: unknown;
-		end_epoch: number;
-		is_certified: boolean;
-		status_event: StatusEvent;
-		initial_certified_epoch: number | null;
+		deletableCounts: {
+			count_deletable_total: number;
+			count_deletable_certified: number;
+		};
+		endEpoch: number;
+		isCertified: boolean;
+		statusEvent: StatusEvent;
+		initialCertifiedEpoch: number | null;
 	};
 };
 
 export type Deletable = {
 	deletable: {
-		deletable_counts: unknown;
-		initial_certified_epoch: number | null;
+		deletableCounts: {
+			count_deletable_total: number;
+			count_deletable_certified: number;
+		};
+		initialCertifiedEpoch: number | null;
 	};
 };
 
 export type StatusEvent = {
 	eventSeq: string;
-	txDigest: Uploadable;
+	txDigest: string;
 };
 
 export type GetBlobMetadataRequestInput = {

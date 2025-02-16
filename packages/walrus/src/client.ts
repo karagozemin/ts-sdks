@@ -24,6 +24,7 @@ import {
 	NoBlobStatusReceivedError,
 	NotEnoughBlobConfirmationsError,
 	NotEnoughSliversReceivedError,
+	NoVerifiedBlobStatusReceivedError,
 	WalrusClientError,
 } from './error.js';
 import { StorageNodeClient } from './storage-node/client.js';
@@ -53,9 +54,9 @@ import type {
 import { blobIdToInt, IntentType, SliverData, StorageConfirmation } from './utils/bcs.js';
 import {
 	encodedBlobLength,
-	getMaxFaultyNodes,
 	getPrimarySourceSymbols,
 	getShardIndicesByNodeId,
+	isAboveValidity,
 	isQuorum,
 	signersToBitmap,
 	storageUnitsFromSize,
@@ -200,7 +201,7 @@ export class WalrusClient {
 		const stakingState = await this.stakingState();
 		const numShards = stakingState.n_shards;
 
-		const queue = new PromiseQueue<BlobStatus>({ maxConcurrency: 20 });
+		const queue = new PromiseQueue<BlobStatus>({ maxConcurrency: 300 });
 		const executors = committee.nodes.map((node) => ({
 			weight: node.shardIndices.length,
 			executor: async () => {
@@ -258,22 +259,37 @@ export class WalrusClient {
 			},
 		);
 
-		const uniqueResults = statuses.reduce((acc, result) => {
+		const statusesByTotalWeight = statuses.reduce((acc, result) => {
 			const { status, weight } = result;
-			const key = typeof status === 'object' ? Object.keys(status)[0] : status;
 
-			if (acc.has(key)) {
-				acc.set(key, acc.get(key) + weight);
+			// TODO: Figure out if we *really* need to deep compare the status objects and refactor
+			// this accordingly. If we do need this, we should use a stable stringify with hashing.
+			const key = JSON.stringify(status);
+			const existing = acc.get(key);
+
+			if (existing) {
+				existing.totalWeight += weight;
 			} else {
-				acc.set(key, weight);
+				acc.set(key, { status, totalWeight: weight });
 			}
 
 			return acc;
-		}, new Map());
+		}, new Map<string, { status: BlobStatus; totalWeight: number }>());
 
-		console.log('ff', uniqueResults);
+		// TODO: Figure out if we need to apply "latest" status sorting logic like the Walrus
+		// client codebase to return the correct latest blob status.
+		for (const { status, totalWeight } of statusesByTotalWeight.values()) {
+			// TODO: Figure out if we should look at the on-chain blob events
+			// to verify the blob status when/if nodes don't correctly report the
+			// blob status.
+			if (isAboveValidity(totalWeight, numShards)) {
+				return status;
+			}
+		}
 
-		return statuses[0].status;
+		throw new NoVerifiedBlobStatusReceivedError(
+			`The blob status could not be verified for blob ${blobId},`,
+		);
 	}
 
 	/**
@@ -285,6 +301,7 @@ export class WalrusClient {
 
 		if (stakingState.epoch_state.$kind === 'EpochChangeSync') {
 			const status = await this.getVerifiedBlobStatus({ blobId, signal });
+
 			if (status === 'nonexistent' || 'invalid' in status) {
 				throw new BlobNotCertifiedError(
 					`The specified blob ${blobId} is either non-existent or invalid.`,
@@ -292,17 +309,17 @@ export class WalrusClient {
 			}
 
 			const data = 'permanent' in status ? status.permanent : status.deletable;
-			if (typeof data.initial_certified_epoch !== 'number') {
+			if (typeof data.initialCertifiedEpoch !== 'number') {
 				throw new BlobNotCertifiedError(`The specified blob ${blobId} is not certified.`);
 			}
 
-			if (data.initial_certified_epoch > currentEpoch) {
+			if (data.initialCertifiedEpoch > currentEpoch) {
 				throw new BehindCurrentEpochError(
-					`The client is at epoch ${currentEpoch} while the specified blob was certified at epoch ${data.initial_certified_epoch}.`,
+					`The client is at epoch ${currentEpoch} while the specified blob was certified at epoch ${data.initialCertifiedEpoch}.`,
 				);
 			}
 
-			return data.initial_certified_epoch;
+			return data.initialCertifiedEpoch;
 		}
 
 		return currentEpoch;
@@ -863,8 +880,6 @@ export class WalrusClient {
 		});
 
 		const blobObjectId = suiBlobObject.blob.id.id;
-
-		const maxFaulty = getMaxFaultyNodes(systemState.committee.n_shards);
 		let failures = 0;
 
 		const confirmations = await Promise.all(
@@ -879,7 +894,7 @@ export class WalrusClient {
 				}).catch(() => {
 					failures += committee.nodes[nodeIndex].shardIndices.length;
 
-					if (failures > maxFaulty) {
+					if (isAboveValidity(failures, systemState.committee.n_shards)) {
 						controller.abort();
 
 						throw new NotEnoughBlobConfirmationsError(
@@ -979,7 +994,7 @@ export class WalrusClient {
 	#retryOnPossibleEpochChange<T extends (...args: any[]) => any>(fn: T): T {
 		return ((...args: Parameters<T>) => {
 			try {
-				return fn(...args);
+				return fn.apply(this, args);
 			} catch (error) {
 				if (
 					error instanceof BlobNotCertifiedError ||
@@ -989,9 +1004,8 @@ export class WalrusClient {
 					error instanceof NotEnoughBlobConfirmationsError
 				) {
 					this.#objectLoader.clearAll();
-					return fn(...args);
+					return fn.apply(this, args);
 				}
-
 				throw error;
 			}
 		}) as T;
