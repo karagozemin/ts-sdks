@@ -1,6 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import type { InferBcsType } from '@mysten/bcs';
 import { bcs, fromBase64 } from '@mysten/bcs';
 import { SuiClient } from '@mysten/sui/client';
 import type { Signer } from '@mysten/sui/cryptography';
@@ -9,18 +10,31 @@ import { bls12381_min_pk_verify } from '@mysten/walrus-wasm';
 
 import { TESTNET_WALRUS_PACKAGE_CONFIG } from './constants.js';
 import { Blob } from './contracts/blob.js';
+import type { Committee } from './contracts/committee.js';
 import { StakingInnerV1 } from './contracts/staking_inner.js';
 import { StakingPool } from './contracts/staking_pool.js';
 import { Staking } from './contracts/staking.js';
 import { Storage } from './contracts/storage_resource.js';
 import { SystemStateInnerV1 } from './contracts/system_state_inner.js';
 import { init as initSystemContract, System } from './contracts/system.js';
+import {
+	BehindCurrentEpochError,
+	BlobNotCertifiedError,
+	NoBlobMetadataReceivedError,
+	NotEnoughBlobConfirmationsError,
+	NotEnoughSliversReceivedError,
+	WalrusClientError,
+} from './error.js';
 import { StorageNodeClient } from './storage-node/client.js';
+import { NotFoundError, UserAbortError } from './storage-node/error.js';
+import type { BlobStatus } from './storage-node/types.js';
 import type {
 	CertifyBlobOptions,
 	DeleteBlobOptions,
 	ExtendBlobOptions,
+	GetCertificationEpochOptions,
 	GetStorageConfirmationOptions,
+	GetVerifiedBlobStatusOptions,
 	ReadBlobOptions,
 	RegisterBlobOptions,
 	SliversForNode,
@@ -37,14 +51,17 @@ import type {
 import { blobIdToInt, IntentType, SliverData, StorageConfirmation } from './utils/bcs.js';
 import {
 	encodedBlobLength,
+	getMaxFaultyNodes,
 	getPrimarySourceSymbols,
 	getShardIndicesByNodeId,
+	isQuorum,
 	signersToBitmap,
 	storageUnitsFromSize,
 	toPairIndex,
 	toShardIndex,
 } from './utils/index.js';
 import { SuiObjectDataLoader } from './utils/object-loader.js';
+import { PromiseQueue } from './utils/promise-queue.js';
 import { getRandom } from './utils/randomness.js';
 import { combineSignatures, decodePrimarySlivers, encodeBlob } from './wasm.js';
 
@@ -54,14 +71,14 @@ export class WalrusClient {
 	packageConfig: WalrusPackageConfig;
 	#suiClient: SuiClient;
 	#objectLoader: SuiObjectDataLoader;
-	#nodes?:
+	activeCommittee?:
 		| {
 				byShardIndex: Map<number, StorageNode>;
-				committee: StorageNode[];
+				nodes: StorageNode[];
 		  }
 		| Promise<{
 				byShardIndex: Map<number, StorageNode>;
-				committee: StorageNode[];
+				nodes: StorageNode[];
 		  }>;
 
 	constructor(config: WalrusClientConfig) {
@@ -72,7 +89,7 @@ export class WalrusClient {
 					this.packageConfig = TESTNET_WALRUS_PACKAGE_CONFIG;
 					break;
 				default:
-					throw new Error(`Unsupported network: ${network}`);
+					throw new WalrusClientError(`Unsupported network: ${network}`);
 			}
 		} else {
 			this.packageConfig = config.packageConfig!;
@@ -133,13 +150,17 @@ export class WalrusClient {
 		);
 	}
 
-	async readBlob({ blobId, signal }: ReadBlobOptions) {
+	readBlob = this.#retryOnPossibleEpochChange(this.#internalReadBlob);
+
+	async #internalReadBlob({ blobId, signal }: ReadBlobOptions) {
+		const certificationEpoch = await this.getCertificationEpoch({ blobId, signal });
+		const committee = await this.#getReadCommittee(certificationEpoch);
+
 		const systemState = await this.systemState();
 		const numShards = systemState.committee.n_shards;
 		const minSymbols = getPrimarySourceSymbols(numShards);
 
-		const storageNodes = await this.#getNodes();
-		const randomStorageNode = getRandom(storageNodes.committee);
+		const randomStorageNode = getRandom(committee.nodes);
 
 		const blobMetadata = await this.#storageNodeClient.getBlobMetadata(
 			{ blobId },
@@ -164,10 +185,139 @@ export class WalrusClient {
 			.filter((sliver) => !!sliver);
 
 		if (slivers.length < minSymbols) {
-			throw new Error('Not enough slivers to decode');
+			throw new NotEnoughSliversReceivedError('Not enough slivers to decode');
 		}
 
 		return decodePrimarySlivers(numShards, blobMetadata.metadata.V1.unencoded_length, slivers);
+	}
+
+	/**
+	 * Gets the blob status from multiple storage nodes the returns the latest status that can be verified.
+	 */
+	async getVerifiedBlobStatus({ blobId, signal }: GetVerifiedBlobStatusOptions) {
+		const controller = new AbortController();
+		signal?.addEventListener('abort', () => {
+			controller.abort();
+		});
+
+		// Read from the latest committee because, during epoch change, it is the committee
+		// that will have the most up-to-date information on old and newly certified blobs:
+		const committee = await this.#getActiveCommittee();
+
+		const stakingState = await this.stakingState();
+		const numShards = stakingState.n_shards;
+
+		const queue = new PromiseQueue<BlobStatus>({ maxConcurrency: 10 });
+		const executors = committee.nodes.map((node) => ({
+			weight: node.shardIndices.length,
+			executor: async () => {
+				const result = await this.#storageNodeClient.getBlobStatus(
+					{ blobId },
+					{ nodeUrl: node.networkUrl, signal: controller.signal },
+				);
+				return result.success.data;
+			},
+		}));
+
+		const statuses = await new Promise<{ status: BlobStatus; weight: number }[]>(
+			(resolve, reject) => {
+				const results: { status: BlobStatus; weight: number }[] = [];
+				let successWeight = 0;
+				let numNotFoundWeight = 0;
+				let settledCount = 0;
+
+				executors.forEach(({ executor, weight }) => {
+					queue
+						.add(executor)
+						.then((status) => {
+							if (isQuorum(successWeight, numShards)) {
+								controller.abort('Blob statuses retrieved successfully.');
+								resolve(results);
+							} else {
+								successWeight += weight;
+								results.push({ status, weight });
+							}
+						})
+						.catch((error) => {
+							if (error instanceof NotFoundError) {
+								numNotFoundWeight += weight;
+							} else if (error instanceof UserAbortError) {
+								reject(error);
+							}
+
+							if (isQuorum(numNotFoundWeight, numShards)) {
+								const abortError = new BlobNotCertifiedError('Blob does not exist');
+								controller.abort(abortError);
+								reject(abortError);
+							}
+						})
+						.finally(() => {
+							settledCount += 1;
+							if (settledCount === executors.length) {
+								reject(new NoBlobMetadataReceivedError('fb'));
+							}
+						});
+				});
+			},
+		);
+
+		const uniqueResults = statuses.reduce((acc, result) => {
+			const { status, weight } = result;
+			const key = typeof status === 'object' ? Object.keys(status)[0] : status;
+
+			if (acc.has(key)) {
+				acc.set(key, acc.get(key) + weight);
+			} else {
+				acc.set(key, weight);
+			}
+
+			return acc;
+		}, new Map());
+
+		console.log('ff', uniqueResults);
+	}
+
+	async getCertificationEpoch({ blobId, signal }: GetCertificationEpochOptions) {
+		const stakingState = await this.stakingState();
+		const currentEpoch = stakingState.epoch;
+
+		if (stakingState.epoch_state.$kind === 'EpochChangeSync') {
+			const status = await this.getVerifiedBlobStatus({ blobId, signal });
+			if (typeof status !== 'object' || 'invalid' in status) {
+				throw new BlobNotCertifiedError(
+					`The specified blob ${blobId} is either non-existent or invalid.`,
+				);
+			}
+
+			const data = 'permanent' in status ? status.permanent : status.deletable;
+			if (typeof data.initial_certified_epoch !== 'number') {
+				throw new BlobNotCertifiedError(`The specified blob ${blobId} is not certified.`);
+			}
+
+			if (data.initial_certified_epoch > currentEpoch) {
+				throw new BehindCurrentEpochError(
+					`The client is at epoch ${currentEpoch} while the specified blob was certified at epoch ${data.initial_certified_epoch}.`,
+				);
+			}
+
+			return data.initial_certified_epoch;
+		}
+
+		return currentEpoch;
+	}
+
+	async #getReadCommittee(certificationEpoch: number) {
+		const stakingState = await this.stakingState();
+		const isTransitioning = stakingState.epoch_state.$kind === 'EpochChangeSync';
+
+		let readCommittee: InferBcsType<ReturnType<typeof Committee>> | undefined;
+		if (isTransitioning && certificationEpoch < stakingState.epoch) {
+			readCommittee = stakingState.previous_committee;
+		} else {
+			readCommittee = stakingState.committee;
+		}
+
+		return await this.#getCommittee(readCommittee);
 	}
 
 	async storageCost(size: number, epochs: number) {
@@ -253,7 +403,7 @@ export class WalrusClient {
 		const suiBlobObject = createdObjects.find((object) => object.data?.type === this.blobType);
 
 		if (!suiBlobObject || suiBlobObject.data?.bcs?.dataType !== 'moveObject') {
-			throw new Error('Storage object not found in transaction effects');
+			throw new WalrusClientError('Storage object not found in transaction effects');
 		}
 
 		return {
@@ -344,7 +494,7 @@ export class WalrusClient {
 		const suiBlobObject = createdObjects.find((object) => object.data?.type === this.blobType);
 
 		if (!suiBlobObject || suiBlobObject.data?.bcs?.dataType !== 'moveObject') {
-			throw new Error('Blob object not found in transaction effects');
+			throw new WalrusClientError('Blob object not found in transaction effects');
 		}
 
 		return {
@@ -355,10 +505,10 @@ export class WalrusClient {
 
 	async certifyBlob({ blobId, blobObjectId, confirmations }: CertifyBlobOptions) {
 		const systemState = await this.systemState();
-		const nodes = await this.#getNodes();
+		const committee = await this.#getActiveCommittee();
 
 		if (confirmations.length !== systemState.committee.members.length) {
-			throw new Error(
+			throw new WalrusClientError(
 				'Invalid number of confirmations. Confirmations array must contain an entry for each node',
 			);
 		}
@@ -380,7 +530,7 @@ export class WalrusClient {
 					confirmation?.serializedMessage === confirmationMessage &&
 					bls12381_min_pk_verify(
 						fromBase64(confirmation.signature),
-						new Uint8Array(nodes.committee[index].info.public_key.bytes),
+						new Uint8Array(committee.nodes[index].info.public_key.bytes),
 						fromBase64(confirmation.serializedMessage),
 					);
 
@@ -553,8 +703,8 @@ export class WalrusClient {
 	}
 
 	async writeMetadataToNode({ nodeIndex, blobId, metadata, signal }: WriteMetadataOptions) {
-		const nodes = await this.#getNodes();
-		const node = nodes.committee[nodeIndex];
+		const committee = await this.#getActiveCommittee();
+		const node = committee.nodes[nodeIndex];
 
 		return await this.#storageNodeClient.storeBlobMetadata(
 			{ blobId, metadata },
@@ -569,8 +719,8 @@ export class WalrusClient {
 		objectId,
 		signal,
 	}: GetStorageConfirmationOptions) {
-		const nodes = await this.#getNodes();
-		const node = nodes.committee[nodeIndex];
+		const committee = await this.#getActiveCommittee();
+		const node = committee.nodes[nodeIndex];
 
 		const result = deletable
 			? await this.#storageNodeClient.getDeletableBlobConfirmation(
@@ -687,7 +837,7 @@ export class WalrusClient {
 
 	async writeBlob({ blob, deletable, epochs, signer, signal, owner }: WriteBlobOptions) {
 		const systemState = await this.systemState();
-		const nodes = await this.#getNodes();
+		const committee = await this.#getActiveCommittee();
 		const controller = new AbortController();
 
 		signal?.addEventListener('abort', () => {
@@ -708,7 +858,7 @@ export class WalrusClient {
 
 		const blobObjectId = suiBlobObject.blob.id.id;
 
-		const maxFaulty = Math.floor((systemState.committee.n_shards - 1) / 3);
+		const maxFaulty = getMaxFaultyNodes(systemState.committee.n_shards);
 		let failures = 0;
 
 		const confirmations = await Promise.all(
@@ -721,12 +871,14 @@ export class WalrusClient {
 					deletable: false,
 					signal: controller.signal,
 				}).catch(() => {
-					failures += nodes.committee[nodeIndex].shardIndices.length;
+					failures += committee.nodes[nodeIndex].shardIndices.length;
 
 					if (failures > maxFaulty) {
 						controller.abort();
 
-						throw new Error(`Too many failures while writing blob ${blobId} to nodes`);
+						throw new NotEnoughBlobConfirmationsError(
+							`Too many failures while writing blob ${blobId} to nodes`,
+						);
 					}
 
 					return null;
@@ -757,7 +909,7 @@ export class WalrusClient {
 		});
 
 		if (effects?.status.status !== 'success') {
-			throw new Error(`Failed to ${action}: ${effects?.status.error}`);
+			throw new WalrusClientError(`Failed to ${action}: ${effects?.status.error}`);
 		}
 
 		await this.#suiClient.waitForTransaction({
@@ -767,11 +919,12 @@ export class WalrusClient {
 		return { digest, effects };
 	}
 
-	async #getNodesWithoutCache() {
-		const nodes = await this.#stakingPool();
-		const shardIndicesByNodeId = getShardIndicesByNodeId((await this.stakingState()).committee);
+	async #getCommittee(committee: InferBcsType<ReturnType<typeof Committee>>) {
+		const stakingPool = await this.#stakingPool(committee);
+		const shardIndicesByNodeId = getShardIndicesByNodeId(committee);
+
 		const byShardIndex = new Map<number, StorageNode>();
-		const committee = nodes.map(({ node_info }, nodeIndex) => {
+		const nodes = stakingPool.map(({ node_info }, nodeIndex) => {
 			const shardIndices = shardIndicesByNodeId.get(node_info.node_id) ?? [];
 			const node: StorageNode = {
 				id: node_info.node_id,
@@ -790,34 +943,54 @@ export class WalrusClient {
 
 		return {
 			byShardIndex,
-			committee,
+			nodes,
 		};
 	}
 
-	async #getNodes() {
-		if (!this.#nodes) {
-			this.#nodes = this.#getNodesWithoutCache();
-			this.#nodes = await this.#nodes;
+	async #getActiveCommittee() {
+		if (!this.activeCommittee) {
+			const stakingState = await this.stakingState();
+			this.activeCommittee = this.#getCommittee(stakingState.committee);
+			this.activeCommittee = await this.activeCommittee;
 		}
 
-		return this.#nodes;
+		return this.activeCommittee;
 	}
 
-	async #stakingPool() {
-		return this.#objectLoader.loadManyOrThrow(
-			(await this.systemState()).committee.members.map((member) => member.node_id),
-			StakingPool(),
-		);
+	async #stakingPool(committee: InferBcsType<ReturnType<typeof Committee>>) {
+		const nodeIds = committee.pos0.contents.map((node) => node.key);
+		return this.#objectLoader.loadManyOrThrow(nodeIds, StakingPool());
 	}
 
 	async #getNodeByShardIndex(index: number) {
-		const nodes = await this.#getNodes();
+		const nodes = await this.#getActiveCommittee();
 		const node = nodes.byShardIndex.get(index);
 
 		if (!node) {
-			throw new Error(`Node for shard index ${index} not found`);
+			throw new WalrusClientError(`Node for shard index ${index} not found`);
 		}
 
 		return node;
+	}
+
+	#retryOnPossibleEpochChange<T extends (...args: any[]) => any>(fn: T): T {
+		return ((...args: Parameters<T>) => {
+			try {
+				return fn(...args);
+			} catch (error) {
+				if (
+					error instanceof BlobNotCertifiedError ||
+					error instanceof BehindCurrentEpochError ||
+					error instanceof NoBlobMetadataReceivedError ||
+					error instanceof NotEnoughSliversReceivedError ||
+					error instanceof NotEnoughBlobConfirmationsError
+				) {
+					this.#objectLoader.clearAll();
+					return fn(...args);
+				}
+
+				throw error;
+			}
+		}) as T;
 	}
 }

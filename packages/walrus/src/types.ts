@@ -94,6 +94,14 @@ export type ReadBlobOptions = {
 	blobId: string;
 } & WalrusClientRequestOptions;
 
+export type GetCertificationEpochOptions = {
+	blobId: string;
+} & WalrusClientRequestOptions;
+
+export type GetVerifiedBlobStatusOptions = {
+	blobId: string;
+} & WalrusClientRequestOptions;
+
 export interface SliversForNode {
 	primary: {
 		sliverIndex: number;

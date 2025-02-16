@@ -6,6 +6,8 @@ import { StorageNodeAPIError, UserAbortError } from './error.js';
 import type {
 	GetBlobMetadataRequestInput,
 	GetBlobMetadataResponse,
+	GetBlobStatusRequestInput,
+	GetBlobStatusResponse,
 	GetDeletableBlobConfirmationRequestInput,
 	GetDeletableBlobConfirmationResponse,
 	GetPermanentBlobConfirmationRequestInput,
@@ -58,6 +60,19 @@ export class StorageNodeClient {
 
 		const bcsBytes = await response.arrayBuffer();
 		return BlobMetadataWithId.parse(new Uint8Array(bcsBytes));
+	}
+
+	/**
+	 * Gets the status associated with a Walrus blob.
+	 */
+	async getBlobStatus(
+		{ blobId }: GetBlobStatusRequestInput,
+		{ nodeUrl, ...options }: RequestOptions,
+	): Promise<GetBlobStatusResponse> {
+		const response = await this.#request(`${nodeUrl}/v1/blobs/${blobId}/status`, options);
+
+		const json = await response.json();
+		return json;
 	}
 
 	/**

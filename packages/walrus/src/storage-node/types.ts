@@ -16,6 +16,47 @@ export type StorageConfirmation = {
 	signature: string;
 };
 
+export type GetBlobStatusRequestInput = {
+	blobId: string;
+};
+
+export type GetBlobStatusResponse = {
+	code: number;
+	success: {
+		data: BlobStatus;
+	};
+};
+
+export type BlobStatus = 'nonexistent' | Invalid | Permanent | Deletable;
+
+export type Invalid = {
+	invalid: {
+		event: StatusEvent;
+	};
+};
+
+export type Permanent = {
+	permanent: {
+		deletable_counts: unknown;
+		end_epoch: number;
+		is_certified: boolean;
+		status_event: StatusEvent;
+		initial_certified_epoch: number | null;
+	};
+};
+
+export type Deletable = {
+	deletable: {
+		deletable_counts: unknown;
+		initial_certified_epoch: number | null;
+	};
+};
+
+export type StatusEvent = {
+	eventSeq: string;
+	txDigest: Uploadable;
+};
+
 export type GetBlobMetadataRequestInput = {
 	blobId: string;
 };
