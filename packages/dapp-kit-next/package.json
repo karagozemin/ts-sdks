@@ -13,7 +13,7 @@
 		"dist",
 		"src"
 	],
-	"type": "commonjs",
+	"type": "module",
 	"main": "./dist/cjs/index.js",
 	"module": "./dist/esm/index.js",
 	"types": "./dist/cjs/index.d.ts",
@@ -54,7 +54,9 @@
 		"@mysten/zksend": "workspace:*",
 		"@nanostores/lit": "^0.2.2",
 		"@nanostores/persistent": "^0.10.2",
+		"@sveltejs/vite-plugin-svelte": "^5.0.3",
 		"lit": "^3.2.1",
-		"nanostores": "^0.10.3"
+		"nanostores": "^0.10.3",
+		"svelte": "^5.20.1"
 	}
 }
