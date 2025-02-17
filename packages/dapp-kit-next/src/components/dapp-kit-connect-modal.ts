@@ -1,6 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import type { PropertyValues } from 'lit';
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { createDappKitStore } from '../store/index.js';
@@ -162,15 +163,15 @@ export class DappKitConnectModal extends LitElement {
 	@state()
 	accessor #selectedWallet: WalletWithRequiredFeatures | null = null;
 
-	#storeController: StoreController<DappKitStoreState>;
+	#storeController: StoreController<DappKitStoreState> | null = null;
 
-	constructor() {
-		super();
+	updated(changedProperties: PropertyValues<this>) {
+		if (changedProperties.has('store')) {
+			// @ts-expect-error: Unsubscribe is not publicly exposed.
+			this.#storeController?.unsubscribe?.();
+			this.#storeController = new StoreController(this, this.store.atoms.$state);
+		}
 
-		this.#storeController = new StoreController(this, this.store.atoms.$state);
-	}
-
-	updated(changedProperties: Map<string, unknown>) {
 		if (changedProperties.has('open')) {
 			if (this.open) {
 				this.#dialog.showModal();
@@ -181,8 +182,6 @@ export class DappKitConnectModal extends LitElement {
 	}
 
 	render() {
-		console.log('rendering connect modal', this.store);
-
 		const handleClose = () => {
 			this.dispatchEvent(new CustomEvent('close'));
 		};
@@ -210,7 +209,7 @@ export class DappKitConnectModal extends LitElement {
 							<h2 part="title" class="title">Connect a Wallet</h2>
 
 							<dapp-kit-internal-wallet-list
-								.wallets=${this.#storeController.value.wallets}
+								.wallets=${this.#storeController?.value.wallets ?? []}
 								.selectedWallet=${this.#selectedWallet!}
 								@wallet-selected=${(e: CustomEvent) => {
 									this.#selectedWallet = e.detail.wallet;

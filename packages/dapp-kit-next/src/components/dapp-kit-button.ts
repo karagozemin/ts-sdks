@@ -1,6 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import type { PropertyValues } from 'lit';
 import { css, html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { StoreController } from '@nanostores/lit';
@@ -30,6 +31,15 @@ export class DappKitButton extends LitElement {
 		client: new SuiClient({ url: getFullnodeUrl('mainnet') }),
 	});
 
+	#storeController: StoreController<DappKitStoreState> | null = null;
+	updated(changedProperties: PropertyValues<this>) {
+		if (changedProperties.has('store')) {
+			// @ts-expect-error: Unsubscribe is not publicly exposed.
+			this.#storeController?.unsubscribe?.();
+			this.#storeController = new StoreController(this, this.store.atoms.$state);
+		}
+	}
+
 	storeController: StoreController<DappKitStoreState> = new StoreController(
 		this,
 		this.store.atoms.$state,
@@ -58,7 +68,6 @@ export class DappKitButton extends LitElement {
 	}
 
 	override render() {
-		console.log('rendering', this.store);
 		return html`
 			${this.currentAccount.value
 				? html`
@@ -66,7 +75,6 @@ export class DappKitButton extends LitElement {
 							part="account-button"
 							@click=${async () => {
 								await this.store.disconnectWallet();
-								console.log('disconnecting');
 							}}
 						>
 							<slot name="account">
