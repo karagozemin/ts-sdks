@@ -33,7 +33,7 @@ export function getPrimarySourceSymbols(nShards: number): number {
 
 export function isQuorum(size: number, nShards: number): boolean {
 	const maxFaulty = getMaxFaultyNodes(nShards);
-	return size > 2 * maxFaulty + 1;
+	return size > 2 * maxFaulty;
 }
 
 export function isAboveValidity(size: number, nShards: number): boolean {

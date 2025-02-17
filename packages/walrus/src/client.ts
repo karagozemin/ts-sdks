@@ -992,9 +992,9 @@ export class WalrusClient {
 	}
 
 	#retryOnPossibleEpochChange<T extends (...args: any[]) => any>(fn: T): T {
-		return ((...args: Parameters<T>) => {
+		return (async (...args: Parameters<T>) => {
 			try {
-				return fn.apply(this, args);
+				return await fn.apply(this, args);
 			} catch (error) {
 				if (
 					error instanceof BlobNotCertifiedError ||
@@ -1004,7 +1004,7 @@ export class WalrusClient {
 					error instanceof NotEnoughBlobConfirmationsError
 				) {
 					this.#objectLoader.clearAll();
-					return fn.apply(this, args);
+					return await fn.apply(this, args);
 				}
 				throw error;
 			}
