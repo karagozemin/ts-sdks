@@ -52,6 +52,7 @@ import type {
 	WriteSliversToNodeOptions,
 } from './types.js';
 import { blobIdToInt, IntentType, SliverData, StorageConfirmation } from './utils/bcs.js';
+import { compareByLatestInLifecycle } from './utils/blob-status.js';
 import {
 	encodedBlobLength,
 	getPrimarySourceSymbols,
@@ -204,12 +205,11 @@ export class WalrusClient {
 		const queue = new PromiseQueue<BlobStatus>({ maxConcurrency: 300 });
 		const executors = committee.nodes.map((node) => ({
 			weight: node.shardIndices.length,
-			executor: async () => {
-				const result = await this.#storageNodeClient.getBlobStatus(
+			executor: () => {
+				return this.#storageNodeClient.getBlobStatus(
 					{ blobId },
 					{ nodeUrl: node.networkUrl, signal: controller.signal },
 				);
-				return result.success.data;
 			},
 		}));
 
@@ -261,12 +261,10 @@ export class WalrusClient {
 
 		const statusesByTotalWeight = statuses.reduce((acc, result) => {
 			const { status, weight } = result;
-
-			// TODO: Figure out if we *really* need to deep compare the status objects and refactor
-			// this accordingly. If we do need this, we should use a stable stringify with hashing.
+			// TODO: Hash and deep compare this with a stable stringify function.
 			const key = JSON.stringify(status);
-			const existing = acc.get(key);
 
+			const existing = acc.get(key);
 			if (existing) {
 				existing.totalWeight += weight;
 			} else {
@@ -276,14 +274,15 @@ export class WalrusClient {
 			return acc;
 		}, new Map<string, { status: BlobStatus; totalWeight: number }>());
 
-		// TODO: Figure out if we need to apply "latest" status sorting logic like the Walrus
-		// client codebase to return the correct latest blob status.
-		for (const { status, totalWeight } of statusesByTotalWeight.values()) {
-			// TODO: Figure out if we should look at the on-chain blob events
-			// to verify the blob status when/if nodes don't correctly report the
-			// blob status.
-			if (isAboveValidity(totalWeight, numShards)) {
-				return status;
+		const uniqueStatuses = [...statusesByTotalWeight.values()];
+		const sortedStatuses = uniqueStatuses.toSorted((a, b) => {
+			return compareByLatestInLifecycle(a.status, b.status);
+		});
+
+		for (const value of sortedStatuses) {
+			// TODO: We can check the chain via the `event` field as a fallback here.
+			if (isAboveValidity(value.totalWeight, numShards)) {
+				return value.status;
 			}
 		}
 
@@ -301,30 +300,34 @@ export class WalrusClient {
 
 		if (stakingState.epoch_state.$kind === 'EpochChangeSync') {
 			const status = await this.getVerifiedBlobStatus({ blobId, signal });
-
-			if (status === 'nonexistent' || 'invalid' in status) {
-				throw new BlobNotCertifiedError(
-					`The specified blob ${blobId} is either non-existent or invalid.`,
-				);
+			if (status.type === 'nonexistent' || status.type === 'invalid') {
+				throw new BlobNotCertifiedError(`The specified blob ${blobId} is ${status.type}.`);
 			}
 
-			const data = 'permanent' in status ? status.permanent : status.deletable;
-			if (typeof data.initialCertifiedEpoch !== 'number') {
+			if (typeof status.initialCertifiedEpoch !== 'number') {
 				throw new BlobNotCertifiedError(`The specified blob ${blobId} is not certified.`);
 			}
 
-			if (data.initialCertifiedEpoch > currentEpoch) {
+			if (status.initialCertifiedEpoch > currentEpoch) {
 				throw new BehindCurrentEpochError(
-					`The client is at epoch ${currentEpoch} while the specified blob was certified at epoch ${data.initialCertifiedEpoch}.`,
+					`The client is at epoch ${currentEpoch} while the specified blob was certified at epoch ${status.initialCertifiedEpoch}.`,
 				);
 			}
 
-			return data.initialCertifiedEpoch;
+			return status.initialCertifiedEpoch;
 		}
 
 		return currentEpoch;
 	}
 
+	/**
+	 * Retrieves the node committee responsible for serving reads.
+	 *
+	 * During an epoch change, reads should be served by the previous committee if the blob was
+	 * certified in an earlier epoch. This ensures that we read from nodes with the most accurate
+	 * information as nodes from the current committee might still be receiving transferred shards
+	 * from the previous committeee.
+	 */
 	async #getReadCommittee(certificationEpoch: number) {
 		const stakingState = await this.stakingState();
 		const isTransitioning = stakingState.epoch_state.$kind === 'EpochChangeSync';

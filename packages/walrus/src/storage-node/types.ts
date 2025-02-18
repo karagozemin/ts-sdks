@@ -20,27 +20,36 @@ export type GetBlobStatusRequestInput = {
 	blobId: string;
 };
 
-export type GetBlobStatusResponse = {
+export type GetBlobStatusResponse = BlobStatus;
+
+export type BlobStatus =
+	| { type: 'nonexistent' }
+	| ({ type: 'invalid' } & InvalidBlobStatus['invalid'])
+	| ({ type: 'permanent' } & PermanentBlobStatus['permanent'])
+	| ({ type: 'deletable' } & DeletableBlobStatus['deletable']);
+
+export type RawGetBlobStatusResponse = {
 	code: number;
 	success: {
-		data: BlobStatus;
+		data: RawBlobStatus;
 	};
 };
 
-export type BlobStatus = 'nonexistent' | Invalid | Permanent | Deletable;
+export type RawBlobStatus =
+	| 'nonexistent'
+	| InvalidBlobStatus
+	| PermanentBlobStatus
+	| DeletableBlobStatus;
 
-export type Invalid = {
+export type InvalidBlobStatus = {
 	invalid: {
 		event: StatusEvent;
 	};
 };
 
-export type Permanent = {
+export type PermanentBlobStatus = {
 	permanent: {
-		deletableCounts: {
-			count_deletable_total: number;
-			count_deletable_certified: number;
-		};
+		deletableCounts: DeletableCounts;
 		endEpoch: number;
 		isCertified: boolean;
 		statusEvent: StatusEvent;
@@ -48,14 +57,16 @@ export type Permanent = {
 	};
 };
 
-export type Deletable = {
+export type DeletableBlobStatus = {
 	deletable: {
-		deletableCounts: {
-			count_deletable_total: number;
-			count_deletable_certified: number;
-		};
+		deletableCounts: DeletableCounts;
 		initialCertifiedEpoch: number | null;
 	};
+};
+
+export type DeletableCounts = {
+	count_deletable_total: number;
+	count_deletable_certified: number;
 };
 
 export type StatusEvent = {
