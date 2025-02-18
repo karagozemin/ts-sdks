@@ -65,7 +65,6 @@ import {
 	toShardIndex,
 } from './utils/index.js';
 import { SuiObjectDataLoader } from './utils/object-loader.js';
-import { PromiseQueue } from './utils/promise-queue.js';
 import { getRandom } from './utils/randomness.js';
 import { combineSignatures, decodePrimarySlivers, encodeBlob } from './wasm.js';
 
@@ -202,17 +201,6 @@ export class WalrusClient {
 		const stakingState = await this.stakingState();
 		const numShards = stakingState.n_shards;
 
-		const queue = new PromiseQueue<BlobStatus>({ maxConcurrency: 300 });
-		const executors = committee.nodes.map((node) => ({
-			weight: node.shardIndices.length,
-			executor: () => {
-				return this.#storageNodeClient.getBlobStatus(
-					{ blobId },
-					{ nodeUrl: node.networkUrl, signal: controller.signal },
-				);
-			},
-		}));
-
 		const statuses = await new Promise<{ status: BlobStatus; weight: number }[]>(
 			(resolve, reject) => {
 				const results: { status: BlobStatus; weight: number }[] = [];
@@ -220,9 +208,11 @@ export class WalrusClient {
 				let numNotFoundWeight = 0;
 				let settledCount = 0;
 
-				executors.forEach(({ executor, weight }) => {
-					queue
-						.add(executor)
+				committee.nodes.forEach((node) => {
+					const weight = node.shardIndices.length;
+
+					this.#storageNodeClient
+						.getBlobStatus({ blobId }, { nodeUrl: node.networkUrl, signal: controller.signal })
 						.then((status) => {
 							if (isQuorum(successWeight, numShards)) {
 								controller.abort('Quorum of blob statuses retrieved successfully.');
@@ -247,7 +237,7 @@ export class WalrusClient {
 						})
 						.finally(() => {
 							settledCount += 1;
-							if (settledCount === executors.length) {
+							if (settledCount === committee.nodes.length) {
 								reject(
 									new NoBlobStatusReceivedError(
 										'Not enough statuses were retrieved to achieve quorum.',
