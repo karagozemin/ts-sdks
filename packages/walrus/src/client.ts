@@ -36,6 +36,7 @@ import type {
 	CommitteeInfo,
 	DeleteBlobOptions,
 	ExtendBlobOptions,
+	GetBlobMetadataOptions,
 	GetCertificationEpochOptions,
 	GetStorageConfirmationOptions,
 	GetVerifiedBlobStatusOptions,
@@ -77,6 +78,8 @@ export class WalrusClient {
 	#suiClient: SuiClient;
 	#objectLoader: SuiObjectDataLoader;
 	activeCommittee?: CommitteeInfo | Promise<CommitteeInfo>;
+
+	#blobMetadataMaxConcurrencyLimit = 10;
 
 	constructor(config: WalrusClientConfig) {
 		if (config.network && !config.packageConfig) {
@@ -150,16 +153,13 @@ export class WalrusClient {
 	readBlob = this.#retryOnPossibleEpochChange(this.#internalReadBlob);
 
 	async #internalReadBlob({ blobId, signal }: ReadBlobOptions) {
-		console.log('CALLING ONCE');
-		const certificationEpoch = await this.getCertificationEpoch({ blobId, signal });
-		const committee = await this.#getReadCommittee(certificationEpoch);
-
 		const blobMetadata = await this.getBlobMetadata({ blobId, signal });
 		const systemState = await this.systemState();
 		const numShards = systemState.committee.n_shards;
 		const minSymbols = getPrimarySourceSymbols(numShards);
 
 		// TODO: implement better shard selection logic
+		const committee = await this.#getReadCommittee({ blobId, signal });
 		const sliverPromises = Array.from({ length: minSymbols }).map(async (_, shardIndex) => {
 			const storageNode = await this.#getNodeByShardIndex(committee, shardIndex);
 			const sliverPairIndex = toPairIndex(shardIndex, blobId, numShards);
@@ -305,14 +305,17 @@ export class WalrusClient {
 		return currentEpoch;
 	}
 
-	async getBlobMetadata({ blobId, signal }: { blobId: string; signal?: AbortSignal | null }) {
+	/**
+	 * Gets the blob metadata from multiple storage nodes and returns the first
+	 */
+	async getBlobMetadata({ blobId, signal }: GetBlobMetadataOptions) {
 		const controller = new AbortController();
 		signal?.addEventListener('abort', () => {
 			controller.abort();
 		});
 
-		const randomizedNodes = shuffle(readCommittee);
-		const queue = new PromiseQueue<BlobMetadataWithId>({ maxConcurrency: 10 });
+		const committee = await this.#getReadCommittee({ blobId, signal });
+		const randomizedNodes = shuffle(committee.nodes);
 
 		const executors = randomizedNodes.map((node) => ({
 			weight: node.shardIndices.length,
@@ -331,6 +334,10 @@ export class WalrusClient {
 			const { executor: attemptGetMetadata } = executors.shift()!;
 			return await attemptGetMetadata();
 		} catch (error) {
+			const queue = new PromiseQueue<BlobMetadataWithId>({
+				maxConcurrency: this.#blobMetadataMaxConcurrencyLimit,
+			});
+
 			return new Promise<BlobMetadataWithId>((resolve, reject) => {
 				let settledCount = 0;
 				let numNotFoundWeight = 0;
@@ -391,8 +398,9 @@ export class WalrusClient {
 	 * information as nodes from the current committee might still be receiving transferred shards
 	 * from the previous committeee.
 	 */
-	async #getReadCommittee(certificationEpoch: number) {
+	async #getReadCommittee({ blobId, signal }: GetCertificationEpochOptions) {
 		const stakingState = await this.stakingState();
+		const certificationEpoch = await this.getCertificationEpoch({ blobId, signal });
 		const isTransitioning = stakingState.epoch_state.$kind === 'EpochChangeSync';
 
 		if (isTransitioning && certificationEpoch < stakingState.epoch) {
