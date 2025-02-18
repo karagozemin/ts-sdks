@@ -57,6 +57,7 @@ import {
 	encodedBlobLength,
 	getPrimarySourceSymbols,
 	getShardIndicesByNodeId,
+	hash,
 	isAboveValidity,
 	isQuorum,
 	signersToBitmap,
@@ -148,6 +149,7 @@ export class WalrusClient {
 	readBlob = this.#retryOnPossibleEpochChange(this.#internalReadBlob);
 
 	async #internalReadBlob({ blobId, signal }: ReadBlobOptions) {
+		console.log('CALLING ONCE');
 		const certificationEpoch = await this.getCertificationEpoch({ blobId, signal });
 		const committee = await this.#getReadCommittee(certificationEpoch);
 
@@ -249,22 +251,20 @@ export class WalrusClient {
 			},
 		);
 
-		const statusesByTotalWeight = statuses.reduce((acc, result) => {
-			const { status, weight } = result;
-			// TODO: Hash and deep compare this with a stable stringify function.
-			const key = JSON.stringify(status);
+		const aggregatedStatuses = new Map<string, { status: BlobStatus; totalWeight: number }>();
+		for (const value of statuses) {
+			const { status, weight } = value;
+			const key = await hash(status);
 
-			const existing = acc.get(key);
+			const existing = aggregatedStatuses.get(key);
 			if (existing) {
 				existing.totalWeight += weight;
 			} else {
-				acc.set(key, { status, totalWeight: weight });
+				aggregatedStatuses.set(key, { status, totalWeight: weight });
 			}
+		}
 
-			return acc;
-		}, new Map<string, { status: BlobStatus; totalWeight: number }>());
-
-		const uniqueStatuses = [...statusesByTotalWeight.values()];
+		const uniqueStatuses = [...aggregatedStatuses.values()];
 		const sortedStatuses = uniqueStatuses.toSorted((a, b) => {
 			return compareByLatestInLifecycle(a.status, b.status);
 		});
