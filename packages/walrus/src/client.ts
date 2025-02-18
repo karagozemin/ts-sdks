@@ -306,9 +306,6 @@ export class WalrusClient {
 		return currentEpoch;
 	}
 
-	/**
-	 * Gets blob metadata
-	 */
 	async getBlobMetadata({ blobId, signal }: GetBlobMetadataOptions) {
 		const controller = new AbortController();
 		signal?.addEventListener('abort', () => {
