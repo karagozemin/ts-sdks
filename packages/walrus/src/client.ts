@@ -332,14 +332,10 @@ export class WalrusClient {
 		const stakingState = await this.stakingState();
 		const isTransitioning = stakingState.epoch_state.$kind === 'EpochChangeSync';
 
-		let readCommittee: InferBcsType<ReturnType<typeof Committee>> | undefined;
 		if (isTransitioning && certificationEpoch < stakingState.epoch) {
-			readCommittee = stakingState.previous_committee;
-		} else {
-			readCommittee = stakingState.committee;
+			return await this.#getCommittee(stakingState.previous_committee);
 		}
-
-		return await this.#getCommittee(readCommittee);
+		return await this.#getActiveCommittee();
 	}
 
 	async storageCost(size: number, epochs: number) {
