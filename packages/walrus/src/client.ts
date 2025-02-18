@@ -8,7 +8,7 @@ import type { Signer } from '@mysten/sui/cryptography';
 import { coinWithBalance, Transaction } from '@mysten/sui/transactions';
 import { bls12381_min_pk_verify } from '@mysten/walrus-wasm';
 
-import { TESTNET_WALRUS_PACKAGE_CONFIG } from './constants.js';
+import { statusLifecycleRank, TESTNET_WALRUS_PACKAGE_CONFIG } from './constants.js';
 import { Blob } from './contracts/blob.js';
 import type { Committee } from './contracts/committee.js';
 import { StakingInnerV1 } from './contracts/staking_inner.js';
@@ -52,7 +52,6 @@ import type {
 	WriteSliversToNodeOptions,
 } from './types.js';
 import { blobIdToInt, IntentType, SliverData, StorageConfirmation } from './utils/bcs.js';
-import { compareByLatestInLifecycle } from './utils/blob-status.js';
 import {
 	encodedBlobLength,
 	getPrimarySourceSymbols,
@@ -265,9 +264,9 @@ export class WalrusClient {
 		}
 
 		const uniqueStatuses = [...aggregatedStatuses.values()];
-		const sortedStatuses = uniqueStatuses.toSorted((a, b) => {
-			return compareByLatestInLifecycle(a.status, b.status);
-		});
+		const sortedStatuses = uniqueStatuses.toSorted(
+			(a, b) => statusLifecycleRank[b.status.type] - statusLifecycleRank[a.status.type],
+		);
 
 		for (const value of sortedStatuses) {
 			// TODO: We can check the chain via the `event` field as a fallback here.
