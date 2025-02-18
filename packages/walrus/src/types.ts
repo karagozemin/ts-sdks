@@ -99,17 +99,11 @@ export type ReadBlobOptions = {
 	blobId: string;
 } & WalrusClientRequestOptions;
 
-export type GetCertificationEpochOptions = {
-	blobId: string;
-} & WalrusClientRequestOptions;
+export type GetCertificationEpochOptions = ReadBlobOptions;
 
-export type GetBlobMetadataOptions = {
-	blobId: string;
-} & WalrusClientRequestOptions;
+export type GetBlobMetadataOptions = ReadBlobOptions;
 
-export type GetVerifiedBlobStatusOptions = {
-	blobId: string;
-} & WalrusClientRequestOptions;
+export type GetVerifiedBlobStatusOptions = ReadBlobOptions;
 
 export interface SliversForNode {
 	primary: {

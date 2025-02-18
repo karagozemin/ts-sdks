@@ -154,6 +154,7 @@ export class WalrusClient {
 
 	async #internalReadBlob({ blobId, signal }: ReadBlobOptions) {
 		const blobMetadata = await this.getBlobMetadata({ blobId, signal });
+
 		const systemState = await this.systemState();
 		const numShards = systemState.committee.n_shards;
 		const minSymbols = getPrimarySourceSymbols(numShards);
@@ -184,7 +185,7 @@ export class WalrusClient {
 	}
 
 	/**
-	 * Gets the blob status from multiple storage nodes the returns the latest status that can be verified.
+	 * Gets the blob status from multiple storage nodes and returns the latest status that can be verified.
 	 */
 	async getVerifiedBlobStatus({ blobId, signal }: GetVerifiedBlobStatusOptions) {
 		const controller = new AbortController();
@@ -306,7 +307,7 @@ export class WalrusClient {
 	}
 
 	/**
-	 * Gets the blob metadata from multiple storage nodes and returns the first
+	 * Gets blob metadata
 	 */
 	async getBlobMetadata({ blobId, signal }: GetBlobMetadataOptions) {
 		const controller = new AbortController();
@@ -317,21 +318,32 @@ export class WalrusClient {
 		const committee = await this.#getReadCommittee({ blobId, signal });
 		const randomizedNodes = shuffle(committee.nodes);
 
-		const executors = randomizedNodes.map((node) => ({
-			weight: node.shardIndices.length,
-			executor: () => {
-				return this.#storageNodeClient.getBlobMetadata(
-					{ blobId },
-					{ nodeUrl: node.networkUrl, signal: controller.signal },
-				);
-			},
-		}));
+		let numNotFoundWeight = 0;
+		let numBlockedWeight = 0;
+
+		const executors = randomizedNodes.map((node) => {
+			return async () => {
+				try {
+					return await this.#storageNodeClient.getBlobMetadata(
+						{ blobId },
+						{ nodeUrl: node.networkUrl, signal: controller.signal },
+					);
+				} catch (error) {
+					if (error instanceof NotFoundError) {
+						numNotFoundWeight += node.shardIndices.length;
+					} else if (error instanceof LegallyUnavailableError) {
+						numBlockedWeight += node.shardIndices.length;
+					}
+					throw error;
+				}
+			};
+		});
 
 		const stakingState = await this.stakingState();
 		const numShards = stakingState.n_shards;
 
 		try {
-			const { executor: attemptGetMetadata } = executors.shift()!;
+			const attemptGetMetadata = executors.shift()!;
 			return await attemptGetMetadata();
 		} catch (error) {
 			const queue = new PromiseQueue<BlobMetadataWithId>({
@@ -340,10 +352,8 @@ export class WalrusClient {
 
 			return new Promise<BlobMetadataWithId>((resolve, reject) => {
 				let settledCount = 0;
-				let numNotFoundWeight = 0;
-				let numBlockedWeight = 0;
 
-				executors.forEach(({ weight, executor }) => {
+				executors.forEach((executor) => {
 					queue
 						.add(executor)
 						.then((result) => {
@@ -351,15 +361,9 @@ export class WalrusClient {
 							resolve(result);
 						})
 						.catch((error) => {
-							if (error instanceof NotFoundError) {
-								numNotFoundWeight += weight;
-							} else if (error instanceof LegallyUnavailableError) {
-								numBlockedWeight += weight;
-							} else if (error instanceof UserAbortError) {
+							if (error instanceof UserAbortError) {
 								reject(error);
-							}
-
-							if (isQuorum(numBlockedWeight + numNotFoundWeight, numShards)) {
+							} else if (isQuorum(numBlockedWeight + numNotFoundWeight, numShards)) {
 								if (numNotFoundWeight > numBlockedWeight) {
 									const abortError = new BlobNotCertifiedError(
 										`The specified blob ${blobId} is not certified.`,
@@ -380,7 +384,7 @@ export class WalrusClient {
 							if (settledCount === executors.length) {
 								reject(
 									new NoBlobMetadataReceivedError(
-										'Not enough metadata was retrieved to achieve quorum.',
+										'No valid blob metadata could be retrieved from any storage node.',
 									),
 								);
 							}
@@ -398,7 +402,7 @@ export class WalrusClient {
 	 * information as nodes from the current committee might still be receiving transferred shards
 	 * from the previous committeee.
 	 */
-	async #getReadCommittee({ blobId, signal }: GetCertificationEpochOptions) {
+	async #getReadCommittee({ blobId, signal }: ReadBlobOptions) {
 		const stakingState = await this.stakingState();
 		const certificationEpoch = await this.getCertificationEpoch({ blobId, signal });
 		const isTransitioning = stakingState.epoch_state.$kind === 'EpochChangeSync';
