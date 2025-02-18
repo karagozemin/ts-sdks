@@ -103,6 +103,10 @@ export type GetCertificationEpochOptions = {
 	blobId: string;
 } & WalrusClientRequestOptions;
 
+export type GetBlobMetadataOptions = {
+	blobId: string;
+} & WalrusClientRequestOptions;
+
 export type GetVerifiedBlobStatusOptions = {
 	blobId: string;
 } & WalrusClientRequestOptions;

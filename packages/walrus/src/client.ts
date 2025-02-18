@@ -19,6 +19,7 @@ import { SystemStateInnerV1 } from './contracts/system_state_inner.js';
 import { init as initSystemContract, System } from './contracts/system.js';
 import {
 	BehindCurrentEpochError,
+	BlobBlockedError,
 	BlobNotCertifiedError,
 	NoBlobMetadataReceivedError,
 	NoBlobStatusReceivedError,
@@ -28,8 +29,8 @@ import {
 	WalrusClientError,
 } from './error.js';
 import { StorageNodeClient } from './storage-node/client.js';
-import { NotFoundError, UserAbortError } from './storage-node/error.js';
-import type { BlobStatus } from './storage-node/types.js';
+import { LegallyUnavailableError, NotFoundError, UserAbortError } from './storage-node/error.js';
+import type { BlobMetadataWithId, BlobStatus } from './storage-node/types.js';
 import type {
 	CertifyBlobOptions,
 	CommitteeInfo,
@@ -65,7 +66,8 @@ import {
 	toShardIndex,
 } from './utils/index.js';
 import { SuiObjectDataLoader } from './utils/object-loader.js';
-import { getRandom } from './utils/randomness.js';
+import { PromiseQueue } from './utils/promise-queue.js';
+import { shuffle } from './utils/randomness.js';
 import { combineSignatures, decodePrimarySlivers, encodeBlob } from './wasm.js';
 
 export class WalrusClient {
@@ -152,16 +154,10 @@ export class WalrusClient {
 		const certificationEpoch = await this.getCertificationEpoch({ blobId, signal });
 		const committee = await this.#getReadCommittee(certificationEpoch);
 
+		const blobMetadata = await this.getBlobMetadata({ blobId, signal });
 		const systemState = await this.systemState();
 		const numShards = systemState.committee.n_shards;
 		const minSymbols = getPrimarySourceSymbols(numShards);
-
-		const randomStorageNode = getRandom(committee.nodes);
-
-		const blobMetadata = await this.#storageNodeClient.getBlobMetadata(
-			{ blobId },
-			{ nodeUrl: randomStorageNode.networkUrl, signal },
-		);
 
 		// TODO: implement better shard selection logic
 		const sliverPromises = Array.from({ length: minSymbols }).map(async (_, shardIndex) => {
@@ -307,6 +303,84 @@ export class WalrusClient {
 		}
 
 		return currentEpoch;
+	}
+
+	async getBlobMetadata({ blobId, signal }: { blobId: string; signal?: AbortSignal | null }) {
+		const controller = new AbortController();
+		signal?.addEventListener('abort', () => {
+			controller.abort();
+		});
+
+		const randomizedNodes = shuffle(readCommittee);
+		const queue = new PromiseQueue<BlobMetadataWithId>({ maxConcurrency: 10 });
+
+		const executors = randomizedNodes.map((node) => ({
+			weight: node.shardIndices.length,
+			executor: () => {
+				return this.#storageNodeClient.getBlobMetadata(
+					{ blobId },
+					{ nodeUrl: node.networkUrl, signal: controller.signal },
+				);
+			},
+		}));
+
+		const stakingState = await this.stakingState();
+		const numShards = stakingState.n_shards;
+
+		try {
+			const { executor: attemptGetMetadata } = executors.shift()!;
+			return await attemptGetMetadata();
+		} catch (error) {
+			return new Promise<BlobMetadataWithId>((resolve, reject) => {
+				let settledCount = 0;
+				let numNotFoundWeight = 0;
+				let numBlockedWeight = 0;
+
+				executors.forEach(({ weight, executor }) => {
+					queue
+						.add(executor)
+						.then((result) => {
+							controller.abort('Blob metadata successfully retrieved.');
+							resolve(result);
+						})
+						.catch((error) => {
+							if (error instanceof NotFoundError) {
+								numNotFoundWeight += weight;
+							} else if (error instanceof LegallyUnavailableError) {
+								numBlockedWeight += weight;
+							} else if (error instanceof UserAbortError) {
+								reject(error);
+							}
+
+							if (isQuorum(numBlockedWeight + numNotFoundWeight, numShards)) {
+								if (numNotFoundWeight > numBlockedWeight) {
+									const abortError = new BlobNotCertifiedError(
+										`The specified blob ${blobId} is not certified.`,
+									);
+									controller.abort(abortError);
+									reject(abortError);
+								} else {
+									const abortError = new BlobBlockedError(
+										`The specified blob ${blobId} is blocked.`,
+									);
+									controller.abort(abortError);
+									reject(abortError);
+								}
+							}
+						})
+						.finally(() => {
+							settledCount += 1;
+							if (settledCount === executors.length) {
+								reject(
+									new NoBlobMetadataReceivedError(
+										'Not enough metadata was retrieved to achieve quorum.',
+									),
+								);
+							}
+						});
+				});
+			});
+		}
 	}
 
 	/**
