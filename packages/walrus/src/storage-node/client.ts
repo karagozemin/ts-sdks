@@ -177,6 +177,10 @@ export class StorageNodeClient {
 
 		const { nodeUrl, signal, timeout, ...init } = options;
 
+		if (options.signal?.aborted) {
+			throw new UserAbortError();
+		}
+
 		signal?.addEventListener('abort', () => {
 			controller.abort();
 		});
