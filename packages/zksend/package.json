@@ -21,6 +21,7 @@
 	],
 	"scripts": {
 		"clean": "rm -rf tsconfig.tsbuildinfo ./dist",
+		"watch": "watch 'pnpm run build' src/",
 		"build": "build-package",
 		"prepublishOnly": "pnpm build",
 		"prettier:check": "prettier -c --ignore-unknown .",
@@ -45,10 +46,11 @@
 		"vitest": "^2.1.8"
 	},
 	"dependencies": {
-		"@mysten/sui": "workspace:*",
-		"@mysten/wallet-standard": "workspace:*",
+		"@mysten/sui": "latest",
+		"@mysten/wallet-standard": "latest",
 		"mitt": "^3.0.1",
 		"nanostores": "^0.10.3",
-		"valibot": "^0.36.0"
+		"valibot": "^0.36.0",
+		"watch": "^1.0.2"
 	}
 }

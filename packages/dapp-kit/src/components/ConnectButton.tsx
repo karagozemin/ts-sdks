@@ -14,7 +14,7 @@ type ConnectButtonProps = {
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 export function ConnectButton({
-	connectText = 'Connect Wallet!2',
+	connectText = 'Connect Wallet!',
 	...buttonProps
 }: ConnectButtonProps) {
 	const currentAccount = useCurrentAccount();

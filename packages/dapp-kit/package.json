@@ -30,6 +30,7 @@
 		"clean": "rm -rf tsconfig.tsbuildinfo ./dist",
 		"build": "build-dapp-kit",
 		"test": "pnpm test:typecheck && pnpm vitest run",
+		"watch": "watch 'pnpm run build' src/",
 		"test:typecheck": "tsc -b ./test",
 		"prepublishOnly": "pnpm build",
 		"size": "size-limit",
@@ -78,7 +79,7 @@
 	"dependencies": {
 		"@mysten/sui": "latest",
 		"@mysten/wallet-standard": "latest",
-		"@mysten/zksend": "latest",
+		"@mysten/zksend": "link:../zksend",
 		"@radix-ui/react-dialog": "^1.1.1",
 		"@radix-ui/react-dropdown-menu": "^2.1.1",
 		"@radix-ui/react-slot": "^1.1.0",

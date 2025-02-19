@@ -47,7 +47,6 @@ type ConnectModalProps = {
 } & (ControlledModalProps | UncontrolledModalProps);
 
 export function ConnectModal({ trigger, open, defaultOpen, onOpenChange }: ConnectModalProps) {
-	console.log('in connect modal!!???!!!');
 	const [isModalOpen, setModalOpen] = useState(open ?? defaultOpen);
 	const [currentView, setCurrentView] = useState<ConnectModalView>();
 	const [selectedWallet, setSelectedWallet] = useState<WalletWithRequiredFeatures>();

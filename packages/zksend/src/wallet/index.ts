@@ -106,6 +106,8 @@ export class StashedWallet implements Wallet {
 		origin?: string;
 		address?: string | null;
 	}) {
+		console.log('in here stashed wallet?');
+
 		this.#accounts = [];
 		this.#events = mitt();
 		this.#origin = origin;
@@ -255,6 +257,8 @@ export function registerStashedWallet(
 		network?: StashedSupportedNetwork;
 	} = {},
 ) {
+	console.log('registering stashed walle!!!!!');
+
 	const wallets = getWallets();
 
 	let addressFromRedirect: string | null = null;
