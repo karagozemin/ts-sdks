@@ -30,7 +30,7 @@ import {
 } from './error.js';
 import { StorageNodeClient } from './storage-node/client.js';
 import { LegallyUnavailableError, NotFoundError, UserAbortError } from './storage-node/error.js';
-import type { BlobMetadataWithId, BlobStatus } from './storage-node/types.js';
+import type { BlobMetadataWithId, BlobStatus, GetSliverResponse } from './storage-node/types.js';
 import type {
 	CertifyBlobOptions,
 	CommitteeInfo,
@@ -38,6 +38,7 @@ import type {
 	ExtendBlobOptions,
 	GetBlobMetadataOptions,
 	GetCertificationEpochOptions,
+	GetSliverOptions,
 	GetStorageConfirmationOptions,
 	GetVerifiedBlobStatusOptions,
 	ReadBlobOptions,
@@ -389,6 +390,84 @@ export class WalrusClient {
 				});
 			});
 		}
+	}
+
+	async #getSlivers({ blobId, signal }: GetSliverOptions) {
+		const stakingState = await this.stakingState();
+		const numShards = stakingState.n_shards;
+		const minSymbols = getPrimarySourceSymbols(numShards);
+
+		const committee = await this.#getReadCommittee({ blobId, signal });
+		const randomizedNodes = weightedShuffle(
+			committee.map((node) => ({ value: node, weight: node.shardIndices.length })),
+		);
+
+		const controller = new AbortController();
+		signal?.addEventListener('abort', () => {
+			controller.abort();
+		});
+
+		const queue = new PromiseQueue<GetSliverResponse>({ maxConcurrency: 33 });
+		let numNotFoundErrors = 0;
+		let numBlockedErrors = 0;
+
+		const executors = randomizedNodes.flatMap((node) =>
+			node.shardIndices.map((shardIndex) => async () => {
+				try {
+					const sliverPairIndex = toPairIndex(shardIndex, blobId, numShards);
+					return await this.#storageNodeClient.getSliver(
+						{ blobId, sliverPairIndex, sliverType: 'primary' },
+						{ nodeUrl: node.url, signal: controller.signal },
+					);
+				} catch (error) {
+					if (error instanceof NotFoundError) {
+						numNotFoundErrors += 1;
+					} else if (error instanceof LegallyUnavailableError) {
+						numBlockedErrors += 1;
+					}
+					throw error;
+				}
+			}),
+		);
+
+		return new Promise<GetSliverResponse[]>((resolve, reject) => {
+			const slivers: GetSliverResponse[] = [];
+			let settledCount = 0;
+
+			executors.forEach((executor) => {
+				queue
+					.add(executor)
+					.then((sliver) => {
+						if (slivers.length === minSymbols) {
+							controller.abort('Enough slivers successfully retrieved.');
+							resolve(slivers);
+						} else {
+							slivers.push(sliver);
+						}
+					})
+					.catch((error) => {
+						if (error instanceof UserAbortError) {
+							reject(error);
+						} else if (isQuorum(numBlockedErrors + numNotFoundErrors, numShards)) {
+							if (numNotFoundErrors > numBlockedErrors) {
+								const abortError = new BlobNotCertifiedError('Blob does not exist');
+								controller.abort(abortError);
+								reject(abortError);
+							} else {
+								const abortError = new BlobBlockedError('Blob does not exist');
+								controller.abort(abortError);
+								reject(abortError);
+							}
+						}
+					})
+					.finally(() => {
+						settledCount += 1;
+						if (settledCount === executors.length && slivers.length < minSymbols) {
+							reject(new NotEnoughSliversReceivedError('Not enough slivers'));
+						}
+					});
+			});
+		});
 	}
 
 	/**

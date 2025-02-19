@@ -103,6 +103,8 @@ export type GetCertificationEpochOptions = ReadBlobOptions;
 
 export type GetBlobMetadataOptions = ReadBlobOptions;
 
+export type GetSliverOptions = ReadBlobOptions;
+
 export type GetVerifiedBlobStatusOptions = ReadBlobOptions;
 
 export interface SliversForNode {
