@@ -33,7 +33,7 @@ export type StorageNodeClientOptions = {
 
 	/**
 	 * An optional timeout for requests.
-	 * @default 30_000ms (3 seconds)
+	 * @default 30_000ms (30 seconds)
 	 */
 	timeout?: number;
 };
