@@ -173,11 +173,10 @@ export class StorageNodeClient {
 	}
 
 	async #request(path: string, options: RequestOptions) {
+		const { nodeUrl, signal, timeout, ...init } = options;
 		const controller = new AbortController();
 
-		const { nodeUrl, signal, timeout, ...init } = options;
-
-		if (options.signal?.aborted) {
+		if (signal?.aborted) {
 			throw new UserAbortError();
 		}
 
@@ -197,7 +196,7 @@ export class StorageNodeClient {
 				signal: controller.signal,
 			});
 		} catch (error) {
-			if (options.signal?.aborted) {
+			if (signal?.aborted) {
 				throw new UserAbortError();
 			}
 
