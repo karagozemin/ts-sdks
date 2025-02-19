@@ -189,24 +189,26 @@ export class StorageNodeClient {
 			controller.abort();
 		}, timeout ?? this.#timeout);
 
-		const response = await this.#fetch(`${nodeUrl}${path}`, {
-			...init,
-			signal: controller.signal,
-		})
-			.catch((error) => {
-				if (options.signal?.aborted) {
-					throw new UserAbortError();
-				}
+		let response: Response | undefined;
 
-				if (error instanceof Error && error.name === 'AbortError') {
-					throw new ConnectionTimeoutError();
-				}
-
-				throw error;
-			})
-			.finally(() => {
-				clearTimeout(abortTimerId);
+		try {
+			response = await this.#fetch(`${nodeUrl}${path}`, {
+				...init,
+				signal: controller.signal,
 			});
+		} catch (error) {
+			if (options.signal?.aborted) {
+				throw new UserAbortError();
+			}
+
+			if (error instanceof Error && error.name === 'AbortError') {
+				throw new ConnectionTimeoutError();
+			}
+
+			throw error;
+		} finally {
+			clearTimeout(abortTimerId);
+		}
 
 		if (!response.ok) {
 			const errorText = await response.text().catch((reason) => reason);
