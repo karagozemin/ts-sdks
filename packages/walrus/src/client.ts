@@ -395,7 +395,7 @@ export class WalrusClient {
 		if (!this.#readCommittee) {
 			this.#readCommittee = this.#forceGetReadCommittee(options);
 		}
-		return await this.#readCommittee;
+		return this.#readCommittee;
 	}
 
 	async #forceGetReadCommittee({ blobId, signal }: ReadBlobOptions) {
