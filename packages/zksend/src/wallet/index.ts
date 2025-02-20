@@ -257,7 +257,7 @@ export function registerStashedWallet(
 		network?: StashedSupportedNetwork;
 	} = {},
 ) {
-	console.log('registering stashed walle!!!!!');
+	console.log('registering stashed walle????');
 
 	const wallets = getWallets();
 
