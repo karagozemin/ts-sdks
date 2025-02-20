@@ -20,11 +20,11 @@ import { init as initSystemContract, System } from './contracts/system.js';
 import {
 	BehindCurrentEpochError,
 	BlobNotCertifiedError,
-	NoBlobMetadataReceivedError,
 	NoBlobStatusReceivedError,
 	NotEnoughBlobConfirmationsError,
 	NotEnoughSliversReceivedError,
 	NoVerifiedBlobStatusReceivedError,
+	RetryableWalrusClientError,
 	WalrusClientError,
 } from './error.js';
 import { StorageNodeClient } from './storage-node/client.js';
@@ -74,7 +74,7 @@ export class WalrusClient {
 	packageConfig: WalrusPackageConfig;
 	#suiClient: SuiClient;
 	#objectLoader: SuiObjectDataLoader;
-	activeCommittee?: CommitteeInfo | Promise<CommitteeInfo>;
+	activeCommittee?: CommitteeInfo | Promise<CommitteeInfo> | null;
 
 	constructor(config: WalrusClientConfig) {
 		if (config.network && !config.packageConfig) {
@@ -187,7 +187,7 @@ export class WalrusClient {
 	}
 
 	/**
-	 * Gets the blob status from multiple storage nodes the returns the latest status that can be verified.
+	 * Gets the blob status from multiple storage nodes and returns the latest status that can be verified.
 	 */
 	async getVerifiedBlobStatus({ blobId, signal }: GetVerifiedBlobStatusOptions) {
 		const controller = new AbortController();
@@ -208,59 +208,61 @@ export class WalrusClient {
 				let numNotFoundWeight = 0;
 				let settledCount = 0;
 
-				committee.nodes.forEach((node) => {
+				committee.nodes.forEach(async (node) => {
 					const weight = node.shardIndices.length;
 
-					this.#storageNodeClient
-						.getBlobStatus({ blobId }, { nodeUrl: node.networkUrl, signal: controller.signal })
-						.then((status) => {
-							if (isQuorum(successWeight, numShards)) {
-								controller.abort('Quorum of blob statuses retrieved successfully.');
-								resolve(results);
-							} else {
-								successWeight += weight;
-								results.push({ status, weight });
-							}
-						})
-						.catch((error) => {
-							if (error instanceof NotFoundError) {
-								numNotFoundWeight += weight;
-							} else if (error instanceof UserAbortError) {
-								reject(error);
-							}
+					try {
+						const status = await this.#storageNodeClient.getBlobStatus(
+							{ blobId },
+							{ nodeUrl: node.networkUrl, signal: controller.signal },
+						);
 
-							if (isQuorum(numNotFoundWeight, numShards)) {
-								const abortError = new BlobNotCertifiedError('The blob does not exist.');
-								controller.abort(abortError);
-								reject(abortError);
-							}
-						})
-						.finally(() => {
-							settledCount += 1;
-							if (settledCount === committee.nodes.length) {
-								reject(
-									new NoBlobStatusReceivedError(
-										'Not enough statuses were retrieved to achieve quorum.',
-									),
-								);
-							}
-						});
+						if (isQuorum(successWeight, numShards)) {
+							controller.abort('Quorum of blob statuses retrieved successfully.');
+							resolve(results);
+						} else {
+							successWeight += weight;
+							results.push({ status, weight });
+						}
+					} catch (error) {
+						if (error instanceof NotFoundError) {
+							numNotFoundWeight += weight;
+						} else if (error instanceof UserAbortError) {
+							reject(error);
+						}
+
+						if (isQuorum(numNotFoundWeight, numShards)) {
+							const abortError = new BlobNotCertifiedError('The blob does not exist.');
+							controller.abort(abortError);
+							reject(abortError);
+						}
+					} finally {
+						settledCount += 1;
+						if (settledCount === committee.nodes.length) {
+							reject(
+								new NoBlobStatusReceivedError(
+									'Not enough statuses were retrieved to achieve quorum.',
+								),
+							);
+						}
+					}
 				});
 			},
 		);
 
-		const aggregatedStatuses = new Map<string, { status: BlobStatus; totalWeight: number }>();
-		for (const value of statuses) {
+		const aggregatedStatuses = statuses.reduce((accumulator, value) => {
 			const { status, weight } = value;
-			const key = await hash(status);
+			const key = JSON.stringify(status);
 
-			const existing = aggregatedStatuses.get(key);
+			const existing = accumulator.get(key);
 			if (existing) {
 				existing.totalWeight += weight;
 			} else {
-				aggregatedStatuses.set(key, { status, totalWeight: weight });
+				accumulator.set(key, { status, totalWeight: weight });
 			}
-		}
+
+			return accumulator;
+		}, new Map<string, { status: BlobStatus; totalWeight: number }>());
 
 		const uniqueStatuses = [...aggregatedStatuses.values()];
 		const sortedStatuses = uniqueStatuses.toSorted(
@@ -978,19 +980,18 @@ export class WalrusClient {
 		return node;
 	}
 
-	#retryOnPossibleEpochChange<T extends (...args: any[]) => any>(fn: T): T {
+	reset() {
+		this.#objectLoader.clearAll();
+		this.activeCommittee = null;
+	}
+
+	#retryOnPossibleEpochChange<T extends (...args: any[]) => Promise<any>>(fn: T): T {
 		return (async (...args: Parameters<T>) => {
 			try {
 				return await fn.apply(this, args);
 			} catch (error) {
-				if (
-					error instanceof BlobNotCertifiedError ||
-					error instanceof BehindCurrentEpochError ||
-					error instanceof NoBlobMetadataReceivedError ||
-					error instanceof NotEnoughSliversReceivedError ||
-					error instanceof NotEnoughBlobConfirmationsError
-				) {
-					this.#objectLoader.clearAll();
+				if (error instanceof RetryableWalrusClientError) {
+					this.reset();
 					return await fn.apply(this, args);
 				}
 				throw error;

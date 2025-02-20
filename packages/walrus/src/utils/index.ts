@@ -120,12 +120,3 @@ export function nodesByShardIndex(committee: InferBcsType<ReturnType<typeof Comm
 
 	return nodesByShardIndex;
 }
-
-export async function hash(value: any) {
-	const stringified = JSON.stringify(value);
-	const bytes = new TextEncoder().encode(stringified);
-
-	const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
-	const hashArr = new Uint8Array(hashBuffer);
-	return toHex(hashArr);
-}
