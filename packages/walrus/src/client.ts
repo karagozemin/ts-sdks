@@ -73,7 +73,7 @@ export class WalrusClient {
 	packageConfig: WalrusPackageConfig;
 	#suiClient: SuiClient;
 	#objectLoader: SuiObjectDataLoader;
-	activeCommittee?: CommitteeInfo | Promise<CommitteeInfo> | null;
+	#activeCommittee?: CommitteeInfo | Promise<CommitteeInfo> | null;
 
 	constructor(config: WalrusClientConfig) {
 		if (config.network && !config.packageConfig) {
@@ -957,13 +957,13 @@ export class WalrusClient {
 	}
 
 	async #getActiveCommittee() {
-		if (!this.activeCommittee) {
+		if (!this.#activeCommittee) {
 			const stakingState = await this.stakingState();
-			this.activeCommittee = this.#getCommittee(stakingState.committee);
-			this.activeCommittee = await this.activeCommittee;
+			this.#activeCommittee = this.#getCommittee(stakingState.committee);
+			this.#activeCommittee = await this.#activeCommittee;
 		}
 
-		return this.activeCommittee;
+		return this.#activeCommittee;
 	}
 
 	async #stakingPool(committee: InferBcsType<ReturnType<typeof Committee>>) {
@@ -981,7 +981,7 @@ export class WalrusClient {
 
 	reset() {
 		this.#objectLoader.clearAll();
-		this.activeCommittee = null;
+		this.#activeCommittee = null;
 	}
 
 	#retryOnPossibleEpochChange<T extends (...args: any[]) => Promise<any>>(fn: T): T {
