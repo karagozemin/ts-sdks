@@ -72,13 +72,17 @@ export class StashedPopup {
 		type: T;
 	} & Extract<StashedRequestData, { type: T }>): Promise<StashedResponseTypes[T]> {
 		window.addEventListener('message', this.#listener);
+
+		const requestData = {
+			...data,
+			requestId: this.#id,
+			appOrigin: window.origin,
+			network: this.#network,
+			appName: this.#name,
+		};
+
 		this.#popup.location.assign(
-			`${this.#origin}/dapp/${type}?${new URLSearchParams({
-				id: this.#id,
-				origin: window.origin,
-				network: this.#network,
-				name: this.#name,
-			})}${data ? `#${new URLSearchParams(data as never)}` : ''}`,
+			`${this.#origin}/dapp/${type}${data ? `#${JSON.stringify(requestData)}` : ''}`,
 		);
 
 		return this.#promise as Promise<StashedResponseTypes[T]>;
@@ -129,20 +133,20 @@ export class StashedHost {
 	}
 
 	static fromUrl(url: string = window.location.href) {
-		console.log('creating stashed host from url??@@@?');
+		console.log('creating stashed host from ur???');
 		const parsed = new URL(url);
-
-		const urlHashData = parsed.hash
-			? Object.fromEntries([...new URLSearchParams(parsed.hash.slice(1))])
-			: {};
-
+		console.log('parse1 ', parsed);
+		const hash = parsed.hash.slice(1); // Remove the # character
+		const { requestId, appOrigin, appName, ...rest } = JSON.parse(decodeURIComponent(hash));
+		// console.log('urlHashData ', urlHashData);
 		const request = parse(StashedRequest, {
-			id: parsed.searchParams.get('id'),
-			origin: parsed.searchParams.get('origin'),
-			name: parsed.searchParams.get('name'),
+			requestId,
+			appOrigin,
+			appName,
 			payload: {
 				type: parsed.pathname.split('/').pop(),
-				...urlHashData,
+				...rest,
+				// ...urlHashData,
 			},
 		});
 
@@ -156,11 +160,11 @@ export class StashedHost {
 	sendMessage(payload: StashedResponsePayload) {
 		window.opener.postMessage(
 			{
-				id: this.#request.id,
+				id: this.#request.requestId,
 				source: 'zksend-channel',
 				payload,
 			} satisfies StashedResponse,
-			this.#request.origin,
+			this.#request.appOrigin,
 		);
 	}
 

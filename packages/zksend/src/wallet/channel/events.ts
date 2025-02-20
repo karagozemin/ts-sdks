@@ -22,9 +22,9 @@ export const StashedRequestData = variant('type', [
 export type StashedRequestData = InferOutput<typeof StashedRequestData>;
 
 export const StashedRequest = object({
-	id: pipe(string('`id` is required'), uuid()),
-	origin: pipe(string(), url('`origin` must be a valid URL')),
-	name: optional(string()),
+	requestId: pipe(string('`requestId` is required'), uuid()),
+	appOrigin: pipe(string(), url('`appOrigin` must be a valid URL')),
+	appName: optional(string()),
 	payload: StashedRequestData,
 });
 
