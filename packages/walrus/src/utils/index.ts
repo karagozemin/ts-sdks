@@ -1,7 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { toHex } from '@mysten/bcs';
 import type { InferBcsType } from '@mysten/bcs';
 
 import type { Committee } from '../contracts/committee.js';

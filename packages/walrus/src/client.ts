@@ -56,7 +56,6 @@ import {
 	encodedBlobLength,
 	getPrimarySourceSymbols,
 	getShardIndicesByNodeId,
-	hash,
 	isAboveValidity,
 	isQuorum,
 	signersToBitmap,
