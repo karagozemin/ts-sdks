@@ -138,7 +138,6 @@ export class StashedHost {
 		console.log('parse1 ', parsed);
 		const hash = parsed.hash.slice(1); // Remove the # character
 		const { requestId, appOrigin, appName, ...rest } = JSON.parse(decodeURIComponent(hash));
-		// console.log('urlHashData ', urlHashData);
 		const request = parse(StashedRequest, {
 			requestId,
 			appOrigin,
@@ -146,7 +145,6 @@ export class StashedHost {
 			payload: {
 				type: parsed.pathname.split('/').pop(),
 				...rest,
-				// ...urlHashData,
 			},
 		});
 
