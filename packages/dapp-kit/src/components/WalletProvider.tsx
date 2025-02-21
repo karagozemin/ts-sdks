@@ -104,7 +104,6 @@ function WalletConnectionManager({
 	stashedWallet,
 	children,
 }: WalletConnectionManagerProps) {
-	console.log('in WalletConnectionManager... ');
 	useWalletsChanged(preferredWallets, walletFilter);
 	useWalletPropertiesChanged();
 	useStashedWallet(stashedWallet);

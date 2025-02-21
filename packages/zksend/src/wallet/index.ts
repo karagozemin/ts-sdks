@@ -26,8 +26,6 @@ import mitt from 'mitt';
 import { DEFAULT_STASHED_ORIGIN, StashedPopup } from './channel/index.js';
 import type { StashedSupportedNetwork } from './types.js';
 
-console.log('Loading StashedWallet module...');
-
 type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
 };
@@ -35,13 +33,6 @@ type WalletEventsMap = {
 const STASHED_RECENT_ADDRESS_KEY = 'stashed:recentAddress';
 
 export const STASHED_WALLET_NAME = 'Stashed' as const;
-
-const wallets = getWallets();
-
-wallets.on('register', (event) => {
-	console.log('other wallet regsitration event ', event.name);
-});
-
 export class StashedWallet implements Wallet {
 	#events: Emitter<WalletEventsMap>;
 	#accounts: ReadonlyWalletAccount[];
@@ -304,7 +295,9 @@ export function registerStashedWallet(
 		network?: StashedSupportedNetwork;
 	} = {},
 ) {
-	console.log('registering stashed walle????');
+	/* @ts-ignore */
+
+	console.log('registering stashed web wallet');
 
 	const wallets = getWallets();
 
@@ -317,13 +310,15 @@ export function registerStashedWallet(
 		address: addressFromRedirect,
 	});
 
-	console.log('wallets ', wallets);
-	// listen for other wallet regsitration events
-	wallets.on('register', (event) => {
-		console.log('other wallet1 regsitration event ', event.name);
-	});
-
 	const unregister = wallets.register(wallet);
+
+	/* @ts-ignore */
+	if (window.stashed) {
+		// don't register stashed web if extension is installed.
+		// we prefer the extension over the web wallet.
+		console.log('stashed extension is installed, unregister web wallet.');
+		unregister();
+	}
 
 	return {
 		wallet,
