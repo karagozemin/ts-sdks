@@ -20,15 +20,20 @@ export function WalletList({ selectedWalletName, onPlaceholderClick, onSelect }:
 	return (
 		<ul className={styles.container}>
 			{wallets.length > 0 ? (
-				wallets.map((wallet) => (
-					<WalletListItem
-						key={getWalletUniqueIdentifier(wallet)}
-						name={wallet.name}
-						icon={wallet.icon}
-						isSelected={getWalletUniqueIdentifier(wallet) === selectedWalletName}
-						onClick={() => onSelect(wallet)}
-					/>
-				))
+				wallets.map((wallet) => {
+					console.log('wallet ', wallet.id);
+					console.log(wallet.name);
+
+					return (
+						<WalletListItem
+							key={getWalletUniqueIdentifier(wallet)}
+							name={wallet.name}
+							icon={wallet.icon}
+							isSelected={getWalletUniqueIdentifier(wallet) === selectedWalletName}
+							onClick={() => onSelect(wallet)}
+						/>
+					);
+				})
 			) : (
 				<WalletListItem
 					name="Sui Wallet"

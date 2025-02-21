@@ -17,11 +17,9 @@ export function useWalletsChanged(
 ) {
 	const setWalletRegistered = useWalletStore((state) => state.setWalletRegistered);
 	const setWalletUnregistered = useWalletStore((state) => state.setWalletUnregistered);
-
 	useEffect(() => {
 		const walletsApi = getWallets();
 		setWalletRegistered(getRegisteredWallets(preferredWallets, walletFilter));
-
 		const unsubscribeFromRegister = walletsApi.on('register', () => {
 			setWalletRegistered(getRegisteredWallets(preferredWallets, walletFilter));
 		});

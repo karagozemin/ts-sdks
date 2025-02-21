@@ -12,6 +12,7 @@ export const StashedRequestData = variant('type', [
 		type: literal('sign-transaction-block'),
 		data: string('`data` is required'),
 		address: string('`address` is required'),
+		network: string('`network` is required'),
 	}),
 	object({
 		type: literal('sign-personal-message'),
