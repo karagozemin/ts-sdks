@@ -188,7 +188,7 @@ export class WalrusClient {
 	async getBlobMetadata({ blobId, signal }: GetBlobMetadataOptions) {
 		const controller = new AbortController();
 		signal?.addEventListener('abort', () => {
-			controller.abort();
+			controller.abort(signal.reason);
 		});
 
 		const committee = await this.#getReadCommittee({ blobId, signal });
@@ -268,7 +268,7 @@ export class WalrusClient {
 	async getVerifiedBlobStatus({ blobId, signal }: GetVerifiedBlobStatusOptions) {
 		const controller = new AbortController();
 		signal?.addEventListener('abort', () => {
-			controller.abort();
+			controller.abort(signal.reason);
 		});
 
 		// Read from the latest committee because, during epoch change, it is the committee
