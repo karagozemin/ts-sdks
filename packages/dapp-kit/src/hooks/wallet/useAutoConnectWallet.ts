@@ -48,7 +48,6 @@ export function useAutoConnectWallet(): 'disabled' | 'idle' | 'attempted' {
 				(wallet) => getWalletUniqueIdentifier(wallet) === lastConnectedWalletName,
 			);
 			if (wallet) {
-				console.log('wallet ', wallet);
 				await connectWallet({
 					wallet,
 					accountAddress: lastConnectedAccountAddress,

@@ -108,15 +108,11 @@ export class StashedWallet implements Wallet {
 		origin?: string;
 		address?: string | null;
 	}) {
-		console.log('in here stashed wallet?');
-
 		this.#accounts = [];
 		this.#events = mitt();
 		this.#origin = origin;
 		this.#name = name;
 		this.#network = network;
-
-		console.log('in here- --- address? ', address);
 
 		if (address) {
 			this.#setAccount(address);
@@ -141,8 +137,6 @@ export class StashedWallet implements Wallet {
 			network: this.#network,
 		});
 
-		console.log('response ', response);
-
 		return {
 			transactionBlockBytes: response.bytes,
 			signature: response.signature,
@@ -161,16 +155,12 @@ export class StashedWallet implements Wallet {
 
 		const data = tx.serialize();
 
-		console.log('data ', data);
-
 		const response = await popup.send({
 			type: 'sign-transaction-block',
 			data,
 			address: account.address,
 			network: this.#network,
 		});
-
-		console.log('response ', response);
 
 		return {
 			bytes: response.bytes,
@@ -204,7 +194,6 @@ export class StashedWallet implements Wallet {
 	};
 
 	#setAccount(address?: string) {
-		console.log('in set account... ', address);
 		if (address) {
 			this.#accounts = [
 				new ReadonlyWalletAccount({
@@ -240,7 +229,6 @@ export class StashedWallet implements Wallet {
 	}
 
 	#setMultipleAccounts(addresses: string[]) {
-		console.log('in set multiple accounts... ', addresses);
 		if (addresses) {
 			this.#accounts = addresses.map((address) => {
 				return new ReadonlyWalletAccount({
@@ -262,7 +250,6 @@ export class StashedWallet implements Wallet {
 
 	#connect: StandardConnectMethod = async (input) => {
 		if (input?.silent) {
-			console.log('in connect... ', input);
 			const address = localStorage.getItem(STASHED_RECENT_ADDRESS_KEY);
 
 			if (address) {
@@ -281,8 +268,6 @@ export class StashedWallet implements Wallet {
 		const response = await popup.send({
 			type: 'connect',
 		});
-
-		console.log('response ', response);
 
 		if (!('address' in response)) {
 			throw new Error('Unexpected response');
@@ -329,8 +314,6 @@ export function registerStashedWallet(
 	embeddedIframe.src = 'http://localhost:3000/embed'; // origin || DEFAULT_STASHED_ORIGIN;
 	document.body.appendChild(embeddedIframe);
 
-	console.log('registering stashed web wallet');
-
 	const wallets = getWallets();
 
 	let addressFromRedirect: string | null = null;
@@ -353,14 +336,11 @@ export function registerStashedWallet(
 	}, 1000);
 
 	window.addEventListener('message', (event) => {
-		console.log('got message from stashed ', event);
 		if (event.origin !== 'http://localhost:3000' && event.origin !== 'https://getstashed.com')
 			return;
 		const { type } = event.data;
 
 		if (type === 'WALLET_STATUS') {
-			console.log('accounts ', event.data.payload.accounts);
-			console.log('wallet ', wallet);
 			wallet.accounts.forEach((account) => {
 				const foundAddress = (event?.data?.payload?.accounts || []).some((item: any) => {
 					return item.account.address === account.address;
@@ -376,13 +356,8 @@ export function registerStashedWallet(
 	if (window.stashed) {
 		// don't register stashed web if extension is installed.
 		// we prefer the extension over the web wallet.
-		console.log('stashed extension is installed, unregister web wallet.');
-		// remove iframe
 		document.body.removeChild(embeddedIframe);
-		// remove event listener
-		window.removeEventListener('message', (event) => {
-			console.log('got message from stashed ', event);
-		});
+		window.removeEventListener('message', () => {});
 		unregister();
 	}
 

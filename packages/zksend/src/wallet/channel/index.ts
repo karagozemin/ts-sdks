@@ -122,7 +122,6 @@ export class StashedHost {
 	#request: InferOutput<typeof StashedRequest>;
 
 	constructor(request: InferOutput<typeof StashedRequest>) {
-		console.log('creating stashed host###');
 		if (typeof window === 'undefined' || !window.opener) {
 			throw new Error(
 				'StashedHost can only be used in a window opened through `window.open`. `window.opener` is not available.',
@@ -133,9 +132,7 @@ export class StashedHost {
 	}
 
 	static fromUrl(url: string = window.location.href) {
-		console.log('creating stashed host from ur111???');
 		const parsed = new URL(url);
-		console.log('parse2 ', parsed);
 		const hash = parsed.hash.slice(1); // Remove the # character
 		const { requestId, appOrigin, appName, ...rest } = JSON.parse(decodeURIComponent(hash));
 		const request = parse(StashedRequest, {
