@@ -258,7 +258,6 @@ export class StashedWallet implements Wallet {
 
 			return { accounts: this.accounts };
 		}
-
 		const popup = new StashedPopup({
 			name: this.#name,
 			origin: this.#origin,
@@ -279,10 +278,10 @@ export class StashedWallet implements Wallet {
 			this.#setAccount(response.address);
 		}
 
-		embeddedIframe.contentWindow?.postMessage(
-			{ type: 'WALLET_CONNECTED', payload: { message: 'The wallet has been connected.', input } },
-			'http://localhost:3000', // todo: use actual domain
-		);
+		// embeddedIframe.contentWindow?.postMessage(
+		// 	{ type: 'WALLET_CONNECTED', payload: { message: 'The wallet has been connected.', input } },
+		// 	'http://localhost:3000', // todo: use actual domain
+		// );
 
 		return { accounts: this.accounts };
 	};
@@ -328,6 +327,7 @@ export function registerStashedWallet(
 	const unregister = wallets.register(wallet);
 
 	// every 3 seconds, check if the wallet is connected
+	intervalEnabled = true;
 	setInterval(() => {
 		embeddedIframe.contentWindow?.postMessage(
 			{ type: 'WALLET_STATUS_REQUEST', payload: { message: 'Give me status please.' } },
@@ -336,6 +336,7 @@ export function registerStashedWallet(
 	}, 1000);
 
 	window.addEventListener('message', (event) => {
+		console.log('got message from stashed ', event);
 		if (event.origin !== 'http://localhost:3000' && event.origin !== 'https://getstashed.com')
 			return;
 		const { type } = event.data;
