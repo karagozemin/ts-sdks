@@ -34,6 +34,8 @@ const STASHED_RECENT_ADDRESS_KEY = 'stashed:recentAddress';
 
 let embeddedIframe: HTMLIFrameElement;
 
+let intervalEnabled = false;
+
 export const STASHED_WALLET_NAME = 'Stashed' as const;
 
 export class StashedWallet implements Wallet {
@@ -249,6 +251,7 @@ export class StashedWallet implements Wallet {
 	}
 
 	#connect: StandardConnectMethod = async (input) => {
+		console.log('in connect... ', input);
 		if (input?.silent) {
 			const address = localStorage.getItem(STASHED_RECENT_ADDRESS_KEY);
 
@@ -258,6 +261,7 @@ export class StashedWallet implements Wallet {
 
 			return { accounts: this.accounts };
 		}
+		intervalEnabled = false;
 		const popup = new StashedPopup({
 			name: this.#name,
 			origin: this.#origin,
@@ -282,7 +286,9 @@ export class StashedWallet implements Wallet {
 		// 	{ type: 'WALLET_CONNECTED', payload: { message: 'The wallet has been connected.', input } },
 		// 	'http://localhost:3000', // todo: use actual domain
 		// );
-
+		setTimeout(() => {
+			intervalEnabled = true;
+		}, 2000);
 		return { accounts: this.accounts };
 	};
 
@@ -327,7 +333,9 @@ export function registerStashedWallet(
 	const unregister = wallets.register(wallet);
 
 	// every 3 seconds, check if the wallet is connected
+	intervalEnabled = true;
 	setInterval(() => {
+		if (!intervalEnabled) return;
 		embeddedIframe.contentWindow?.postMessage(
 			{ type: 'WALLET_STATUS_REQUEST', payload: { message: 'Give me status please.' } },
 			'http://localhost:3000', // todo: use actual domain
@@ -341,6 +349,8 @@ export function registerStashedWallet(
 		const { type } = event.data;
 
 		if (type === 'WALLET_STATUS') {
+			if (!intervalEnabled) return;
+
 			wallet.accounts.forEach((account) => {
 				const foundAddress = (event?.data?.payload?.accounts || []).some((item: any) => {
 					return item.account.address === account.address;
