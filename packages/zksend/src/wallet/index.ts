@@ -327,7 +327,6 @@ export function registerStashedWallet(
 	const unregister = wallets.register(wallet);
 
 	// every 3 seconds, check if the wallet is connected
-	intervalEnabled = true;
 	setInterval(() => {
 		embeddedIframe.contentWindow?.postMessage(
 			{ type: 'WALLET_STATUS_REQUEST', payload: { message: 'Give me status please.' } },
