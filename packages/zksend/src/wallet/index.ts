@@ -214,6 +214,26 @@ export class StashedWallet implements Wallet {
 
 		this.#events.emit('change', { accounts: this.accounts });
 	}
+	addAccount(address: string) {
+		// if (this.#accounts.length === 0) {
+		// 	localStorage.setItem(STASHED_RECENT_ADDRESS_KEY, address);
+		// 	this.#connect({ silent: true });
+		// 	return;
+		// }
+
+		this.#accounts.push(
+			new ReadonlyWalletAccount({
+				address,
+				chains: [SUI_MAINNET_CHAIN],
+				features: ['sui:signTransactionBlock', 'sui:signPersonalMessage'],
+				// NOTE: Stashed doesn't support getting public keys, and zkLogin accounts don't have meaningful public keys anyway
+				publicKey: new Uint8Array(),
+			}),
+		);
+
+		this.#events.emit('change', { accounts: this.accounts });
+	}
+
 	removeAccount(address: string) {
 		const recentAddress = localStorage.getItem(STASHED_RECENT_ADDRESS_KEY);
 
@@ -251,7 +271,6 @@ export class StashedWallet implements Wallet {
 	}
 
 	#connect: StandardConnectMethod = async (input) => {
-		console.log('in connect... ', input);
 		if (input?.silent) {
 			const address = localStorage.getItem(STASHED_RECENT_ADDRESS_KEY);
 
@@ -343,20 +362,27 @@ export function registerStashedWallet(
 	}, 1000);
 
 	window.addEventListener('message', (event) => {
-		console.log('got message from stashed ', event);
 		if (event.origin !== 'http://localhost:3000' && event.origin !== 'https://getstashed.com')
 			return;
-		const { type } = event.data;
+		const { type, payload } = event.data;
 
 		if (type === 'WALLET_STATUS') {
 			if (!intervalEnabled) return;
 
 			wallet.accounts.forEach((account) => {
-				const foundAddress = (event?.data?.payload?.accounts || []).some((item: any) => {
+				const foundAddress = (payload?.accounts || []).some((item: any) => {
 					return item.account.address === account.address;
 				});
 				if (!foundAddress) {
 					wallet.removeAccount(account.address);
+				}
+			});
+
+			// now search payload accounts to see if any addresses are missing from wallet.accounts
+			// if we find some addresses missing, we should add them to the wallet
+			(payload?.accounts || []).forEach((item: any) => {
+				if (!wallet.accounts.some((account) => account.address === item.account.address)) {
+					wallet.addAccount(item.account.address);
 				}
 			});
 		}
