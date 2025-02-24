@@ -32,7 +32,10 @@ type WalletEventsMap = {
 
 const STASHED_RECENT_ADDRESS_KEY = 'stashed:recentAddress';
 
+let embeddedIframe: HTMLIFrameElement;
+
 export const STASHED_WALLET_NAME = 'Stashed' as const;
+
 export class StashedWallet implements Wallet {
 	#events: Emitter<WalletEventsMap>;
 	#accounts: ReadonlyWalletAccount[];
@@ -220,6 +223,21 @@ export class StashedWallet implements Wallet {
 
 		this.#events.emit('change', { accounts: this.accounts });
 	}
+	removeAccount(address: string) {
+		const recentAddress = localStorage.getItem(STASHED_RECENT_ADDRESS_KEY);
+
+		if (recentAddress === address) {
+			localStorage.removeItem(STASHED_RECENT_ADDRESS_KEY);
+		}
+
+		this.#accounts = this.#accounts.filter((account) => account.address !== address);
+
+		if (this.#accounts.length > 0) {
+			localStorage.setItem(STASHED_RECENT_ADDRESS_KEY, this.#accounts[0].address);
+		}
+
+		this.#events.emit('change', { accounts: this.accounts });
+	}
 
 	#setMultipleAccounts(addresses: string[]) {
 		console.log('in set multiple accounts... ', addresses);
@@ -276,12 +294,22 @@ export class StashedWallet implements Wallet {
 			this.#setAccount(response.address);
 		}
 
+		embeddedIframe.contentWindow?.postMessage(
+			{ type: 'WALLET_CONNECTED', payload: { message: 'The wallet has been connected.', input } },
+			'http://localhost:3000', // todo: use actual domain
+		);
+
 		return { accounts: this.accounts };
 	};
 
 	#disconnect: StandardDisconnectMethod = async () => {
 		localStorage.removeItem(STASHED_RECENT_ADDRESS_KEY);
 		this.#setAccount();
+
+		embeddedIframe.contentWindow?.postMessage(
+			{ type: 'WALLET_DISCONNECTED', payload: { message: 'The wallet has been disconnected.' } },
+			'http://localhost:3000', // todo: use actual domain
+		);
 	};
 }
 
@@ -296,6 +324,10 @@ export function registerStashedWallet(
 	} = {},
 ) {
 	/* @ts-ignore */
+	embeddedIframe = document.createElement('iframe');
+	embeddedIframe.style.display = 'none';
+	embeddedIframe.src = 'http://localhost:3000/embed'; // origin || DEFAULT_STASHED_ORIGIN;
+	document.body.appendChild(embeddedIframe);
 
 	console.log('registering stashed web wallet');
 
@@ -312,11 +344,45 @@ export function registerStashedWallet(
 
 	const unregister = wallets.register(wallet);
 
+	// every 3 seconds, check if the wallet is connected
+	setInterval(() => {
+		embeddedIframe.contentWindow?.postMessage(
+			{ type: 'WALLET_STATUS_REQUEST', payload: { message: 'Give me status please.' } },
+			'http://localhost:3000', // todo: use actual domain
+		);
+	}, 1000);
+
+	window.addEventListener('message', (event) => {
+		console.log('got message from stashed ', event);
+		if (event.origin !== 'http://localhost:3000' && event.origin !== 'https://getstashed.com')
+			return;
+		const { type } = event.data;
+
+		if (type === 'WALLET_STATUS') {
+			console.log('accounts ', event.data.payload.accounts);
+			console.log('wallet ', wallet);
+			wallet.accounts.forEach((account) => {
+				const foundAddress = (event?.data?.payload?.accounts || []).some((item: any) => {
+					return item.account.address === account.address;
+				});
+				if (!foundAddress) {
+					wallet.removeAccount(account.address);
+				}
+			});
+		}
+	});
+
 	/* @ts-ignore */
 	if (window.stashed) {
 		// don't register stashed web if extension is installed.
 		// we prefer the extension over the web wallet.
 		console.log('stashed extension is installed, unregister web wallet.');
+		// remove iframe
+		document.body.removeChild(embeddedIframe);
+		// remove event listener
+		window.removeEventListener('message', (event) => {
+			console.log('got message from stashed ', event);
+		});
 		unregister();
 	}
 
