@@ -283,7 +283,7 @@ export class WalrusClient {
 
 					try {
 						if (failedNodes.has(url)) {
-							throw new Error('Auto-fail bad node');
+							throw new Error(`Skipping node at ${url} due to previous failure.`);
 						}
 
 						const sliver = await this.#storageNodeClient.getSliver(
