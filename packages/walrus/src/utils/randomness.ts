@@ -7,34 +7,13 @@ type WeightedItem<T> = {
 };
 
 export function weightedShuffle<T>(arr: WeightedItem<T>[]): T[] {
-	const totalWeight = arr.reduce((sum, element) => sum + element.weight, 0);
-
-	function getRandomWeightedIndex() {
-		const randomWeight = Math.random() * totalWeight;
-		let cumulativeWeight = 0;
-
-		for (let i = 0; i < arr.length; i += 1) {
-			cumulativeWeight += arr[i].weight;
-			if (randomWeight <= cumulativeWeight) {
-				return i;
-			}
-		}
-
-		return arr.length - 1;
-	}
-
-	const selectedIndexes = new Set<number>();
-	const result: T[] = [];
-
-	while (result.length < arr.length) {
-		const index = getRandomWeightedIndex();
-		if (!selectedIndexes.has(index)) {
-			selectedIndexes.add(index);
-			result.push(arr[index].value);
-		}
-	}
-
-	return result;
+	return arr
+		.map(({ value, weight }) => ({
+			value,
+			weight: Math.pow(Math.random(), 1 / weight),
+		}))
+		.sort((a, b) => b.weight - a.weight)
+		.map((item) => item.value);
 }
 
 export function shuffle<T>(arr: T[]): T[] {
