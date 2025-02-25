@@ -384,14 +384,6 @@ export function registerStashedWallet(
 					wallet.removeAccount(account.address);
 				}
 			});
-
-			// now search payload accounts to see if any addresses are missing from wallet.accounts
-			// if we find some addresses missing, we should add them to the wallet
-			// (payload?.accounts || []).forEach((item: any) => {
-			// 	if (!wallet.accounts.some((account) => account.address === item.account.address)) {
-			// 		wallet.addAccount(item.account.address);
-			// 	}
-			// });
 		}
 	});
 
