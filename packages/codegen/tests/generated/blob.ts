@@ -347,6 +347,23 @@ export function init(packageAddress: string) {
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
+    function add_or_replace_metadata(options: {
+        arguments: [
+            RawTransactionArgument<string>,
+            RawTransactionArgument<string>
+        ];
+    }) {
+        const argumentsTypes = [
+            `${packageAddress}::blob::Blob`,
+            `${packageAddress}::metadata::Metadata`
+        ];
+        return (tx: Transaction) => tx.moveCall({
+            package: packageAddress,
+            module: "blob",
+            function: "add_or_replace_metadata",
+            arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
+        });
+    }
     function take_metadata(options: {
         arguments: [
             RawTransactionArgument<string>
@@ -374,6 +391,21 @@ export function init(packageAddress: string) {
             package: packageAddress,
             module: "blob",
             function: "metadata",
+            arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
+        });
+    }
+    function metadata_or_create(options: {
+        arguments: [
+            RawTransactionArgument<string>
+        ];
+    }) {
+        const argumentsTypes = [
+            `${packageAddress}::blob::Blob`
+        ];
+        return (tx: Transaction) => tx.moveCall({
+            package: packageAddress,
+            module: "blob",
+            function: "metadata_or_create",
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
@@ -413,5 +445,22 @@ export function init(packageAddress: string) {
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
-    return { object_id, registered_epoch, blob_id, size, encoding_type, certified_epoch, storage, encoded_size, storage_mut, end_epoch, assert_certified_not_expired, derive_blob_id, _new, certify_with_certified_msg, _delete, burn, extend_with_resource, emit_certified, add_metadata, take_metadata, metadata, insert_or_update_metadata_pair, remove_metadata_pair };
+    function remove_metadata_pair_if_exists(options: {
+        arguments: [
+            RawTransactionArgument<string>,
+            RawTransactionArgument<string>
+        ];
+    }) {
+        const argumentsTypes = [
+            `${packageAddress}::blob::Blob`,
+            "0x0000000000000000000000000000000000000000000000000000000000000001::string::String"
+        ];
+        return (tx: Transaction) => tx.moveCall({
+            package: packageAddress,
+            module: "blob",
+            function: "remove_metadata_pair_if_exists",
+            arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
+        });
+    }
+    return { object_id, registered_epoch, blob_id, size, encoding_type, certified_epoch, storage, encoded_size, storage_mut, end_epoch, assert_certified_not_expired, derive_blob_id, _new, certify_with_certified_msg, _delete, burn, extend_with_resource, emit_certified, add_metadata, add_or_replace_metadata, take_metadata, metadata, metadata_or_create, insert_or_update_metadata_pair, remove_metadata_pair, remove_metadata_pair_if_exists };
 }

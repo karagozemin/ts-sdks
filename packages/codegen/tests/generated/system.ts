@@ -355,21 +355,6 @@ export function init(packageAddress: string) {
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
-    function committee(options: {
-        arguments: [
-            RawTransactionArgument<string>
-        ];
-    }) {
-        const argumentsTypes = [
-            `${packageAddress}::system::System`
-        ];
-        return (tx: Transaction) => tx.moveCall({
-            package: packageAddress,
-            module: "system",
-            function: "committee",
-            arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-        });
-    }
     function advance_epoch(options: {
         arguments: [
             RawTransactionArgument<string>,
@@ -481,5 +466,5 @@ export function init(packageAddress: string) {
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
-    return { create_empty, invalidate_blob_id, certify_event_blob, reserve_space, register_blob, certify_blob, delete_blob, extend_blob_with_resource, extend_blob, add_subsidy, register_deny_list_update, update_deny_list, delete_deny_listed_blob, epoch, total_capacity_size, used_capacity_size, n_shards, committee, advance_epoch, package_id, version, set_new_package_id, migrate, inner_mut, inner };
+    return { create_empty, invalidate_blob_id, certify_event_blob, reserve_space, register_blob, certify_blob, delete_blob, extend_blob_with_resource, extend_blob, add_subsidy, register_deny_list_update, update_deny_list, delete_deny_listed_blob, epoch, total_capacity_size, used_capacity_size, n_shards, advance_epoch, package_id, version, set_new_package_id, migrate, inner_mut, inner };
 }

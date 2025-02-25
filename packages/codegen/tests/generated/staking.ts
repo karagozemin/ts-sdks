@@ -72,23 +72,6 @@ export function init(packageAddress: string) {
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
-    function withdraw_node(options: {
-        arguments: [
-            RawTransactionArgument<string>,
-            RawTransactionArgument<string>
-        ];
-    }) {
-        const argumentsTypes = [
-            `${packageAddress}::staking::Staking`,
-            `${packageAddress}::storage_node::StorageNodeCap`
-        ];
-        return (tx: Transaction) => tx.moveCall({
-            package: packageAddress,
-            module: "staking",
-            function: "withdraw_node",
-            arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-        });
-    }
     function set_next_commission(options: {
         arguments: [
             RawTransactionArgument<string>,
@@ -427,27 +410,6 @@ export function init(packageAddress: string) {
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
-    function shard_transfer_failed(options: {
-        arguments: [
-            RawTransactionArgument<string>,
-            RawTransactionArgument<string>,
-            RawTransactionArgument<string>,
-            RawTransactionArgument<number[]>
-        ];
-    }) {
-        const argumentsTypes = [
-            `${packageAddress}::staking::Staking`,
-            `${packageAddress}::storage_node::StorageNodeCap`,
-            "0x0000000000000000000000000000000000000000000000000000000000000002::object::ID",
-            "vector<u16>"
-        ];
-        return (tx: Transaction) => tx.moveCall({
-            package: packageAddress,
-            module: "staking",
-            function: "shard_transfer_failed",
-            arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-        });
-    }
     function epoch_sync_done(options: {
         arguments: [
             RawTransactionArgument<string>,
@@ -519,6 +481,23 @@ export function init(packageAddress: string) {
             package: packageAddress,
             module: "staking",
             function: "withdraw_stake",
+            arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
+        });
+    }
+    function try_join_active_set(options: {
+        arguments: [
+            RawTransactionArgument<string>,
+            RawTransactionArgument<string>
+        ];
+    }) {
+        const argumentsTypes = [
+            `${packageAddress}::staking::Staking`,
+            `${packageAddress}::storage_node::StorageNodeCap`
+        ];
+        return (tx: Transaction) => tx.moveCall({
+            package: packageAddress,
+            module: "staking",
+            function: "try_join_active_set",
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
@@ -669,5 +648,5 @@ export function init(packageAddress: string) {
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
-    return { create, register_candidate, withdraw_node, set_next_commission, collect_commission, set_commission_receiver, set_governance_authorized, check_governance_authorization, get_current_node_weight, compute_next_committee, set_storage_price_vote, set_write_price_vote, set_node_capacity_vote, node_metadata, set_next_public_key, set_name, set_network_address, set_network_public_key, set_node_metadata, voting_end, initiate_epoch_change, shard_transfer_failed, epoch_sync_done, stake_with_pool, request_withdraw_stake, withdraw_stake, package_id, version, epoch, is_quorum, calculate_rewards, set_new_package_id, migrate, inner_mut, inner };
+    return { create, register_candidate, set_next_commission, collect_commission, set_commission_receiver, set_governance_authorized, check_governance_authorization, get_current_node_weight, compute_next_committee, set_storage_price_vote, set_write_price_vote, set_node_capacity_vote, node_metadata, set_next_public_key, set_name, set_network_address, set_network_public_key, set_node_metadata, voting_end, initiate_epoch_change, epoch_sync_done, stake_with_pool, request_withdraw_stake, withdraw_stake, try_join_active_set, package_id, version, epoch, is_quorum, calculate_rewards, set_new_package_id, migrate, inner_mut, inner };
 }

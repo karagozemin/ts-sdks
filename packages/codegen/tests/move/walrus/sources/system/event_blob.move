@@ -6,6 +6,11 @@ module walrus::event_blob;
 
 use sui::vec_map::{Self, VecMap};
 
+// Error codes
+// Error types in `walrus-sui/types/move_errors.rs` are auto-generated from the Move error codes.
+/// The provided sequence number is invalid.
+const EInvalidSequenceNumber: u64 = 0;
+
 // === Definitions related to event blob certification ===
 
 /// Event blob index which was attested by a storage node.
@@ -27,7 +32,7 @@ public struct EventBlobCertificationState has store {
     /// Latest certified event blob.
     latest_certified_blob: Option<EventBlob>,
     /// Current event blob being attested.
-    aggregate_weight_per_blob: VecMap<u256, u16>,
+    aggregate_weight_per_blob: VecMap<EventBlob, u16>,
 }
 
 // === Accessors related to event blob attestation ===
@@ -120,7 +125,7 @@ public(package) fun update_latest_certified_event_blob(
     blob_id: u256,
 ) {
     self.get_latest_certified_checkpoint_sequence_number().do!(|latest_certified_sequence_num| {
-        assert!(checkpoint_sequence_number > latest_certified_sequence_num);
+        assert!(checkpoint_sequence_number > latest_certified_sequence_num, EInvalidSequenceNumber);
     });
     self.latest_certified_blob = option::some(new_event_blob(checkpoint_sequence_number, blob_id));
 }
@@ -129,18 +134,25 @@ public(package) fun update_latest_certified_event_blob(
 public(package) fun update_aggregate_weight(
     self: &mut EventBlobCertificationState,
     blob_id: u256,
+    ending_checkpoint_sequence_number: u64,
     weight: u16,
 ): u16 {
-    let agg_weight = &mut self.aggregate_weight_per_blob[&blob_id];
+    let event_blob = new_event_blob(ending_checkpoint_sequence_number, blob_id);
+    let agg_weight = &mut self.aggregate_weight_per_blob[&event_blob];
     *agg_weight = *agg_weight + weight;
     *agg_weight
 }
 
 /// Start tracking which nodes are signing the event blob with given id for
 /// event blob certification
-public(package) fun start_tracking_blob(self: &mut EventBlobCertificationState, blob_id: u256) {
-    if (!self.aggregate_weight_per_blob.contains(&blob_id)) {
-        self.aggregate_weight_per_blob.insert(blob_id, 0);
+public(package) fun start_tracking_blob(
+    self: &mut EventBlobCertificationState,
+    blob_id: u256,
+    ending_checkpoint_sequence_number: u64,
+) {
+    let event_blob = new_event_blob(ending_checkpoint_sequence_number, blob_id);
+    if (!self.aggregate_weight_per_blob.contains(&event_blob)) {
+        self.aggregate_weight_per_blob.insert(event_blob, 0);
     };
 }
 
