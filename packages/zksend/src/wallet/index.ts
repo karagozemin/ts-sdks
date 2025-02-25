@@ -142,6 +142,7 @@ export class StashedWallet implements Wallet {
 			data,
 			address: account.address,
 			network: this.#network,
+			session: getStashedSessions()[account.address],
 		});
 
 		return {
@@ -167,6 +168,7 @@ export class StashedWallet implements Wallet {
 			data,
 			address: account.address,
 			network: this.#network,
+			session: getStashedSessions()[account.address],
 		});
 
 		return {
@@ -187,6 +189,7 @@ export class StashedWallet implements Wallet {
 			type: 'sign-personal-message',
 			bytes,
 			address: account.address,
+			session: getStashedSessions()[account.address],
 		});
 
 		return {

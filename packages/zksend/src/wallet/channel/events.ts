@@ -24,11 +24,13 @@ export const StashedRequestData = variant('type', [
 		data: string('`data` is required'),
 		address: string('`address` is required'),
 		network: string('`network` is required'),
+		session: string('`session` is required'),
 	}),
 	object({
 		type: literal('sign-personal-message'),
 		bytes: string('`bytes` is required'),
 		address: string('`address` is required'),
+		session: string('`session` is required'),
 	}),
 ]);
 export type StashedRequestData = InferOutput<typeof StashedRequestData>;
