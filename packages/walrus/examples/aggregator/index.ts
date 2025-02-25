@@ -5,7 +5,7 @@ import { serve } from '@hono/node-server';
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 import { Hono } from 'hono';
 
-import { NotFoundError, WalrusClient } from '../../src/index.js';
+import { BlobBlockedError, WalrusClient } from '../../src/index.js';
 
 /** @ts-ignore */
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -35,17 +35,17 @@ app.get('/v1/blobs/:id', async (c) => {
 	}
 
 	try {
-		var blob = await walrusClient.readBlob({ blobId });
+		const blob = await walrusClient.readBlob({ blobId });
 		cache.set(blobId, new Blob([blob]));
+
+		return c.body(blob.buffer as ArrayBuffer);
 	} catch (error) {
-		if (error instanceof NotFoundError) {
+		if (error instanceof BlobBlockedError || error instanceof BlobNotCertifiedError) {
 			return c.json({ error: 'Blob not found' }, 404);
 		}
 
 		return c.json({ error: 'Internal server error' }, 500);
 	}
-
-	return c.body(blob.buffer as ArrayBuffer);
 });
 
 serve(app, (info) => {

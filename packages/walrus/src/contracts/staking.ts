@@ -433,28 +433,6 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function shard_transfer_failed(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number[]>,
-		];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking::Staking`,
-			`${packageAddress}::storage_node::StorageNodeCap`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-			'vector<u16>',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'shard_transfer_failed',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function epoch_sync_done(options: {
 		arguments: [
 			RawTransactionArgument<string>,
@@ -524,6 +502,21 @@ export function init(packageAddress: string) {
 				package: packageAddress,
 				module: 'staking',
 				function: 'withdraw_stake',
+				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
+			});
+	}
+	function try_join_active_set(options: {
+		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+	}) {
+		const argumentsTypes = [
+			`${packageAddress}::staking::Staking`,
+			`${packageAddress}::storage_node::StorageNodeCap`,
+		];
+		return (tx: Transaction) =>
+			tx.moveCall({
+				package: packageAddress,
+				module: 'staking',
+				function: 'try_join_active_set',
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
@@ -660,11 +653,11 @@ export function init(packageAddress: string) {
 		set_node_metadata,
 		voting_end,
 		initiate_epoch_change,
-		shard_transfer_failed,
 		epoch_sync_done,
 		stake_with_pool,
 		request_withdraw_stake,
 		withdraw_stake,
+		try_join_active_set,
 		package_id,
 		version,
 		epoch,
