@@ -81,8 +81,10 @@ export class StashedPopup {
 			appName: this.#name,
 		};
 
+		const encodedRequestData = btoa(JSON.stringify(requestData));
+
 		this.#popup.location.assign(
-			`${this.#origin}/dapp/${type}${data ? `#${JSON.stringify(requestData)}` : ''}`,
+			`${this.#origin}/dapp/${type}${data ? `#${encodedRequestData}` : ''}`,
 		);
 
 		return this.#promise as Promise<StashedResponseTypes[T]>;
@@ -134,7 +136,7 @@ export class StashedHost {
 	static fromUrl(url: string = window.location.href) {
 		const parsed = new URL(url);
 		const hash = parsed.hash.slice(1); // Remove the # character
-		const { requestId, appOrigin, appName, ...rest } = JSON.parse(decodeURIComponent(hash));
+		const { requestId, appOrigin, appName, ...rest } = JSON.parse(atob(decodeURIComponent(hash)));
 		const request = parse(StashedRequest, {
 			requestId,
 			appOrigin,

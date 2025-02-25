@@ -301,10 +301,6 @@ export class StashedWallet implements Wallet {
 			this.#setAccount(response.address);
 		}
 
-		// embeddedIframe.contentWindow?.postMessage(
-		// 	{ type: 'WALLET_CONNECTED', payload: { message: 'The wallet has been connected.', input } },
-		// 	'http://localhost:3000', // todo: use actual domain
-		// );
 		setTimeout(() => {
 			intervalEnabled = true;
 		}, 2000);

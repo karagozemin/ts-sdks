@@ -36,6 +36,7 @@ export const StashedResponseData = variant('type', [
 		type: literal('connect'),
 		address: string(),
 		selectedAddresses: array(string()),
+		session: string(),
 	}),
 	object({
 		type: literal('sign-transaction-block'),
