@@ -30,7 +30,7 @@ type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
 };
 
-const STASHED_SESSIONS_KEY = 'stashed:sessions';
+const STASHED_SESSION_KEY = 'stashed:session';
 
 let embeddedIframe: HTMLIFrameElement;
 
@@ -38,9 +38,9 @@ let intervalEnabled = false;
 
 export const STASHED_WALLET_NAME = 'Stashed' as const;
 
-const getStashedSessions = () => {
-	const sessions = localStorage.getItem(STASHED_SESSIONS_KEY);
-	return JSON.parse(sessions || '{}');
+const getStashedSession = () => {
+	const { addresses = [], token } = JSON.parse(localStorage.getItem(STASHED_SESSION_KEY) || '{}');
+	return { addresses, token };
 };
 
 export class StashedWallet implements Wallet {
@@ -142,7 +142,7 @@ export class StashedWallet implements Wallet {
 			data,
 			address: account.address,
 			network: this.#network,
-			session: getStashedSessions()[account.address],
+			session: getStashedSession().token,
 		});
 
 		return {
@@ -168,7 +168,7 @@ export class StashedWallet implements Wallet {
 			data,
 			address: account.address,
 			network: this.#network,
-			session: getStashedSessions()[account.address],
+			session: getStashedSession().token,
 		});
 
 		return {
@@ -189,7 +189,8 @@ export class StashedWallet implements Wallet {
 			type: 'sign-personal-message',
 			bytes,
 			address: account.address,
-			session: getStashedSessions()[account.address],
+			network: this.#network,
+			session: getStashedSession().token,
 		});
 
 		return {
@@ -235,11 +236,17 @@ export class StashedWallet implements Wallet {
 	}
 
 	removeAccount(address: string) {
-		const sessions = getStashedSessions();
+		const { addresses, token } = getStashedSession();
 
-		if (sessions[address]) {
-			delete sessions[address];
-			localStorage.setItem(STASHED_SESSIONS_KEY, JSON.stringify(sessions));
+		if (addresses.includes(address)) {
+			addresses.splice(addresses.indexOf(address), 1);
+			localStorage.setItem(
+				STASHED_SESSION_KEY,
+				JSON.stringify({
+					addresses,
+					token,
+				}),
+			);
 		}
 
 		this.#accounts = this.#accounts.filter((account) => account.address !== address);
@@ -267,11 +274,11 @@ export class StashedWallet implements Wallet {
 
 	#connect: StandardConnectMethod = async (input) => {
 		if (input?.silent) {
-			const sessions = JSON.parse(localStorage.getItem(STASHED_SESSIONS_KEY) || '{}');
+			console.log('IN SILENT CONNECT');
+			const { addresses } = getStashedSession();
 
-			const adddresses = Object.keys(sessions);
-			if (adddresses.length) {
-				this.#setMultipleAccounts(adddresses);
+			if (addresses.length) {
+				this.#setMultipleAccounts(addresses);
 			}
 
 			return { accounts: this.accounts };
@@ -285,13 +292,17 @@ export class StashedWallet implements Wallet {
 
 		const response = await popup.send({
 			type: 'connect',
+			network: this.#network,
 		});
 
 		if (!('address' in response)) {
 			throw new Error('Unexpected response');
 		}
 
-		localStorage.setItem(STASHED_SESSIONS_KEY, JSON.stringify(response.sessions));
+		localStorage.setItem(
+			STASHED_SESSION_KEY,
+			JSON.stringify({ addresses: response.selectedAddresses, token: response.session }),
+		);
 
 		if (response.selectedAddresses) {
 			this.#setMultipleAccounts(response.selectedAddresses);
@@ -306,7 +317,7 @@ export class StashedWallet implements Wallet {
 	};
 
 	#disconnect: StandardDisconnectMethod = async () => {
-		localStorage.removeItem(STASHED_SESSIONS_KEY);
+		localStorage.removeItem(STASHED_SESSION_KEY);
 		this.#setAccount();
 
 		embeddedIframe.contentWindow?.postMessage(
