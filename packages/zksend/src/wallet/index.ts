@@ -30,13 +30,18 @@ type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
 };
 
-const STASHED_RECENT_ADDRESS_KEY = 'stashed:recentAddress';
+const STASHED_SESSIONS_KEY = 'stashed:sessions';
 
 let embeddedIframe: HTMLIFrameElement;
 
 let intervalEnabled = false;
 
 export const STASHED_WALLET_NAME = 'Stashed' as const;
+
+const getStashedSessions = () => {
+	const sessions = localStorage.getItem(STASHED_SESSIONS_KEY);
+	return JSON.parse(sessions || '{}');
+};
 
 export class StashedWallet implements Wallet {
 	#events: Emitter<WalletEventsMap>;
@@ -206,8 +211,6 @@ export class StashedWallet implements Wallet {
 					publicKey: new Uint8Array(),
 				}),
 			];
-
-			localStorage.setItem(STASHED_RECENT_ADDRESS_KEY, address);
 		} else {
 			this.#accounts = [];
 		}
@@ -215,12 +218,6 @@ export class StashedWallet implements Wallet {
 		this.#events.emit('change', { accounts: this.accounts });
 	}
 	addAccount(address: string) {
-		// if (this.#accounts.length === 0) {
-		// 	localStorage.setItem(STASHED_RECENT_ADDRESS_KEY, address);
-		// 	this.#connect({ silent: true });
-		// 	return;
-		// }
-
 		this.#accounts.push(
 			new ReadonlyWalletAccount({
 				address,
@@ -235,17 +232,14 @@ export class StashedWallet implements Wallet {
 	}
 
 	removeAccount(address: string) {
-		const recentAddress = localStorage.getItem(STASHED_RECENT_ADDRESS_KEY);
+		const sessions = getStashedSessions();
 
-		if (recentAddress === address) {
-			localStorage.removeItem(STASHED_RECENT_ADDRESS_KEY);
+		if (sessions[address]) {
+			delete sessions[address];
+			localStorage.setItem(STASHED_SESSIONS_KEY, JSON.stringify(sessions));
 		}
 
 		this.#accounts = this.#accounts.filter((account) => account.address !== address);
-
-		if (this.#accounts.length > 0) {
-			localStorage.setItem(STASHED_RECENT_ADDRESS_KEY, this.#accounts[0].address);
-		}
 
 		this.#events.emit('change', { accounts: this.accounts });
 	}
@@ -261,8 +255,6 @@ export class StashedWallet implements Wallet {
 					publicKey: new Uint8Array(),
 				});
 			});
-
-			localStorage.setItem(STASHED_RECENT_ADDRESS_KEY, addresses[0]);
 		} else {
 			this.#accounts = [];
 		}
@@ -272,10 +264,11 @@ export class StashedWallet implements Wallet {
 
 	#connect: StandardConnectMethod = async (input) => {
 		if (input?.silent) {
-			const address = localStorage.getItem(STASHED_RECENT_ADDRESS_KEY);
+			const sessions = JSON.parse(localStorage.getItem(STASHED_SESSIONS_KEY) || '{}');
 
-			if (address) {
-				this.#setAccount(address);
+			const adddresses = Object.keys(sessions);
+			if (adddresses.length) {
+				this.#setMultipleAccounts(adddresses);
 			}
 
 			return { accounts: this.accounts };
@@ -295,6 +288,8 @@ export class StashedWallet implements Wallet {
 			throw new Error('Unexpected response');
 		}
 
+		localStorage.setItem(STASHED_SESSIONS_KEY, JSON.stringify(response.sessions));
+
 		if (response.selectedAddresses) {
 			this.#setMultipleAccounts(response.selectedAddresses);
 		} else {
@@ -308,7 +303,7 @@ export class StashedWallet implements Wallet {
 	};
 
 	#disconnect: StandardDisconnectMethod = async () => {
-		localStorage.removeItem(STASHED_RECENT_ADDRESS_KEY);
+		localStorage.removeItem(STASHED_SESSIONS_KEY);
 		this.#setAccount();
 
 		embeddedIframe.contentWindow?.postMessage(
@@ -376,11 +371,11 @@ export function registerStashedWallet(
 
 			// now search payload accounts to see if any addresses are missing from wallet.accounts
 			// if we find some addresses missing, we should add them to the wallet
-			(payload?.accounts || []).forEach((item: any) => {
-				if (!wallet.accounts.some((account) => account.address === item.account.address)) {
-					wallet.addAccount(item.account.address);
-				}
-			});
+			// (payload?.accounts || []).forEach((item: any) => {
+			// 	if (!wallet.accounts.some((account) => account.address === item.account.address)) {
+			// 		wallet.addAccount(item.account.address);
+			// 	}
+			// });
 		}
 	});
 
