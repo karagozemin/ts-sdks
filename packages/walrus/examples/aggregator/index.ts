@@ -5,7 +5,7 @@ import { serve } from '@hono/node-server';
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 import { Hono } from 'hono';
 
-import { WalrusClient } from '../src/index.js';
+import { NotFoundError, WalrusClient } from '../../src/index.js';
 
 /** @ts-ignore */
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -26,13 +26,26 @@ const cache = new Map<string, Blob>();
 app.get('/v1/blobs/:id', async (c) => {
 	const blobId = c.req.param('id');
 
-	if (!cache.has(blobId)) {
-		// TODO: handle not found error
-		const blob = await walrusClient.readBlob({ blobId });
-		cache.set(blobId, new Blob([blob]));
+	if (!blobId) {
+		return c.json({ error: 'Missing blob id' }, 400);
 	}
 
-	return c.body(cache.get(blobId)!.stream());
+	if (cache.has(blobId)) {
+		return c.body(cache.get(blobId)!.stream());
+	}
+
+	try {
+		var blob = await walrusClient.readBlob({ blobId });
+		cache.set(blobId, new Blob([blob]));
+	} catch (error) {
+		if (error instanceof NotFoundError) {
+			return c.json({ error: 'Blob not found' }, 404);
+		}
+
+		return c.json({ error: 'Internal server error' }, 500);
+	}
+
+	return c.body(blob.buffer as ArrayBuffer);
 });
 
 serve(app, (info) => {
