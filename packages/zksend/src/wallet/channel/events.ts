@@ -38,7 +38,6 @@ export type StashedRequest = InferOutput<typeof StashedRequest>;
 export const StashedResponseData = variant('type', [
 	object({
 		type: literal('connect'),
-		address: string(),
 		selectedAddresses: array(string()),
 		session: string(),
 	}),

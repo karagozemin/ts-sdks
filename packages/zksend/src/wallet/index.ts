@@ -276,7 +276,6 @@ export class StashedWallet implements Wallet {
 
 	#connect: StandardConnectMethod = async (input) => {
 		if (input?.silent) {
-			console.log('IN SILENT CONNECT');
 			const { addresses } = getStashedSession();
 
 			if (addresses.length) {
@@ -297,7 +296,7 @@ export class StashedWallet implements Wallet {
 			network: this.#network,
 		});
 
-		if (!('address' in response)) {
+		if (!('selectedAddresses' in response)) {
 			throw new Error('Unexpected response');
 		}
 
@@ -306,11 +305,7 @@ export class StashedWallet implements Wallet {
 			JSON.stringify({ addresses: response.selectedAddresses, token: response.session }),
 		);
 
-		if (response.selectedAddresses) {
-			this.#setMultipleAccounts(response.selectedAddresses);
-		} else {
-			this.#setAccount(response.address);
-		}
+		this.#setMultipleAccounts(response.selectedAddresses);
 
 		setTimeout(() => {
 			intervalEnabled = true;
@@ -363,7 +358,7 @@ export function registerStashedWallet(
 	setInterval(() => {
 		if (!intervalEnabled) return;
 		embeddedIframe.contentWindow?.postMessage(
-			{ type: 'WALLET_STATUS_REQUEST', payload: { message: 'Give me status please.' } },
+			{ type: 'WALLET_STATUS_REQUEST' },
 			'http://localhost:3000', // todo: use actual domain
 		);
 	}, 1000);
