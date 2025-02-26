@@ -34,7 +34,7 @@ const STASHED_SESSION_KEY = 'stashed:session';
 
 let embeddedIframe: HTMLIFrameElement;
 
-let intervalEnabled = false;
+let walletStatusCheckEnabled = false;
 
 export const STASHED_WALLET_NAME = 'Stashed' as const;
 
@@ -284,7 +284,7 @@ export class StashedWallet implements Wallet {
 
 			return { accounts: this.accounts };
 		}
-		intervalEnabled = false;
+		walletStatusCheckEnabled = false;
 		const popup = new StashedPopup({
 			name: this.#name,
 			origin: this.#origin,
@@ -308,7 +308,7 @@ export class StashedWallet implements Wallet {
 		this.#setMultipleAccounts(response.selectedAddresses);
 
 		setTimeout(() => {
-			intervalEnabled = true;
+			walletStatusCheckEnabled = true;
 		}, 2000);
 		return { accounts: this.accounts };
 	};
@@ -354,9 +354,9 @@ export function registerStashedWallet(
 	const unregister = wallets.register(wallet);
 
 	// every 3 seconds, check if the wallet is connected
-	intervalEnabled = true;
+	walletStatusCheckEnabled = true;
 	setInterval(() => {
-		if (!intervalEnabled) return;
+		if (!walletStatusCheckEnabled) return;
 		embeddedIframe.contentWindow?.postMessage(
 			{ type: 'WALLET_STATUS_REQUEST' },
 			'http://localhost:3000', // todo: use actual domain
@@ -369,7 +369,7 @@ export function registerStashedWallet(
 		const { type, payload } = event.data;
 
 		if (type === 'WALLET_STATUS') {
-			if (!intervalEnabled) return;
+			if (!walletStatusCheckEnabled) return;
 
 			wallet.accounts.forEach((account) => {
 				const foundAddress = (payload?.accounts || []).some((item: any) => {
