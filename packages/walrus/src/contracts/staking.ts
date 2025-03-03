@@ -77,21 +77,6 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function withdraw_node(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking::Staking`,
-			`${packageAddress}::storage_node::StorageNodeCap`,
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'withdraw_node',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function set_next_commission(options: {
 		arguments: [
 			RawTransactionArgument<string>,
@@ -634,7 +619,6 @@ export function init(packageAddress: string) {
 	return {
 		create,
 		register_candidate,
-		withdraw_node,
 		set_next_commission,
 		collect_commission,
 		set_commission_receiver,

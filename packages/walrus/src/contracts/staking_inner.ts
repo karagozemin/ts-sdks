@@ -93,21 +93,6 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function withdraw_node(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking_inner::StakingInnerV1`,
-			`${packageAddress}::storage_node::StorageNodeCap`,
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking_inner',
-				function: 'withdraw_node',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function set_commission_receiver(options: {
 		arguments: [
 			RawTransactionArgument<string>,
@@ -443,21 +428,6 @@ export function init(packageAddress: string) {
 				package: packageAddress,
 				module: 'staking_inner',
 				function: 'set_node_metadata',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function set_withdrawing(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking_inner::StakingInnerV1`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking_inner',
-				function: 'set_withdrawing',
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
@@ -807,7 +777,6 @@ export function init(packageAddress: string) {
 	return {
 		_new,
 		create_pool,
-		withdraw_node,
 		set_commission_receiver,
 		collect_commission,
 		voting_end,
@@ -826,7 +795,6 @@ export function init(packageAddress: string) {
 		set_network_address,
 		set_network_public_key,
 		set_node_metadata,
-		set_withdrawing,
 		destroy_empty_pool,
 		stake_with_pool,
 		request_withdraw_stake,
