@@ -39,7 +39,6 @@ import type {
 	CertifyBlobOptions,
 	CommitteeInfo,
 	DeleteBlobOptions,
-	EncodingType,
 	ExtendBlobOptions,
 	GetBlobMetadataOptions,
 	GetCertificationEpochOptions,
@@ -60,13 +59,7 @@ import type {
 	WriteSliverOptions,
 	WriteSliversToNodeOptions,
 } from './types.js';
-import {
-	EncodingType as BcsEncodingType,
-	blobIdToInt,
-	IntentType,
-	SliverData,
-	StorageConfirmation,
-} from './utils/bcs.js';
+import { blobIdToInt, IntentType, SliverData, StorageConfirmation } from './utils/bcs.js';
 import {
 	chunk,
 	encodedBlobLength,
@@ -186,23 +179,17 @@ export class WalrusClient {
 		const numShards = systemState.committee.n_shards;
 
 		const blobMetadata = await this.getBlobMetadata({ blobId, signal });
-		const encodingType = blobMetadata.metadata.V1.encoding_type.$kind;
 
-		const slivers = await this.getSlivers({ blobId, encodingType, signal });
+		const slivers = await this.getSlivers({ blobId, signal });
 
 		const blobBytes = decodePrimarySlivers(
 			blobId,
 			numShards,
 			blobMetadata.metadata.V1.unencoded_length,
 			slivers,
-			encodingType,
 		);
 
-		const reconstructedBlobMetadata = computeMetadata(
-			systemState.committee.n_shards,
-			blobBytes,
-			encodingType,
-		);
+		const reconstructedBlobMetadata = computeMetadata(systemState.committee.n_shards, blobBytes);
 
 		if (reconstructedBlobMetadata.blob_id !== blobId) {
 			throw new InconsistentBlobError('The specified blob was encoded incorrectly.');
@@ -287,7 +274,7 @@ export class WalrusClient {
 		}
 	}
 
-	async getSlivers({ blobId, signal, encodingType }: GetSliversOptions) {
+	async getSlivers({ blobId, signal }: GetSliversOptions) {
 		const committee = await this.#getReadCommittee({ blobId, signal });
 		const randomizedNodes = weightedShuffle(
 			committee.nodes.map((node) => ({
@@ -298,7 +285,7 @@ export class WalrusClient {
 
 		const stakingState = await this.stakingState();
 		const numShards = stakingState.n_shards;
-		const { primarySymbols: minSymbols } = getSourceSymbols(numShards, encodingType);
+		const { primarySymbols: minSymbols } = getSourceSymbols(numShards);
 
 		const sliverPairIndices = randomizedNodes.flatMap((node) =>
 			node.shardIndices.map((shardIndex) => ({
@@ -532,9 +519,9 @@ export class WalrusClient {
 	/**
 	 * Calculate the cost of storing a blob for a given a size and number of epochs.
 	 */
-	async storageCost(size: number, epochs: number, encodingType: EncodingType) {
+	async storageCost(size: number, epochs: number) {
 		const systemState = await this.systemState();
-		const encodedSize = encodedBlobLength(size, systemState.committee.n_shards, encodingType);
+		const encodedSize = encodedBlobLength(size, systemState.committee.n_shards);
 		const storageUnits = storageUnitsFromSize(encodedSize);
 		const storageCost =
 			BigInt(storageUnits) * BigInt(systemState.storage_price_per_unit_size) * BigInt(epochs);
@@ -553,11 +540,11 @@ export class WalrusClient {
 	 * tx.transferObjects([await client.createStorage({ size: 1000, epochs: 3 })], owner);
 	 * ```
 	 */
-	async createStorage({ size, epochs, walCoin, encodingType }: StorageWithSizeOptions) {
+	async createStorage({ size, epochs, walCoin }: StorageWithSizeOptions) {
 		const systemObject = await this.systemObject();
 		const systemState = await this.systemState();
-		const encodedSize = encodedBlobLength(size, systemState.committee.n_shards, encodingType);
-		const { storageCost } = await this.storageCost(size, epochs, encodingType);
+		const encodedSize = encodedBlobLength(size, systemState.committee.n_shards);
+		const { storageCost } = await this.storageCost(size, epochs);
 
 		return (tx: Transaction) => {
 			const coin = walCoin
@@ -597,9 +584,8 @@ export class WalrusClient {
 		size,
 		epochs,
 		owner,
-		encodingType,
 	}: StorageWithSizeOptions & { transaction?: Transaction; owner: string }) {
-		transaction.transferObjects([await this.createStorage({ size, epochs, encodingType })], owner);
+		transaction.transferObjects([await this.createStorage({ size, epochs })], owner);
 
 		return transaction;
 	}
@@ -665,10 +651,9 @@ export class WalrusClient {
 		deletable,
 		walCoin,
 		attributes,
-		encodingType,
 	}: RegisterBlobOptions) {
-		const storage = await this.createStorage({ size, epochs, walCoin, encodingType });
-		const { writeCost } = await this.storageCost(size, epochs, encodingType);
+		const storage = await this.createStorage({ size, epochs, walCoin });
+		const { writeCost } = await this.storageCost(size, epochs);
 
 		return (tx: Transaction) => {
 			const writeCoin = walCoin
@@ -688,7 +673,7 @@ export class WalrusClient {
 						blobIdToInt(blobId),
 						BigInt(bcs.u256().parse(rootHash)),
 						size,
-						BcsEncodingType.serialize(encodingType).toBytes()[0],
+						1,
 						deletable,
 						writeCoin,
 					],
@@ -975,18 +960,13 @@ export class WalrusClient {
 	 */
 	async extendBlob({ blobObjectId, epochs, endEpoch, walCoin }: ExtendBlobOptions) {
 		const blob = await this.#objectLoader.load(blobObjectId, Blob());
-		const encodingType = BcsEncodingType.parse(new Uint8Array([blob.encoding_type])).$kind;
 		const numEpochs = typeof epochs === 'number' ? epochs : endEpoch - blob.storage.end_epoch;
 
 		if (numEpochs <= 0) {
 			return (_tx: Transaction) => {};
 		}
 
-		const { storageCost } = await this.storageCost(
-			Number(blob.storage.storage_size),
-			numEpochs,
-			encodingType,
-		);
+		const { storageCost } = await this.storageCost(Number(blob.storage.storage_size), numEpochs);
 
 		return (tx: Transaction) => {
 			const coin = walCoin
@@ -1286,12 +1266,12 @@ export class WalrusClient {
 	 * const { blobId, metadata, sliversByNode, rootHash } = await client.encodeBlob(blob);
 	 * ```
 	 */
-	async encodeBlob(blob: Uint8Array, encodingType: EncodingType) {
+	async encodeBlob(blob: Uint8Array) {
 		const systemState = await this.systemState();
 		const committee = await this.#getActiveCommittee();
 
 		const numShards = systemState.committee.n_shards;
-		const { blobId, metadata, sliverPairs, rootHash } = encodeBlob(numShards, blob, encodingType);
+		const { blobId, metadata, sliverPairs, rootHash } = encodeBlob(numShards, blob);
 
 		const sliversByNodeMap = new Map<number, SliversForNode>();
 
@@ -1419,12 +1399,11 @@ export class WalrusClient {
 		signal,
 		owner,
 		attributes,
-		encodingType = 'RS2',
 	}: WriteBlobOptions) {
 		const systemState = await this.systemState();
 		const committee = await this.#getActiveCommittee();
 
-		const { sliversByNode, blobId, metadata, rootHash } = await this.encodeBlob(blob, encodingType);
+		const { sliversByNode, blobId, metadata, rootHash } = await this.encodeBlob(blob);
 
 		const suiBlobObject = await this.executeRegisterBlobTransaction({
 			signer,
@@ -1435,7 +1414,6 @@ export class WalrusClient {
 			deletable,
 			owner,
 			attributes,
-			encodingType,
 		});
 
 		const controller = new AbortController();
@@ -1452,7 +1430,7 @@ export class WalrusClient {
 					deletable,
 					objectId: blobObjectId,
 					signal: signal ? AbortSignal.any([controller.signal, signal]) : controller.signal,
-				}).catch((error) => {
+				}).catch(() => {
 					failures += committee.nodes[nodeIndex].shardIndices.length;
 
 					if (isAboveValidity(failures, systemState.committee.n_shards)) {

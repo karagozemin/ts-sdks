@@ -231,7 +231,6 @@ export class StorageNodeClient {
 
 		let response: Response | undefined;
 
-		const requestStartTime = Date.now();
 		try {
 			response = await this.#fetch(`${nodeUrl}${path}`, {
 				...init,
@@ -245,8 +244,6 @@ export class StorageNodeClient {
 			if (error instanceof Error && error.name === 'AbortError') {
 				throw new ConnectionTimeoutError();
 			}
-
-			console.error(`${nodeUrl}${path}`, error, Date.now() - requestStartTime);
 
 			throw error;
 		}

@@ -7,7 +7,7 @@ import { Agent, setGlobalDispatcher } from 'undici';
 import { WalrusClient } from '../../src/client.js';
 import { getFundedKeypair } from '../funded-keypair.js';
 
-// Node connect timeout is 10 seconds, and walrus nodes are SLOW
+// Node connect timeout is 10 seconds, and walrus nodes can be slow to respond
 setGlobalDispatcher(
 	new Agent({
 		connectTimeout: 60_000,
@@ -27,26 +27,6 @@ const walrusClient = new WalrusClient({
 	suiClient,
 	storageNodeClientOptions: {
 		timeout: 60_000,
-		fetch: (url, init) => {
-			return new Promise((resolve, reject) => {
-				// bun hangs even with abort signals
-				init?.signal?.addEventListener('abort', (error) => {
-					reject(error);
-				});
-
-				fetch(
-					url as never,
-					{
-						...init,
-						// bun
-						// dispatcher: new Agent({ connectTimeout: 60_000, connect: { timeout: 60_000 } }),
-						tls: {
-							rejectUnauthorized: false,
-						},
-					} as never,
-				).then(resolve, reject);
-			});
-		},
 	},
 });
 

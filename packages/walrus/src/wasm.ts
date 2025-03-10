@@ -17,7 +17,7 @@ export interface EncodedBlob {
 export function encodeBlob(
 	nShards: number,
 	bytes: Uint8Array,
-	encodingType: EncodingType,
+	encodingType: EncodingType = 'RS2',
 ): EncodedBlob {
 	const encoder = new BlobEncoder(nShards);
 
@@ -74,7 +74,7 @@ export function decodePrimarySlivers(
 	nShards: number,
 	size: number | bigint | string,
 	slivers: (typeof SliverData.$inferInput)[],
-	encodingType: EncodingType,
+	encodingType: EncodingType = 'RS2',
 ): Uint8Array {
 	const encoder = new BlobEncoder(nShards);
 
@@ -94,7 +94,7 @@ export function decodePrimarySlivers(
 export function computeMetadata(
 	nShards: number,
 	bytes: Uint8Array,
-	encodingType: EncodingType,
+	encodingType: EncodingType = 'RS2',
 ): typeof BlobMetadataWithId.$inferInput & { blob_id: string } {
 	const encoder = new BlobEncoder(nShards);
 	const metadata = encoder.compute_metadata(

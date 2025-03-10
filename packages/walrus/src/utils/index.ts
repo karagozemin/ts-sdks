@@ -13,7 +13,7 @@ const BLOB_ID_LEN = 32;
 export function encodedBlobLength(
 	unencodedLength: number,
 	nShards: number,
-	encodingType: EncodingType,
+	encodingType: EncodingType = 'RS2',
 ): number {
 	const { primarySymbols, secondarySymbols } = getSourceSymbols(nShards, encodingType);
 
@@ -29,7 +29,7 @@ export function encodedBlobLength(
 	return nShards * metadata + sliversSize;
 }
 
-export function getSourceSymbols(nShards: number, encodingType: EncodingType) {
+export function getSourceSymbols(nShards: number, encodingType: EncodingType = 'RS2') {
 	const safetyLimit = decodingSafetyLimit(nShards, encodingType);
 	const maxFaulty = getMaxFaultyNodes(nShards);
 	const minCorrect = nShards - maxFaulty;
