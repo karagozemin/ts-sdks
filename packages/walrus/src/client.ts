@@ -832,7 +832,9 @@ export class WalrusClient {
 			.filter((confirmation) => confirmation !== null);
 
 		if (!isQuorum(filteredConfirmations.length, systemState.committee.members.length)) {
-			throw new NotEnoughBlobConfirmationsError('Too many invalid confirmations received for blob');
+			throw new NotEnoughBlobConfirmationsError(
+				`Too many invalid confirmations received for blob (${filteredConfirmations.length} of ${systemState.committee.members.length})`,
+			);
 		}
 
 		const combinedSignature = combineSignatures(
@@ -1450,7 +1452,7 @@ export class WalrusClient {
 					deletable,
 					objectId: blobObjectId,
 					signal: signal ? AbortSignal.any([controller.signal, signal]) : controller.signal,
-				}).catch(() => {
+				}).catch((error) => {
 					failures += committee.nodes[nodeIndex].shardIndices.length;
 
 					if (isAboveValidity(failures, systemState.committee.n_shards)) {

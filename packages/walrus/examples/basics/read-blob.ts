@@ -23,7 +23,7 @@ export async function retrieveBlob(blobId: string) {
 }
 
 (async function main() {
-	const blob = await retrieveBlob('vFB2qz768MTocyT00s0TdjicmEmSHP3HTmvBVKk9v2M');
+	const blob = await retrieveBlob('OFrKO0ofGc4inX8roHHaAB-pDHuUiIA08PW4N2B2gFk');
 
 	const textDecoder = new TextDecoder('utf-8');
 	const resultString = textDecoder.decode(await blob.arrayBuffer());
