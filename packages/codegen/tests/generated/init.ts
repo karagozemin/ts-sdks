@@ -5,17 +5,27 @@ import { bcs } from "@mysten/sui/bcs";
 import { type Transaction } from "@mysten/sui/transactions";
 import { normalizeMoveArguments, type RawTransactionArgument } from "./utils/index.js";
 import * as object from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js";
+import * as _package from "./deps/0x0000000000000000000000000000000000000000000000000000000000000002/package.js";
+export function INIT() {
+    return bcs.struct("INIT", ({
+        dummy_field: bcs.bool()
+    }));
+}
 export function InitCap() {
     return bcs.struct("InitCap", ({
-        id: object.UID()
+        id: object.UID(),
+        publisher: _package.Publisher()
     }));
 }
 export function init(packageAddress: string) {
     function init(options: {
         arguments: [
+            RawTransactionArgument<string>
         ];
     }) {
-        const argumentsTypes = [];
+        const argumentsTypes = [
+            `${packageAddress}::init::INIT`
+        ];
         return (tx: Transaction) => tx.moveCall({
             package: packageAddress,
             module: "init",
@@ -67,20 +77,5 @@ export function init(packageAddress: string) {
             arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
         });
     }
-    function destroy(options: {
-        arguments: [
-            RawTransactionArgument<string>
-        ];
-    }) {
-        const argumentsTypes = [
-            `${packageAddress}::init::InitCap`
-        ];
-        return (tx: Transaction) => tx.moveCall({
-            package: packageAddress,
-            module: "init",
-            function: "destroy",
-            arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-        });
-    }
-    return { init, initialize_walrus, migrate, destroy };
+    return { init, initialize_walrus, migrate };
 }
