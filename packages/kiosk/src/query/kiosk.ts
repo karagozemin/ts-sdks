@@ -121,6 +121,10 @@ export async function getOwnedKiosks(
 				filter: {
 					StructType: options.personalKioskType,
 				},
+				options: {
+					showContent: true,
+					showType: true,
+				},
 				cursor,
 				limit,
 			}),
@@ -150,7 +154,10 @@ export async function getOwnedKiosks(
 				filter: {
 					StructType: KIOSK_OWNER_CAP,
 				},
-				cursor,
+				options: {
+					showContent: true,
+					showType: true,
+				},
 				limit: remainingLimit,
 			}),
 			OWNED_KIOSKS_CURSOR,
@@ -172,6 +179,10 @@ export async function getOwnedKiosks(
 			owner: address,
 			filter: {
 				StructType: KIOSK_OWNER_CAP,
+			},
+			options: {
+				showContent: true,
+				showType: true,
 			},
 			// cursor might be an empty string if the number of personal kiosks was a multiple of the limit.
 			cursor: cursor ? cursor : null,
