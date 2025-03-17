@@ -68,9 +68,6 @@ export const namedPackagesPlugin = ({
 		// Compose types, and save in cache (for next runs).
 		Object.assign(cache.types, fixComposableTypes(names.types, cache.types));
 
-		// TODO: Once the API can support partial type resolution, we should
-		// resolve nested types separately. That will allow us to compose
-		// type resolution.
 		const [packages, types] = await Promise.all([
 			resolvePackages(
 				names.packages.filter((x) => !cache.packages[x]),
