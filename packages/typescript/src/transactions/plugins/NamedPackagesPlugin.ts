@@ -1,20 +1,16 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { SuiGraphQLClient } from '../../graphql/client.js';
 import type { BuildTransactionOptions } from '../json-rpc-resolver.js';
 import type { TransactionDataBuilder } from '../TransactionData.js';
-import type { NamedPackagesPluginCache, NameResolutionRequest } from './utils.js';
-import { findTransactionBlockNames, listToRequests, replaceNames } from './utils.js';
+import type { NamedPackagesPluginCache } from './utils.js';
+import { batch, findTransactionBlockNames, replaceNames } from './utils.js';
 
 export type NamedPackagesPluginOptions = {
 	/**
-	 * The SuiGraphQLClient to use for resolving names.
-	 * The endpoint should be the GraphQL endpoint of the network you are targeting.
-	 * For non-mainnet networks, if the plugin doesn't work as expected, you need to validate that the
-	 * RPC provider has support for the `packageByName` and `typeByName` queries (using external resolver).
+	 * The URL of the MVR API to use for resolving names.
 	 */
-	suiGraphQLClient: SuiGraphQLClient;
+	url: string;
 	/**
 	 * The number of names to resolve in each batch request.
 	 * Needs to be calculated based on the GraphQL query limits.
@@ -53,8 +49,8 @@ export type NamedPackagesPluginOptions = {
  * You can also define `overrides` to pre-populate name resolutions locally (removes the GraphQL request).
  */
 export const namedPackagesPlugin = ({
-	suiGraphQLClient,
-	pageSize = 10,
+	url,
+	pageSize = 50,
 	overrides = { packages: {}, types: {} },
 }: NamedPackagesPluginOptions) => {
 	const cache = {
@@ -68,62 +64,94 @@ export const namedPackagesPlugin = ({
 		next: () => Promise<void>,
 	) => {
 		const names = findTransactionBlockNames(transactionData);
-		const batches = listToRequests(
-			{
-				packages: names.packages.filter((x) => !cache.packages[x]),
-				types: names.types.filter((x) => !cache.types[x]),
-			},
-			pageSize,
-		);
 
-		// now we need to bulk resolve all the names + types, and replace them in the transaction data.
-		(await Promise.all(batches.map((batch) => query(suiGraphQLClient, batch)))).forEach((res) => {
-			Object.assign(cache.types, res.types);
-			Object.assign(cache.packages, res.packages);
-		});
+		// TODO: Once the API can support partial type resolution, we should
+		// resolve nested types separately. That will allow us to compose
+		// type resolution.
+		const [packages, types] = await Promise.all([
+			resolvePackages(
+				names.packages.filter((x) => !cache.packages[x]),
+				url,
+				pageSize,
+			),
+			resolveTypes(
+				names.types.filter((x) => !cache.types[x]),
+				url,
+				pageSize,
+			),
+		]);
+
+		Object.assign(cache.packages, packages);
+		Object.assign(cache.types, types);
 
 		replaceNames(transactionData, cache);
 
 		await next();
 	};
 
-	async function query(client: SuiGraphQLClient, requests: NameResolutionRequest[]) {
-		const results: NamedPackagesPluginCache = { packages: {}, types: {} };
-		// avoid making a request if there are no names to resolve.
-		if (requests.length === 0) return results;
+	async function resolvePackages(packages: string[], apiUrl: string, pageSize: number) {
+		const batches = batch(packages, pageSize);
 
-		// Create multiple queries for each name / type we need to resolve
-		// TODO: Replace with bulk APIs when available.
-		const gqlQuery = `{
-        ${requests.map((req) => {
-					const request = req.type === 'package' ? 'packageByName' : 'typeByName';
-					const fields = req.type === 'package' ? 'address' : 'repr';
+		const results: Record<string, string> = {};
 
-					return `${gqlQueryKey(req.id)}: ${request}(name:"${req.name}") {
-                    ${fields}
-                }`;
-				})}
-    }`;
+		await Promise.all(
+			batches.map(async (batch) => {
+				const response = await fetch(`${apiUrl}/v1/resolution/bulk`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						names: batch,
+					}),
+				});
 
-		const result = await client.query({
-			query: gqlQuery,
-			variables: undefined,
-		});
+				const data = await response.json();
 
-		if (result.errors) throw new Error(JSON.stringify({ query: gqlQuery, errors: result.errors }));
+				if (!response.ok) throw new Error(`Failed to resolve packages: ${data?.message}`);
+				if (!data?.resolution) return;
 
-		// Parse the results and create a map of `<name|type> -> <address|repr>`
-		for (const req of requests) {
-			const key = gqlQueryKey(req.id);
-			if (!result.data || !result.data[key]) throw new Error(`No result found for: ${req.name}`);
-			const data = result.data[key] as { address?: string; repr?: string };
+				for (const pkg of Object.keys(data?.resolution)) {
+					const pkgData = data.resolution[pkg]?.package_id;
 
-			if (req.type === 'package') results.packages[req.name] = data.address!;
-			if (req.type === 'moveType') results.types[req.name] = data.repr!;
-		}
+					if (!pkgData) continue;
+
+					results[pkg] = pkgData;
+				}
+			}),
+		);
+
+		return results;
+	}
+
+	async function resolveTypes(types: string[], apiUrl: string, pageSize: number) {
+		const batches = batch(types, pageSize);
+
+		const results: Record<string, string> = {};
+
+		await Promise.all(
+			batches.map(async (batch) => {
+				const response = await fetch(`${apiUrl}/v1/type-resolution/bulk`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						types: batch,
+					}),
+				});
+
+				const data = await response.json();
+
+				if (!response.ok) throw new Error(`Failed to resolve types: ${data?.message}`);
+
+				if (!data?.resolution) return;
+
+				for (const type of Object.keys(data?.resolution)) {
+					const typeData = data.resolution[type]?.type_tag;
+					if (!typeData) continue;
+
+					results[type] = typeData;
+				}
+			}),
+		);
 
 		return results;
 	}
 };
-
-const gqlQueryKey = (idx: number) => `key_${idx}`;

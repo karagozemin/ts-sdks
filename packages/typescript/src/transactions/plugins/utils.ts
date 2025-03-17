@@ -114,31 +114,7 @@ export const replaceNames = (builder: TransactionDataBuilder, cache: NamedPackag
 	}
 };
 
-export const listToRequests = (
-	names: { packages: string[]; types: string[] },
-	batchSize: number,
-): NameResolutionRequest[][] => {
-	const results: NameResolutionRequest[] = [];
-	const uniqueNames = deduplicate(names.packages);
-	const uniqueTypes = deduplicate(names.types);
-
-	for (const [idx, name] of uniqueNames.entries()) {
-		results.push({ id: idx, type: 'package', name } as NameResolutionRequest);
-	}
-	for (const [idx, type] of uniqueTypes.entries()) {
-		results.push({
-			id: idx + uniqueNames.length,
-			type: 'moveType',
-			name: type,
-		} as NameResolutionRequest);
-	}
-
-	return batch(results, batchSize);
-};
-
-const deduplicate = <T>(arr: T[]): T[] => [...new Set(arr)];
-
-const batch = <T>(arr: T[], size: number): T[][] => {
+export const batch = <T>(arr: T[], size: number): T[][] => {
 	const batches = [];
 	for (let i = 0; i < arr.length; i += size) {
 		batches.push(arr.slice(i, i + size));

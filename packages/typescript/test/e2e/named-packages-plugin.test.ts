@@ -3,34 +3,52 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { SuiGraphQLClient } from '../../src/graphql/client';
+import { getFullnodeUrl, SuiClient } from '../../src/client';
 import { namedPackagesPlugin, Transaction } from '../../src/transactions';
 import { normalizeSuiAddress } from '../../src/utils';
 
-const DEFAULT_GRAPHQL_URL = import.meta.env.GRAPHQL_URL ?? 'http://127.0.0.1:9125';
-Transaction.registerGlobalSerializationPlugin(
-	'namedPackagesPlugin',
-	namedPackagesPlugin({
-		suiGraphQLClient: new SuiGraphQLClient({
-			url: DEFAULT_GRAPHQL_URL,
-		}),
-		overrides: {
-			packages: {
-				'@framework/std': '0x1',
-				'@framework/std/1': '0x1',
-			},
-			types: {
-				'@framework/std::string::String': '0x1::string::String',
-				'@framework/std::vector::empty<@framework/std::string::String>':
-					'0x1::vector::empty<0x1::string::String>',
-			},
+const mainnetPlugin = namedPackagesPlugin({
+	url: 'https://qa.mainnet.mvr.mystenlabs.com',
+	overrides: {
+		packages: {
+			'@framework/std': '0x1',
+			'@framework/std/1': '0x1',
 		},
-	}),
-);
+		types: {
+			'@framework/std::string::String': '0x1::string::String',
+			'@framework/std::vector::empty<@framework/std::string::String>':
+				'0x1::vector::empty<0x1::string::String>',
+		},
+	},
+});
 
-describe('Name Resolution Plugin (.move)', () => {
+const testnetPlugin = namedPackagesPlugin({
+	url: 'https://qa.testnet.mvr.mystenlabs.com',
+	overrides: {
+		packages: {
+			'@framework/std': '0x1',
+			'@framework/std/1': '0x1',
+		},
+		types: {
+			'@framework/std::string::String': '0x1::string::String',
+			'@framework/std::vector::empty<@framework/std::string::String>':
+				'0x1::vector::empty<0x1::string::String>',
+		},
+	},
+});
+
+const dryRun = async (transaction: Transaction, network: 'mainnet' | 'testnet') => {
+	const client = new SuiClient({ url: getFullnodeUrl(network) });
+
+	transaction.setSender(normalizeSuiAddress('0x2'));
+
+	return client.dryRunTransactionBlock({ transactionBlock: await transaction.build({ client }) });
+};
+
+describe.concurrent('Name Resolution Plugin (.move)', () => {
 	it('Should replace names in a given PTB', async () => {
 		const transaction = new Transaction();
+		transaction.addSerializationPlugin(mainnetPlugin);
 
 		// replace .move names properly
 		transaction.moveCall({
@@ -65,7 +83,84 @@ describe('Name Resolution Plugin (.move)', () => {
 			`0x1::vector::empty<0x1::string::String>`,
 		);
 	});
+});
 
-	// TODO: Add some tests utilizing live GraphQL Queries (mainnet / testnet),
-	// not just overrides.
+describe.concurrent('Name Resolution Plugin (MVR) - Mainnet', () => {
+	it('Should replace target calls in a given PTB', async () => {
+		const transaction = new Transaction();
+
+		transaction.addSerializationPlugin(mainnetPlugin);
+
+		let v1 = transaction.moveCall({
+			target: `@pkg/qwer::mvr_a::new_v1`,
+		});
+
+		transaction.moveCall({
+			target: `@pkg/qwer::mvr_a::new`,
+			arguments: [v1],
+		});
+
+		const res = await dryRun(transaction, 'mainnet');
+		expect(res.effects.status.status).toEqual('success');
+	});
+
+	it('Should replace target calls AND types in a given PTB', async () => {
+		const transaction = new Transaction();
+
+		transaction.addSerializationPlugin(mainnetPlugin);
+
+		transaction.moveCall({
+			target: `@pkg/qwer::mvr_a::noop_with_one_type_param`,
+			typeArguments: ['@pkg/qwer::mvr_a::V1'],
+		});
+
+		// this combines multiple versions of the same package (v3, v2, v1)
+		transaction.moveCall({
+			target: `@pkg/qwer::mvr_a::noop_with_two_type_params`,
+			typeArguments: ['@pkg/qwer::mvr_a::V1', '@pkg/qwer::mvr_b::V2'],
+		});
+
+		const res = await dryRun(transaction, 'mainnet');
+		expect(res.effects.status.status).toEqual('success');
+	});
+});
+
+describe.concurrent('Name Resolution Plugin (MVR) - Testnet', () => {
+	it('Should replace target calls in a given PTB', async () => {
+		const transaction = new Transaction();
+
+		transaction.addSerializationPlugin(testnetPlugin);
+
+		let v1 = transaction.moveCall({
+			target: `@pkg/qwer::mvr_a::new_v1`,
+		});
+
+		transaction.moveCall({
+			target: `@pkg/qwer::mvr_a::new`,
+			arguments: [v1],
+		});
+
+		const res = await dryRun(transaction, 'testnet');
+		expect(res.effects.status.status).toEqual('success');
+	});
+
+	it('Should replace target calls AND types in a given PTB', async () => {
+		const transaction = new Transaction();
+
+		transaction.addSerializationPlugin(testnetPlugin);
+
+		transaction.moveCall({
+			target: `@pkg/qwer::mvr_a::noop_with_one_type_param`,
+			typeArguments: ['@pkg/qwer::mvr_a::V1'],
+		});
+
+		// this combines multiple versions of the same package (v3, v2, v1)
+		transaction.moveCall({
+			target: `@pkg/qwer::mvr_a::noop_with_two_type_params`,
+			typeArguments: ['@pkg/qwer::mvr_a::V1', '@pkg/qwer::mvr_b::V2'],
+		});
+
+		const res = await dryRun(transaction, 'testnet');
+		expect(res.effects.status.status).toEqual('success');
+	});
 });
