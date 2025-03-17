@@ -62,7 +62,7 @@ const dryRun = async (transaction: Transaction, network: 'mainnet' | 'testnet') 
 	return client.dryRunTransactionBlock({ transactionBlock: await transaction.build({ client }) });
 };
 
-describe.concurrent('Name Resolution Plugin (.move)', () => {
+describe.concurrent('Name Resolution Plugin', () => {
 	it('Should replace names in a given PTB', async () => {
 		const transaction = new Transaction();
 		transaction.addSerializationPlugin(mainnetPlugin);
@@ -117,6 +117,15 @@ describe.concurrent('Name Resolution Plugin (MVR) - Mainnet', () => {
 			arguments: [v1],
 		});
 
+		transaction.makeMoveVec({
+			type: '@pkg/qwer::mvr_a::V1',
+			elements: [
+				transaction.moveCall({
+					target: `@pkg/qwer::mvr_a::new_v1`,
+				}),
+			],
+		});
+
 		const res = await dryRun(transaction, 'mainnet');
 		expect(res.effects.status.status).toEqual('success');
 	});
@@ -155,6 +164,15 @@ describe.concurrent('Name Resolution Plugin (MVR) - Testnet', () => {
 		transaction.moveCall({
 			target: `@pkg/qwer::mvr_a::new`,
 			arguments: [v1],
+		});
+
+		transaction.makeMoveVec({
+			type: '@pkg/qwer::mvr_a::V1',
+			elements: [
+				transaction.moveCall({
+					target: `@pkg/qwer::mvr_a::new_v1`,
+				}),
+			],
 		});
 
 		const res = await dryRun(transaction, 'testnet');
