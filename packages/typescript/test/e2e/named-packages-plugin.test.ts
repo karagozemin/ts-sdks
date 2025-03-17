@@ -54,6 +54,62 @@ const localCachePlugin = namedPackagesPlugin({
 	},
 });
 
+const simplePtb = async (network: 'mainnet' | 'testnet') => {
+	const transaction = new Transaction();
+
+	transaction.addSerializationPlugin(network === 'mainnet' ? mainnetPlugin : testnetPlugin);
+
+	let v1 = transaction.moveCall({
+		target: `@pkg/qwer::mvr_a::new_v1`,
+	});
+
+	transaction.moveCall({
+		target: `@pkg/qwer::mvr_a::new`,
+		arguments: [v1],
+	});
+
+	transaction.makeMoveVec({
+		type: '@pkg/qwer::mvr_a::V1',
+		elements: [
+			transaction.moveCall({
+				target: `@pkg/qwer::mvr_a::new_v1`,
+			}),
+		],
+	});
+
+	// Adding a move call with regular addresses, to validate that
+	// a mix of addresses & names work too (in the same PTB).
+	const coin = transaction.moveCall({
+		target: '0x2::coin::zero',
+		typeArguments: ['0x2::sui::SUI'],
+	});
+
+	transaction.transferObjects([coin], normalizeSuiAddress('0x2'));
+
+	const res = await dryRun(transaction, network);
+	expect(res.effects.status.status).toEqual('success');
+};
+
+const nestedTypeArgsPtb = async (network: 'mainnet' | 'testnet') => {
+	const transaction = new Transaction();
+
+	transaction.addSerializationPlugin(network === 'mainnet' ? mainnetPlugin : testnetPlugin);
+
+	transaction.moveCall({
+		target: `@pkg/qwer::mvr_a::noop_with_one_type_param`,
+		typeArguments: ['@pkg/qwer::mvr_a::V1'],
+	});
+
+	// this combines multiple versions of the same package (v3, v2, v1)
+	transaction.moveCall({
+		target: `@pkg/qwer::mvr_a::noop_with_two_type_params`,
+		typeArguments: ['@pkg/qwer::mvr_a::V1', '@pkg/qwer::mvr_b::V2'],
+	});
+
+	const res = await dryRun(transaction, network);
+	expect(res.effects.status.status).toEqual('success');
+};
+
 const dryRun = async (transaction: Transaction, network: 'mainnet' | 'testnet') => {
 	const client = new SuiClient({ url: getFullnodeUrl(network) });
 
@@ -104,99 +160,21 @@ describe.concurrent('Name Resolution Plugin', () => {
 
 describe.concurrent('Name Resolution Plugin (MVR) - Mainnet', () => {
 	it('Should replace target calls in a given PTB', async () => {
-		const transaction = new Transaction();
-
-		transaction.addSerializationPlugin(mainnetPlugin);
-
-		let v1 = transaction.moveCall({
-			target: `@pkg/qwer::mvr_a::new_v1`,
-		});
-
-		transaction.moveCall({
-			target: `@pkg/qwer::mvr_a::new`,
-			arguments: [v1],
-		});
-
-		transaction.makeMoveVec({
-			type: '@pkg/qwer::mvr_a::V1',
-			elements: [
-				transaction.moveCall({
-					target: `@pkg/qwer::mvr_a::new_v1`,
-				}),
-			],
-		});
-
-		const res = await dryRun(transaction, 'mainnet');
-		expect(res.effects.status.status).toEqual('success');
+		await simplePtb('mainnet');
 	});
 
 	it('Should replace target calls AND types in a given PTB', async () => {
-		const transaction = new Transaction();
-
-		transaction.addSerializationPlugin(mainnetPlugin);
-
-		transaction.moveCall({
-			target: `@pkg/qwer::mvr_a::noop_with_one_type_param`,
-			typeArguments: ['@pkg/qwer::mvr_a::V1'],
-		});
-
-		// this combines multiple versions of the same package (v3, v2, v1)
-		transaction.moveCall({
-			target: `@pkg/qwer::mvr_a::noop_with_two_type_params`,
-			typeArguments: ['@pkg/qwer::mvr_a::V1', '@pkg/qwer::mvr_b::V2'],
-		});
-
-		const res = await dryRun(transaction, 'mainnet');
-		expect(res.effects.status.status).toEqual('success');
+		await nestedTypeArgsPtb('mainnet');
 	});
 });
 
 describe.concurrent('Name Resolution Plugin (MVR) - Testnet', () => {
 	it('Should replace target calls in a given PTB', async () => {
-		const transaction = new Transaction();
-
-		transaction.addSerializationPlugin(testnetPlugin);
-
-		let v1 = transaction.moveCall({
-			target: `@pkg/qwer::mvr_a::new_v1`,
-		});
-
-		transaction.moveCall({
-			target: `@pkg/qwer::mvr_a::new`,
-			arguments: [v1],
-		});
-
-		transaction.makeMoveVec({
-			type: '@pkg/qwer::mvr_a::V1',
-			elements: [
-				transaction.moveCall({
-					target: `@pkg/qwer::mvr_a::new_v1`,
-				}),
-			],
-		});
-
-		const res = await dryRun(transaction, 'testnet');
-		expect(res.effects.status.status).toEqual('success');
+		await simplePtb('testnet');
 	});
 
 	it('Should replace target calls AND types in a given PTB', async () => {
-		const transaction = new Transaction();
-
-		transaction.addSerializationPlugin(testnetPlugin);
-
-		transaction.moveCall({
-			target: `@pkg/qwer::mvr_a::noop_with_one_type_param`,
-			typeArguments: ['@pkg/qwer::mvr_a::V1'],
-		});
-
-		// this combines multiple versions of the same package (v3, v2, v1)
-		transaction.moveCall({
-			target: `@pkg/qwer::mvr_a::noop_with_two_type_params`,
-			typeArguments: ['@pkg/qwer::mvr_a::V1', '@pkg/qwer::mvr_b::V2'],
-		});
-
-		const res = await dryRun(transaction, 'testnet');
-		expect(res.effects.status.status).toEqual('success');
+		await nestedTypeArgsPtb('testnet');
 	});
 });
 
