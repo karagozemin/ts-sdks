@@ -54,70 +54,6 @@ const localCachePlugin = namedPackagesPlugin({
 	},
 });
 
-const simplePtb = async (network: 'mainnet' | 'testnet') => {
-	const transaction = new Transaction();
-
-	transaction.addSerializationPlugin(network === 'mainnet' ? mainnetPlugin : testnetPlugin);
-
-	let v1 = transaction.moveCall({
-		target: `@pkg/qwer::mvr_a::new_v1`,
-	});
-
-	transaction.moveCall({
-		target: `@pkg/qwer::mvr_a::new`,
-		arguments: [v1],
-	});
-
-	transaction.makeMoveVec({
-		type: '@pkg/qwer::mvr_a::V1',
-		elements: [
-			transaction.moveCall({
-				target: `@pkg/qwer::mvr_a::new_v1`,
-			}),
-		],
-	});
-
-	// Adding a move call with regular addresses, to validate that
-	// a mix of addresses & names work too (in the same PTB).
-	const coin = transaction.moveCall({
-		target: '0x2::coin::zero',
-		typeArguments: ['0x2::sui::SUI'],
-	});
-
-	transaction.transferObjects([coin], normalizeSuiAddress('0x2'));
-
-	const res = await dryRun(transaction, network);
-	expect(res.effects.status.status).toEqual('success');
-};
-
-const nestedTypeArgsPtb = async (network: 'mainnet' | 'testnet') => {
-	const transaction = new Transaction();
-
-	transaction.addSerializationPlugin(network === 'mainnet' ? mainnetPlugin : testnetPlugin);
-
-	transaction.moveCall({
-		target: `@pkg/qwer::mvr_a::noop_with_one_type_param`,
-		typeArguments: ['@pkg/qwer::mvr_a::V1'],
-	});
-
-	// this combines multiple versions of the same package (v3, v2, v1)
-	transaction.moveCall({
-		target: `@pkg/qwer::mvr_a::noop_with_two_type_params`,
-		typeArguments: ['@pkg/qwer::mvr_a::V1', '@pkg/qwer::mvr_b::V2'],
-	});
-
-	const res = await dryRun(transaction, network);
-	expect(res.effects.status.status).toEqual('success');
-};
-
-const dryRun = async (transaction: Transaction, network: 'mainnet' | 'testnet') => {
-	const client = new SuiClient({ url: getFullnodeUrl(network) });
-
-	transaction.setSender(normalizeSuiAddress('0x2'));
-
-	return client.dryRunTransactionBlock({ transactionBlock: await transaction.build({ client }) });
-};
-
 describe.concurrent('Name Resolution Plugin', () => {
 	it('Should replace names in a given PTB', async () => {
 		const transaction = new Transaction();
@@ -223,3 +159,67 @@ describe.concurrent('Name Resolution Plugin (Local Cache)', () => {
 		expect(res.effects.status.status).toEqual('success');
 	});
 });
+
+const simplePtb = async (network: 'mainnet' | 'testnet') => {
+	const transaction = new Transaction();
+
+	transaction.addSerializationPlugin(network === 'mainnet' ? mainnetPlugin : testnetPlugin);
+
+	let v1 = transaction.moveCall({
+		target: `@pkg/qwer::mvr_a::new_v1`,
+	});
+
+	transaction.moveCall({
+		target: `@pkg/qwer::mvr_a::new`,
+		arguments: [v1],
+	});
+
+	transaction.makeMoveVec({
+		type: '@pkg/qwer::mvr_a::V1',
+		elements: [
+			transaction.moveCall({
+				target: `@pkg/qwer::mvr_a::new_v1`,
+			}),
+		],
+	});
+
+	// Adding a move call with regular addresses, to validate that
+	// a mix of addresses & names work too (in the same PTB).
+	const coin = transaction.moveCall({
+		target: '0x2::coin::zero',
+		typeArguments: ['0x2::sui::SUI'],
+	});
+
+	transaction.transferObjects([coin], normalizeSuiAddress('0x2'));
+
+	const res = await dryRun(transaction, network);
+	expect(res.effects.status.status).toEqual('success');
+};
+
+const nestedTypeArgsPtb = async (network: 'mainnet' | 'testnet') => {
+	const transaction = new Transaction();
+
+	transaction.addSerializationPlugin(network === 'mainnet' ? mainnetPlugin : testnetPlugin);
+
+	transaction.moveCall({
+		target: `@pkg/qwer::mvr_a::noop_with_one_type_param`,
+		typeArguments: ['@pkg/qwer::mvr_a::V1'],
+	});
+
+	// this combines multiple versions of the same package (v3, v2, v1)
+	transaction.moveCall({
+		target: `@pkg/qwer::mvr_a::noop_with_two_type_params`,
+		typeArguments: ['@pkg/qwer::mvr_a::V1', '@pkg/qwer::mvr_b::V2'],
+	});
+
+	const res = await dryRun(transaction, network);
+	expect(res.effects.status.status).toEqual('success');
+};
+
+const dryRun = async (transaction: Transaction, network: 'mainnet' | 'testnet') => {
+	const client = new SuiClient({ url: getFullnodeUrl(network) });
+
+	transaction.setSender(normalizeSuiAddress('0x2'));
+
+	return client.dryRunTransactionBlock({ transactionBlock: await transaction.build({ client }) });
+};
