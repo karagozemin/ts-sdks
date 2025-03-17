@@ -57,6 +57,33 @@ export const findTransactionBlockNames = (
 };
 
 /**
+ * Allows partial replacements of known types with their resolved equivalents.
+ * E.g. `@mvr/demo::a::A<@mvr/demo::b::B>` can be resolved, if we already have
+ * the address for `@mvr/demo::b::B` and the address for `@mvr/demo::a::A`,
+ * without the need to have the full type in the cache.
+ *
+ * Returns composed cached types.
+ */
+export const fixComposableTypes = (
+	types: string[],
+	typeCache: Record<string, string>,
+): Record<string, string> => {
+	const newTypes: Record<string, string> = {};
+	for (const type of types) {
+		// if we already have a resolution for this type, skip.
+		if (typeCache[type]) continue;
+		let replacement = type;
+		for (const [name, address] of Object.entries(typeCache)) {
+			if (type.includes(name)) replacement = replacement.replaceAll(name, address);
+		}
+
+		if (replacement !== type) newTypes[type] = replacement;
+	}
+
+	return newTypes;
+};
+
+/**
  * Returns a list of unique types that include a name
  * from the given list.
  *  */

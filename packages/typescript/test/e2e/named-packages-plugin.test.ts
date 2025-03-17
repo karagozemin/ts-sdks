@@ -37,6 +37,23 @@ const testnetPlugin = namedPackagesPlugin({
 	},
 });
 
+// A local plugin that does not do any online resolution,
+// but can work for the pre-defined cache.
+const localCachePlugin = namedPackagesPlugin({
+	url: '', // empty URL, no online resolution.
+	overrides: {
+		packages: {
+			'@framework/std': '0x1',
+			'@framework/sui': '0x2',
+		},
+		types: {
+			'@framework/sui::vec_set::VecSet': '0x2::vec_set::VecSet',
+			'@framework/std::string::String': '0x1::string::String',
+			'@framework/sui::sui::SUI': '0x2::sui::SUI',
+		},
+	},
+});
+
 const dryRun = async (transaction: Transaction, network: 'mainnet' | 'testnet') => {
 	const client = new SuiClient({ url: getFullnodeUrl(network) });
 
@@ -158,6 +175,52 @@ describe.concurrent('Name Resolution Plugin (MVR) - Testnet', () => {
 		transaction.moveCall({
 			target: `@pkg/qwer::mvr_a::noop_with_two_type_params`,
 			typeArguments: ['@pkg/qwer::mvr_a::V1', '@pkg/qwer::mvr_b::V2'],
+		});
+
+		const res = await dryRun(transaction, 'testnet');
+		expect(res.effects.status.status).toEqual('success');
+	});
+});
+
+describe.concurrent('Name Resolution Plugin (Local Cache)', () => {
+	it('Should replace composite types in a given PTB', async () => {
+		const transaction = new Transaction();
+		transaction.addSerializationPlugin(localCachePlugin);
+
+		const zeroCoin = transaction.moveCall({
+			target: '@framework/sui::coin::zero',
+			typeArguments: ['@framework/sui::sui::SUI'],
+		});
+
+		transaction.transferObjects([zeroCoin], normalizeSuiAddress('0x2'));
+
+		// Types are composed here, without needing any API calls, even if we do not have the
+		// full type in the cache.
+		transaction.moveCall({
+			target: '@framework/std::vector::empty',
+			typeArguments: ['@framework/sui::vec_set::VecSet<@framework/std::string::String>'],
+		});
+
+		const res = await dryRun(transaction, 'testnet');
+		expect(res.effects.status.status).toEqual('success');
+	});
+
+	it('Should replace compsite types twice, and not have any weird side effects', async () => {
+		const transaction = new Transaction();
+		transaction.addSerializationPlugin(localCachePlugin);
+
+		const zeroCoin = transaction.moveCall({
+			target: '@framework/sui::coin::zero',
+			typeArguments: ['@framework/sui::sui::SUI'],
+		});
+
+		transaction.transferObjects([zeroCoin], normalizeSuiAddress('0x2'));
+
+		// Types are composed here, without needing any API calls, even if we do not have the
+		// full type in the cache.
+		transaction.moveCall({
+			target: '@framework/std::vector::empty',
+			typeArguments: ['@framework/sui::vec_set::VecSet<@framework/std::string::String>'],
 		});
 
 		const res = await dryRun(transaction, 'testnet');

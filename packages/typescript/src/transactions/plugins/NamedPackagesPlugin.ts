@@ -4,7 +4,7 @@
 import type { BuildTransactionOptions } from '../json-rpc-resolver.js';
 import type { TransactionDataBuilder } from '../TransactionData.js';
 import type { NamedPackagesPluginCache } from './utils.js';
-import { batch, findTransactionBlockNames, replaceNames } from './utils.js';
+import { batch, findTransactionBlockNames, fixComposableTypes, replaceNames } from './utils.js';
 
 export type NamedPackagesPluginOptions = {
 	/**
@@ -65,6 +65,9 @@ export const namedPackagesPlugin = ({
 	) => {
 		const names = findTransactionBlockNames(transactionData);
 
+		// Compose types, and save in cache (for next runs).
+		Object.assign(cache.types, fixComposableTypes(names.types, cache.types));
+
 		// TODO: Once the API can support partial type resolution, we should
 		// resolve nested types separately. That will allow us to compose
 		// type resolution.
@@ -90,8 +93,9 @@ export const namedPackagesPlugin = ({
 	};
 
 	async function resolvePackages(packages: string[], apiUrl: string, pageSize: number) {
-		const batches = batch(packages, pageSize);
+		if (packages.length === 0) return {};
 
+		const batches = batch(packages, pageSize);
 		const results: Record<string, string> = {};
 
 		await Promise.all(
@@ -123,8 +127,9 @@ export const namedPackagesPlugin = ({
 	}
 
 	async function resolveTypes(types: string[], apiUrl: string, pageSize: number) {
-		const batches = batch(types, pageSize);
+		if (types.length === 0) return {};
 
+		const batches = batch(types, pageSize);
 		const results: Record<string, string> = {};
 
 		await Promise.all(
