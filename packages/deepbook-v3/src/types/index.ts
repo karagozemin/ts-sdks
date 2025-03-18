@@ -11,18 +11,6 @@ export interface BalanceManager {
 	withdrawCap?: string;
 }
 
-export interface Coin {
-	address: string;
-	type: string;
-	scalar: number;
-}
-
-export interface Pool {
-	address: string;
-	baseCoin: string;
-	quoteCoin: string;
-}
-
 // Trading constants
 export enum OrderType {
 	NO_RESTRICTION,
@@ -39,8 +27,10 @@ export enum SelfMatchingOptions {
 }
 
 export interface PlaceLimitOrderParams {
-	poolKey: string;
-	balanceManagerKey: string;
+	poolAddress: string;
+	balanceManagerAddress: string;
+	baseCoinType: string;
+	quoteCoinType: string;
 	clientOrderId: string;
 	price: number;
 	quantity: number;
@@ -52,8 +42,10 @@ export interface PlaceLimitOrderParams {
 }
 
 export interface PlaceMarketOrderParams {
-	poolKey: string;
-	balanceManagerKey: string;
+	poolAddress: string;
+	balanceManagerAddress: string;
+	baseCoinType: string;
+	quoteCoinType: string;
 	clientOrderId: string;
 	quantity: number;
 	isBid: boolean;
@@ -62,15 +54,15 @@ export interface PlaceMarketOrderParams {
 }
 
 export interface ProposalParams {
-	poolKey: string;
-	balanceManagerKey: string;
+	poolAddress: string;
+	balanceManagerAddress: string;
 	takerFee: number;
 	makerFee: number;
 	stakeRequired: number;
 }
 
 export interface SwapParams {
-	poolKey: string;
+	poolAddress: string;
 	amount: number;
 	deepAmount: number;
 	minOut: number;
@@ -80,8 +72,8 @@ export interface SwapParams {
 }
 
 export interface CreatePoolAdminParams {
-	baseCoinKey: string;
-	quoteCoinKey: string;
+	baseCoinAddress: string;
+	quoteCoinAddress: string;
 	tickSize: number;
 	lotSize: number;
 	minSize: number;
@@ -90,8 +82,8 @@ export interface CreatePoolAdminParams {
 }
 
 export interface CreatePermissionlessPoolParams {
-	baseCoinKey: string;
-	quoteCoinKey: string;
+	baseCoinAddress: string;
+	quoteCoinAddress: string;
 	tickSize: number;
 	lotSize: number;
 	minSize: number;

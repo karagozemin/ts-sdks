@@ -40,8 +40,10 @@ export class DeepBookContract {
 	 */
 	placeLimitOrder = (params: PlaceLimitOrderParams) => (tx: Transaction) => {
 		const {
-			poolKey,
-			balanceManagerKey,
+			poolAddress,
+			baseCoinType,
+			quoteCoinType,
+			balanceManagerAddress,
 			clientOrderId,
 			price,
 			quantity,
@@ -53,32 +55,25 @@ export class DeepBookContract {
 		} = params;
 
 		tx.setGasBudgetIfNotSet(GAS_BUDGET);
-		const pool = this.#config.getPool(poolKey);
-		const balanceManager = this.#config.getBalanceManager(balanceManagerKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const inputPrice = Math.round((price * FLOAT_SCALAR * quoteCoin.scalar) / baseCoin.scalar);
-		const inputQuantity = Math.round(quantity * baseCoin.scalar);
-
-		const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerKey));
+		const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
 
 		tx.moveCall({
 			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::place_limit_order`,
 			arguments: [
-				tx.object(pool.address),
-				tx.object(balanceManager.address),
+				tx.object(poolAddress),
+				tx.object(balanceManagerAddress),
 				tradeProof,
 				tx.pure.u64(clientOrderId),
 				tx.pure.u8(orderType),
 				tx.pure.u8(selfMatchingOption),
-				tx.pure.u64(inputPrice),
-				tx.pure.u64(inputQuantity),
+				tx.pure.u64(price),
+				tx.pure.u64(quantity),
 				tx.pure.bool(isBid),
 				tx.pure.bool(payWithDeep),
 				tx.pure.u64(expiration),
 				tx.object(SUI_CLOCK_OBJECT_ID),
 			],
-			typeArguments: [baseCoin.type, quoteCoin.type],
+			typeArguments: [baseCoinType, quoteCoinType],
 		});
 	};
 
@@ -89,8 +84,10 @@ export class DeepBookContract {
 	 */
 	placeMarketOrder = (params: PlaceMarketOrderParams) => (tx: Transaction) => {
 		const {
-			poolKey,
-			balanceManagerKey,
+			poolAddress,
+			baseCoinType,
+			quoteCoinType,
+			balanceManagerAddress,
 			clientOrderId,
 			quantity,
 			isBid,
@@ -99,315 +96,334 @@ export class DeepBookContract {
 		} = params;
 
 		tx.setGasBudgetIfNotSet(GAS_BUDGET);
-		const pool = this.#config.getPool(poolKey);
-		const balanceManager = this.#config.getBalanceManager(balanceManagerKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerKey));
-		const inputQuantity = Math.round(quantity * baseCoin.scalar);
+		const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
 
 		tx.moveCall({
 			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::place_market_order`,
 			arguments: [
-				tx.object(pool.address),
-				tx.object(balanceManager.address),
+				tx.object(poolAddress),
+				tx.object(balanceManagerAddress),
 				tradeProof,
 				tx.pure.u64(clientOrderId),
 				tx.pure.u8(selfMatchingOption),
-				tx.pure.u64(inputQuantity),
+				tx.pure.u64(quantity),
 				tx.pure.bool(isBid),
 				tx.pure.bool(payWithDeep),
 				tx.object(SUI_CLOCK_OBJECT_ID),
 			],
-			typeArguments: [baseCoin.type, quoteCoin.type],
+			typeArguments: [baseCoinType, quoteCoinType],
 		});
 	};
 
 	/**
 	 * @description Modify an existing order
-	 * @param {string} poolKey The key to identify the pool
-	 * @param {string} balanceManagerKey The key to identify the BalanceManager
+	 * @param {string} poolAddress The address of the pool
+	 * @param {string} balanceManagerAddress The balance manager address
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @param {string} orderId Order ID to modify
 	 * @param {number} newQuantity New quantity for the order
 	 * @returns A function that takes a Transaction object
 	 */
 	modifyOrder =
-		(poolKey: string, balanceManagerKey: string, orderId: string, newQuantity: number) =>
+		(
+			poolAddress: string,
+			balanceManagerAddress: string,
+			baseCoinType: string,
+			quoteCoinType: string,
+			orderId: string,
+			newQuantity: number,
+		) =>
 		(tx: Transaction) => {
-			const pool = this.#config.getPool(poolKey);
-			const balanceManager = this.#config.getBalanceManager(balanceManagerKey);
-			const baseCoin = this.#config.getCoin(pool.baseCoin);
-			const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerKey));
-			const inputQuantity = Math.round(newQuantity * baseCoin.scalar);
+			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
 
 			tx.moveCall({
 				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::modify_order`,
 				arguments: [
-					tx.object(pool.address),
-					tx.object(balanceManager.address),
+					tx.object(poolAddress),
+					tx.object(balanceManagerAddress),
 					tradeProof,
 					tx.pure.u128(orderId),
-					tx.pure.u64(inputQuantity),
+					tx.pure.u64(newQuantity),
 					tx.object(SUI_CLOCK_OBJECT_ID),
 				],
-				typeArguments: [baseCoin.type, quoteCoin.type],
+				typeArguments: [baseCoinType, quoteCoinType],
 			});
 		};
 
 	/**
 	 * @description Cancel an existing order
-	 * @param {string} poolKey The key to identify the pool
-	 * @param {string} balanceManagerKey The key to identify the BalanceManager
+	 * @param {string} poolAddress The address of the pool
+	 * @param {string} balanceManagerAddress The balance manager address
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @param {string} orderId Order ID to cancel
 	 * @returns A function that takes a Transaction object
 	 */
 	cancelOrder =
-		(poolKey: string, balanceManagerKey: string, orderId: string) => (tx: Transaction) => {
+		(
+			poolAddress: string,
+			balanceManagerAddress: string,
+			baseCoinType: string,
+			quoteCoinType: string,
+			orderId: string,
+		) =>
+		(tx: Transaction) => {
 			tx.setGasBudgetIfNotSet(GAS_BUDGET);
-			const pool = this.#config.getPool(poolKey);
-			const balanceManager = this.#config.getBalanceManager(balanceManagerKey);
-			const baseCoin = this.#config.getCoin(pool.baseCoin);
-			const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerKey));
+			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
 
 			tx.moveCall({
 				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::cancel_order`,
 				arguments: [
-					tx.object(pool.address),
-					tx.object(balanceManager.address),
+					tx.object(poolAddress),
+					tx.object(balanceManagerAddress),
 					tradeProof,
 					tx.pure.u128(orderId),
 					tx.object(SUI_CLOCK_OBJECT_ID),
 				],
-				typeArguments: [baseCoin.type, quoteCoin.type],
+				typeArguments: [baseCoinType, quoteCoinType],
 			});
 		};
 
 	/**
 	 * @description Cancel all open orders for a balance manager
-	 * @param {string} poolKey The key to identify the pool
-	 * @param {string} balanceManagerKey The key to identify the BalanceManager
+	 * @param {string} poolAddress The address of the pool
+	 * @param {string} balanceManagerAddress The balance manager address
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns A function that takes a Transaction object
 	 */
-	cancelAllOrders = (poolKey: string, balanceManagerKey: string) => (tx: Transaction) => {
-		tx.setGasBudgetIfNotSet(GAS_BUDGET);
-		const pool = this.#config.getPool(poolKey);
-		const balanceManager = this.#config.getBalanceManager(balanceManagerKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerKey));
+	cancelAllOrders =
+		(
+			poolAddress: string,
+			balanceManagerAddress: string,
+			baseCoinType: string,
+			quoteCoinType: string,
+		) =>
+		(tx: Transaction) => {
+			tx.setGasBudgetIfNotSet(GAS_BUDGET);
+			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
 
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::cancel_all_orders`,
-			arguments: [
-				tx.object(pool.address),
-				tx.object(balanceManager.address),
-				tradeProof,
-				tx.object(SUI_CLOCK_OBJECT_ID),
-			],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::cancel_all_orders`,
+				arguments: [
+					tx.object(poolAddress),
+					tx.object(balanceManagerAddress),
+					tradeProof,
+					tx.object(SUI_CLOCK_OBJECT_ID),
+				],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Withdraw settled amounts for a balance manager
-	 * @param {string} poolKey The key to identify the pool
-	 * @param {string} balanceManagerKey The key to identify the BalanceManager
+	 * @param {string} poolAddress The address of the pool
+	 * @param {string} balanceManagerAddress The balance manager address
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns A function that takes a Transaction object
 	 */
-	withdrawSettledAmounts = (poolKey: string, balanceManagerKey: string) => (tx: Transaction) => {
-		const pool = this.#config.getPool(poolKey);
-		const balanceManager = this.#config.getBalanceManager(balanceManagerKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerKey));
+	withdrawSettledAmounts =
+		(
+			poolAddress: string,
+			balanceManagerAddress: string,
+			baseCoinType: string,
+			quoteCoinType: string,
+		) =>
+		(tx: Transaction) => {
+			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
 
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::withdraw_settled_amounts`,
-			arguments: [tx.object(pool.address), tx.object(balanceManager.address), tradeProof],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::withdraw_settled_amounts`,
+				arguments: [tx.object(poolAddress), tx.object(balanceManagerAddress), tradeProof],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Add a deep price point for a target pool using a reference pool
-	 * @param {string} targetPoolKey The key to identify the target pool
-	 * @param {string} referencePoolKey The key to identify the reference pool
+	 * @param {string} targetPoolAddress The address of the target pool
+	 * @param {string} targetBaseType The type of the base asset for the target pool
+	 * @param {string} targetQuoteType The type of the quote asset for the target pool
+	 * @param {string} referencePoolAddress The address of the reference pool
+	 * @param {string} referenceBaseType The type of the base asset for the reference pool
+	 * @param {string} referenceQuoteType The type of the quote asset for the reference pool
 	 * @returns A function that takes a Transaction object
 	 */
-	addDeepPricePoint = (targetPoolKey: string, referencePoolKey: string) => (tx: Transaction) => {
-		const targetPool = this.#config.getPool(targetPoolKey);
-		const referencePool = this.#config.getPool(referencePoolKey);
-		const targetBaseCoin = this.#config.getCoin(targetPool.baseCoin);
-		const targetQuoteCoin = this.#config.getCoin(targetPool.quoteCoin);
-		const referenceBaseCoin = this.#config.getCoin(referencePool.baseCoin);
-		const referenceQuoteCoin = this.#config.getCoin(referencePool.quoteCoin);
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::add_deep_price_point`,
-			arguments: [
-				tx.object(targetPool.address),
-				tx.object(referencePool.address),
-				tx.object(SUI_CLOCK_OBJECT_ID),
-			],
-			typeArguments: [
-				targetBaseCoin.type,
-				targetQuoteCoin.type,
-				referenceBaseCoin.type,
-				referenceQuoteCoin.type,
-			],
-		});
-	};
+	addDeepPricePoint =
+		(
+			targetPoolAddress: string,
+			targetBaseType: string,
+			targetQuoteType: string,
+			referencePoolAddress: string,
+			referenceBaseType: string,
+			referenceQuoteType: string,
+		) =>
+		(tx: Transaction) => {
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::add_deep_price_point`,
+				arguments: [
+					tx.object(targetPoolAddress),
+					tx.object(referencePoolAddress),
+					tx.object(SUI_CLOCK_OBJECT_ID),
+				],
+				typeArguments: [targetBaseType, targetQuoteType, referenceBaseType, referenceQuoteType],
+			});
+		};
 
 	/**
 	 * @description Claim rebates for a balance manager
-	 * @param {string} poolKey The key to identify the pool
-	 * @param {string} balanceManagerKey The key to identify the BalanceManager
+	 * @param {string} poolAddress The address of the pool
+	 * @param {string} balanceManagerAddress The balance manager address
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns A function that takes a Transaction object
 	 */
-	claimRebates = (poolKey: string, balanceManagerKey: string) => (tx: Transaction) => {
-		const pool = this.#config.getPool(poolKey);
-		const balanceManager = this.#config.getBalanceManager(balanceManagerKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerKey));
+	claimRebates =
+		(
+			poolAddress: string,
+			balanceManagerAddress: string,
+			baseCoinType: string,
+			quoteCoinType: string,
+		) =>
+		(tx: Transaction) => {
+			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
 
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::claim_rebates`,
-			arguments: [tx.object(pool.address), tx.object(balanceManager.address), tradeProof],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::claim_rebates`,
+				arguments: [tx.object(poolAddress), tx.object(balanceManagerAddress), tradeProof],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Gets an order
-	 * @param {string} poolKey The key to identify the pool
+	 * @param {string} poolAddress The address of the pool
 	 * @param {string} orderId Order ID to get
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns A function that takes a Transaction object
 	 */
-	getOrder = (poolKey: string, orderId: string) => (tx: Transaction) => {
-		const pool = this.#config.getPool(poolKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::get_order`,
-			arguments: [tx.object(pool.address), tx.pure.u128(orderId)],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+	getOrder =
+		(poolAddress: string, orderId: string, baseCoinType: string, quoteCoinType: string) =>
+		(tx: Transaction) => {
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::get_order`,
+				arguments: [tx.object(poolAddress), tx.pure.u128(orderId)],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Prepares a transaction to retrieve multiple orders from a specified pool.
-	 * @param {string} poolKey - The identifier key for the pool to retrieve orders from.
-	 * @param {string[]} orderIds - Array of order IDs to retrieve.
+	 * @param {string} poolAddress The address of the pool
+	 * @param {string[]} orderIds - Array of order IDs to retrieve
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns {Function} A function that takes a Transaction object
 	 */
-	getOrders = (poolKey: string, orderIds: string[]) => (tx: Transaction) => {
-		const pool = this.#config.getPool(poolKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::get_orders`,
-			arguments: [tx.object(pool.address), tx.pure.vector('u128', orderIds)],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+	getOrders =
+		(poolAddress: string, orderIds: string[], baseCoinType: string, quoteCoinType: string) =>
+		(tx: Transaction) => {
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::get_orders`,
+				arguments: [tx.object(poolAddress), tx.pure.vector('u128', orderIds)],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Burn DEEP tokens from the pool
-	 * @param {string} poolKey The key to identify the pool
+	 * @param {string} poolAddress The address of the pool
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns A function that takes a Transaction object
 	 */
-	burnDeep = (poolKey: string) => (tx: Transaction) => {
-		const pool = this.#config.getPool(poolKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::burn_deep`,
-			arguments: [tx.object(pool.address), tx.object(this.#config.DEEP_TREASURY_ID)],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+	burnDeep =
+		(poolAddress: string, baseCoinType: string, quoteCoinType: string) => (tx: Transaction) => {
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::burn_deep`,
+				arguments: [tx.object(poolAddress), tx.object(this.#config.DEEP_TREASURY_ID)],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Get the mid price for a pool
-	 * @param {string} poolKey The key to identify the pool
+	 * @param {string} poolAddress The address of the pool
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns A function that takes a Transaction object
 	 */
-	midPrice = (poolKey: string) => (tx: Transaction) => {
-		const pool = this.#config.getPool(poolKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::mid_price`,
-			arguments: [tx.object(pool.address), tx.object(SUI_CLOCK_OBJECT_ID)],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+	midPrice =
+		(poolAddress: string, baseCoinType: string, quoteCoinType: string) => (tx: Transaction) => {
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::mid_price`,
+				arguments: [tx.object(poolAddress), tx.object(SUI_CLOCK_OBJECT_ID)],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Check if a pool is whitelisted
-	 * @param {string} poolKey The key to identify the pool
+	 * @param {string} poolAddress The address of the pool
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns A function that takes a Transaction object
 	 */
-	whitelisted = (poolKey: string) => (tx: Transaction) => {
-		const pool = this.#config.getPool(poolKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::whitelisted`,
-			arguments: [tx.object(pool.address)],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+	whitelisted =
+		(poolAddress: string, baseCoinType: string, quoteCoinType: string) => (tx: Transaction) => {
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::whitelisted`,
+				arguments: [tx.object(poolAddress)],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Get the quote quantity out for a given base quantity in
-	 * @param {string} poolKey The key to identify the pool
+	 * @param {string} poolAddress The address of the pool
 	 * @param {number} baseQuantity Base quantity to convert
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns A function that takes a Transaction object
 	 */
-	getQuoteQuantityOut = (poolKey: string, baseQuantity: number) => (tx: Transaction) => {
-		const pool = this.#config.getPool(poolKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::get_quote_quantity_out`,
-			arguments: [
-				tx.object(pool.address),
-				tx.pure.u64(baseQuantity * baseCoin.scalar),
-				tx.object(SUI_CLOCK_OBJECT_ID),
-			],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+	getQuoteQuantityOut =
+		(poolAddress: string, baseQuantity: number, baseCoinType: string, quoteCoinType: string) =>
+		(tx: Transaction) => {
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::get_quote_quantity_out`,
+				arguments: [
+					tx.object(poolAddress),
+					tx.pure.u64(baseQuantity),
+					tx.object(SUI_CLOCK_OBJECT_ID),
+				],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Get the base quantity out for a given quote quantity in
-	 * @param {string} poolKey The key to identify the pool
+	 * @param {string} poolAddress The address of the pool
 	 * @param {number} quoteQuantity Quote quantity to convert
+	 * @param {string} baseCoinType The type of the base coin
+	 * @param {string} quoteCoinType The type of the quote coin
 	 * @returns A function that takes a Transaction object
 	 */
-	getBaseQuantityOut = (poolKey: string, quoteQuantity: number) => (tx: Transaction) => {
-		const pool = this.#config.getPool(poolKey);
-		const baseCoin = this.#config.getCoin(pool.baseCoin);
-		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const quoteScalar = quoteCoin.scalar;
-
-		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::get_base_quantity_out`,
-			arguments: [
-				tx.object(pool.address),
-				tx.pure.u64(quoteQuantity * quoteScalar),
-				tx.object(SUI_CLOCK_OBJECT_ID),
-			],
-			typeArguments: [baseCoin.type, quoteCoin.type],
-		});
-	};
+	getBaseQuantityOut =
+		(poolAddress: string, quoteQuantity: number, baseCoinType: string, quoteCoinType: string) =>
+		(tx: Transaction) => {
+			tx.moveCall({
+				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::get_base_quantity_out`,
+				arguments: [
+					tx.object(poolAddress),
+					tx.pure.u64(quoteQuantity),
+					tx.object(SUI_CLOCK_OBJECT_ID),
+				],
+				typeArguments: [baseCoinType, quoteCoinType],
+			});
+		};
 
 	/**
 	 * @description Get the quantity out for a given base or quote quantity
