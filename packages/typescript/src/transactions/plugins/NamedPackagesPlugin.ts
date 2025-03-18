@@ -63,7 +63,7 @@ export const namedPackagesPlugin = ({
 	pageSize = 50,
 	overrides = { packages: {}, types: {} },
 }: NamedPackagesPluginOptions) => {
-	const cache = overrides || { packages: {}, types: {} };
+	const cache = overrides;
 
 	return async (
 		transactionData: TransactionDataBuilder,
