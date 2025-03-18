@@ -1,10 +1,17 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { parseStructTag } from '../../utils/sui-types.js';
 import type { BuildTransactionOptions } from '../json-rpc-resolver.js';
 import type { TransactionDataBuilder } from '../TransactionData.js';
 import type { NamedPackagesPluginCache } from './utils.js';
-import { batch, findTransactionBlockNames, fixComposableTypes, replaceNames } from './utils.js';
+import {
+	batch,
+	composeCachedTypes,
+	findTransactionBlockNames,
+	getNameMappingFromResult,
+	replaceNames,
+} from './utils.js';
 
 export type NamedPackagesPluginOptions = {
 	/**
@@ -19,6 +26,9 @@ export type NamedPackagesPluginOptions = {
 	/**
 	 * Local overrides for the resolution plugin. Pass this to pre-populate
 	 * the cache with known packages / types (especially useful for local or CI testing).
+	 *
+	 * The types cache works best with first level types, so it might be better to list
+	 * non-generic types here.
 	 *
 	 * 	Expected format example:
 	 *  {
@@ -53,10 +63,7 @@ export const namedPackagesPlugin = ({
 	pageSize = 50,
 	overrides = { packages: {}, types: {} },
 }: NamedPackagesPluginOptions) => {
-	const cache = {
-		packages: { ...overrides.packages },
-		types: { ...overrides.types },
-	};
+	const cache = overrides || { packages: {}, types: {} };
 
 	return async (
 		transactionData: TransactionDataBuilder,
@@ -65,8 +72,8 @@ export const namedPackagesPlugin = ({
 	) => {
 		const names = findTransactionBlockNames(transactionData);
 
-		// Compose types, and save in cache (for next runs).
-		Object.assign(cache.types, fixComposableTypes(names.types, cache.types));
+		// We try to compose all types that we might have them fully resolved.
+		const composedTypes: Record<string, string> = composeCachedTypes(names.types, cache.types);
 
 		const [packages, types] = await Promise.all([
 			resolvePackages(
@@ -75,16 +82,25 @@ export const namedPackagesPlugin = ({
 				pageSize,
 			),
 			resolveTypes(
-				names.types.filter((x) => !cache.types[x]),
+				names.types.filter((x) => !cache.types[x] && !composedTypes[x]),
 				url,
 				pageSize,
 			),
 		]);
 
+		// save first-level mappings to cache.
 		Object.assign(cache.packages, packages);
 		Object.assign(cache.types, types);
 
-		replaceNames(transactionData, cache);
+		// After the resolution, we re-compose all types that must now be fully resolved.
+		Object.assign(composedTypes, composeCachedTypes(names.types, cache.types));
+
+		// when replacing names, we also need to replace the "composed" types collected above.
+		replaceNames(transactionData, {
+			packages: { ...cache.packages },
+			// we include the "composed" type cache too.
+			types: { ...cache.types, ...composedTypes },
+		});
 
 		await next();
 	};
@@ -105,9 +121,13 @@ export const namedPackagesPlugin = ({
 					}),
 				});
 
+				if (!response.ok) {
+					const errorBody = await response.json().catch(() => ({}));
+					throw new Error(`Failed to resolve packages: ${errorBody?.message}`);
+				}
+
 				const data = await response.json();
 
-				if (!response.ok) throw new Error(`Failed to resolve packages: ${data?.message}`);
 				if (!data?.resolution) return;
 
 				for (const pkg of Object.keys(data?.resolution)) {
@@ -139,17 +159,29 @@ export const namedPackagesPlugin = ({
 					}),
 				});
 
-				const data = await response.json();
+				if (!response.ok) {
+					const errorBody = await response.json().catch(() => ({}));
+					throw new Error(`Failed to resolve types: ${errorBody?.message}`);
+				}
 
-				if (!response.ok) throw new Error(`Failed to resolve types: ${data?.message}`);
+				const data = await response.json();
 
 				if (!data?.resolution) return;
 
 				for (const type of Object.keys(data?.resolution)) {
 					const typeData = data.resolution[type]?.type_tag;
 					if (!typeData) continue;
+					// skip primitive types, though they shouldn't be here in the first place.
+					if (!typeData.includes('::')) continue;
 
-					results[type] = typeData;
+					// Save only "first-level" mappings.
+					const mapping = getNameMappingFromResult(
+						parseStructTag(type),
+						parseStructTag(typeData),
+						{},
+					);
+
+					Object.assign(results, mapping);
 				}
 			}),
 		);

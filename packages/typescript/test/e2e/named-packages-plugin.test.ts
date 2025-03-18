@@ -5,10 +5,14 @@ import { describe, expect, it } from 'vitest';
 
 import { getFullnodeUrl, SuiClient } from '../../src/client';
 import { namedPackagesPlugin, Transaction } from '../../src/transactions';
-import { normalizeSuiAddress } from '../../src/utils';
+import { getNameMappingFromResult } from '../../src/transactions/plugins/utils';
+import { normalizeSuiAddress, parseStructTag } from '../../src/utils';
+
+const MAINNET_URL = 'https://qa.mainnet.mvr.mystenlabs.com';
+const TESTNET_URL = 'https://qa.testnet.mvr.mystenlabs.com';
 
 const mainnetPlugin = namedPackagesPlugin({
-	url: 'https://qa.mainnet.mvr.mystenlabs.com',
+	url: MAINNET_URL,
 	overrides: {
 		packages: {
 			'@framework/std': '0x1',
@@ -16,14 +20,13 @@ const mainnetPlugin = namedPackagesPlugin({
 		},
 		types: {
 			'@framework/std::string::String': '0x1::string::String',
-			'@framework/std::vector::empty<@framework/std::string::String>':
-				'0x1::vector::empty<0x1::string::String>',
+			'@framework/std::vector::empty': '0x1::vector::empty',
 		},
 	},
 });
 
 const testnetPlugin = namedPackagesPlugin({
-	url: 'https://qa.testnet.mvr.mystenlabs.com',
+	url: TESTNET_URL,
 	overrides: {
 		packages: {
 			'@framework/std': '0x1',
@@ -31,8 +34,7 @@ const testnetPlugin = namedPackagesPlugin({
 		},
 		types: {
 			'@framework/std::string::String': '0x1::string::String',
-			'@framework/std::vector::empty<@framework/std::string::String>':
-				'0x1::vector::empty<0x1::string::String>',
+			'@framework/std::vector::empty': '0x1::vector::empty',
 		},
 	},
 });
@@ -160,6 +162,68 @@ describe.concurrent('Name Resolution Plugin (Local Cache)', () => {
 	});
 });
 
+describe.concurrent('Utility functions', () => {
+	it('should extract mappings from struct tags properly', () => {
+		const old = parseStructTag('@mvr/demo::foo::bar<@mvr/another::inner::Struct<u64>, bool>>');
+		const resolved = parseStructTag(`0x2::foo::bar<0x3::inner::Struct<u64>, bool>>`);
+
+		const mappings = getNameMappingFromResult(old, resolved);
+		expect(mappings).toEqual({
+			'@mvr/demo::foo::bar': `${normalizeSuiAddress('0x2')}::foo::bar`,
+			'@mvr/another::inner::Struct': `${normalizeSuiAddress('0x3')}::inner::Struct`,
+		});
+	});
+
+	it('The plugin cache should properly hold a list of types', async () => {
+		const cache = { packages: {}, types: {} };
+		const plugin = namedPackagesPlugin({
+			url: MAINNET_URL,
+			overrides: cache,
+		});
+
+		const transaction = new Transaction();
+
+		transaction.addSerializationPlugin(plugin);
+
+		transaction.makeMoveVec({
+			type: '@pkg/qwer::mvr_a::MvrA<@pkg/qwer::mvr_b::V2>',
+			elements: [],
+		});
+
+		transaction.setSender(normalizeSuiAddress('0x2'));
+		await transaction.build({ client: new SuiClient({ url: getFullnodeUrl('mainnet') }) });
+
+		expect(cache.types).toStrictEqual({
+			'@pkg/qwer::mvr_a::MvrA':
+				'0xc168b8766e69c07b1b5ed194e3dc2b4a2a0e328ae6a06a2cae40e2ec83a3f94f::mvr_a::MvrA',
+			'@pkg/qwer::mvr_b::V2':
+				'0x01dcc0337dfe29d3a20fbaceb28febc424e6b8631e93338ed574b40aadc2a9ea::mvr_b::V2',
+		});
+
+		// Using the above cache in a plugin, and verify it works without network access.
+		// now with the current cache, we can construct the exact same PTB, without any API calls.
+		const plugin2 = namedPackagesPlugin({
+			url: '',
+			overrides: cache,
+		});
+
+		const transaction2 = new Transaction();
+
+		transaction2.addSerializationPlugin(plugin2);
+
+		transaction2.makeMoveVec({
+			type: '@pkg/qwer::mvr_a::MvrA<@pkg/qwer::mvr_b::V2>',
+			elements: [],
+		});
+
+		transaction2.setSender(normalizeSuiAddress('0x2'));
+
+		await transaction2.build({
+			client: new SuiClient({ url: getFullnodeUrl('mainnet') }),
+		});
+	});
+});
+
 const simplePtb = async (network: 'mainnet' | 'testnet') => {
 	const transaction = new Transaction();
 
@@ -181,6 +245,11 @@ const simplePtb = async (network: 'mainnet' | 'testnet') => {
 				target: `@pkg/qwer::mvr_a::new_v1`,
 			}),
 		],
+	});
+
+	transaction.makeMoveVec({
+		type: '@pkg/qwer::mvr_a::MvrA<@pkg/qwer::mvr_b::V2>',
+		elements: [],
 	});
 
 	// Adding a move call with regular addresses, to validate that
