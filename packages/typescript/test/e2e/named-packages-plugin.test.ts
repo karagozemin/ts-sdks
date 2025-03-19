@@ -5,11 +5,11 @@ import { describe, expect, it } from 'vitest';
 
 import { getFullnodeUrl, SuiClient } from '../../src/client';
 import { namedPackagesPlugin, Transaction } from '../../src/transactions';
-import { getNameMappingFromResult } from '../../src/transactions/plugins/utils';
-import { normalizeSuiAddress, parseStructTag } from '../../src/utils';
+import { getFirstLevelNamedTypes } from '../../src/transactions/plugins/utils';
+import { normalizeSuiAddress } from '../../src/utils';
 
-const MAINNET_URL = 'https://qa.mainnet.mvr.mystenlabs.com';
-const TESTNET_URL = 'https://qa.testnet.mvr.mystenlabs.com';
+const MAINNET_URL = 'https://mainnet.mvr.mystenlabs.com';
+const TESTNET_URL = 'https://testnet.mvr.mystenlabs.com';
 
 const mainnetPlugin = namedPackagesPlugin({
 	url: MAINNET_URL,
@@ -163,17 +163,26 @@ describe.concurrent('Name Resolution Plugin (Local Cache)', () => {
 });
 
 describe.concurrent('Utility functions', () => {
-	it('should extract mappings from struct tags properly', () => {
-		const old = parseStructTag('@mvr/demo::foo::bar<@mvr/another::inner::Struct<u64>, bool>>');
-		const resolved = parseStructTag(`0x2::foo::bar<0x3::inner::Struct<u64>, bool>>`);
+	it('should properly extract first-level structs ', () => {
+		const testSets = [
+			{
+				input: ['@mvr/demo::a::A<u64, @mvr/another-demo::b::B>'],
+				output: ['@mvr/demo::a::A', '@mvr/another-demo::b::B'],
+			},
+			{
+				input: ['@mvr/demo::a::A<u64, @mvr/another-demo::b::B<u128>>'],
+				output: ['@mvr/demo::a::A', '@mvr/another-demo::b::B'],
+			},
+			{
+				input: ['@mvr/demo::a::A<u64, @mvr/another-demo::b::B<u128>>', '@mvr/demo::c::C'],
+				output: ['@mvr/demo::a::A', '@mvr/another-demo::b::B', '@mvr/demo::c::C'],
+			},
+		];
 
-		const mappings = getNameMappingFromResult(old, resolved);
-		expect(mappings).toEqual({
-			'@mvr/demo::foo::bar': `${normalizeSuiAddress('0x2')}::foo::bar`,
-			'@mvr/another::inner::Struct': `${normalizeSuiAddress('0x3')}::inner::Struct`,
-		});
+		for (const testSet of testSets) {
+			expect(getFirstLevelNamedTypes(testSet.input)).toEqual(testSet.output);
+		}
 	});
-
 	it('The plugin cache should properly hold a list of types', async () => {
 		const cache = { packages: {}, types: {} };
 		const plugin = namedPackagesPlugin({

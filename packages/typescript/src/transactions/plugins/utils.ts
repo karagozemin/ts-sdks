@@ -23,7 +23,7 @@ export type NameResolutionRequest = {
  * Looks up all `.move` names in a transaction block.
  * Returns a list of all the names found.
  */
-export function findTransactionBlockNames(builder: TransactionDataBuilder): {
+export function findNamesInTransaction(builder: TransactionDataBuilder): {
 	packages: string[];
 	types: string[];
 } {
@@ -59,6 +59,36 @@ export function findTransactionBlockNames(builder: TransactionDataBuilder): {
 	};
 }
 
+/**
+ * Extracts all first-level types from a list of types.
+ * E.g. for the input `['@mvr/demo::a::A<@mvr/demo::b::B>']`,
+ * the output will be `['@mvr/demo::a::A', '@mvr/demo::b::B']`.
+ */
+export function getFirstLevelNamedTypes(types: string[]) {
+	const results: Set<string> = new Set();
+
+	for (const type of types) {
+		findMvrNames(type).forEach((name) => results.add(name));
+	}
+
+	return [...results];
+}
+
+/**
+ * Extracts all named types from a given type.
+ */
+function findMvrNames(type: string | StructTag, result: Set<string> = new Set()) {
+	if (typeof type === 'string' && !hasMvrName(type)) return result;
+
+	let tag = isStructTag(type) ? type : parseStructTag(type);
+
+	if (hasMvrName(tag.address)) result.add(`${tag.address}::${tag.module}::${tag.name}`);
+
+	for (const param of tag.typeParams) findMvrNames(param, result);
+
+	return result;
+}
+
 // /**
 //  * Allows partial replacements of known types with their resolved equivalents.
 //  * E.g. `@mvr/demo::a::A<@mvr/demo::b::B>` can be resolved, if we already have
@@ -67,14 +97,12 @@ export function findTransactionBlockNames(builder: TransactionDataBuilder): {
 //  *
 //  * Returns the fully composed resolved types (if any) in a `named-type -> normalized-type` map.
 //  */
-export function composeCachedTypes(types: string[], typeCache: Record<string, string>) {
+export function populateNamedTypesFromCache(types: string[], typeCache: Record<string, string>) {
 	const composedTypes: Record<string, string> = {};
 
 	types.forEach((type) => {
 		const normalized = normalizeStructTag(findAndReplaceCachedTypes(type, typeCache));
-		// we only store composed types IF they no longer have any names in them.
-		// Otherwise, we will need to resolve them regardless, as part of the query step.
-		if (!hasMvrName(normalized)) composedTypes[type] = normalized;
+		composedTypes[type] = normalized;
 	});
 
 	return composedTypes;
@@ -84,57 +112,29 @@ export function composeCachedTypes(types: string[], typeCache: Record<string, st
  * Traverses a type, and replaces any found names with their resolved equivalents,
  * based on the supplied type cache.
  */
-function findAndReplaceCachedTypes(tag: string | StructTag, typeCache: Record<string, string>) {
+function findAndReplaceCachedTypes(
+	tag: string | StructTag,
+	typeCache: Record<string, string>,
+): StructTag {
 	const type = isStructTag(tag) ? tag : parseStructTag(tag);
 
 	let typeTag = `${type.address}::${type.module}::${type.name}`;
 	const cacheHit = typeCache[typeTag];
 
 	if (cacheHit) {
-		let [mvrName, module, name] = cacheHit.split('::');
-		type.address = mvrName;
-		type.module = module;
-		type.name = name;
+		let [mvrName] = cacheHit.split('::');
+
+		return {
+			...type,
+			address: mvrName,
+			typeParams: type.typeParams.map((param) => findAndReplaceCachedTypes(param, typeCache)),
+		};
 	}
 
-	for (const param of type.typeParams.filter((x) => isStructTag(x))) {
-		findAndReplaceCachedTypes(param, typeCache);
-	}
-
-	return type;
-}
-
-/**
- * Given two equivalent types, one with names, and one without,
- * we create a "mapping" of `name -> address`
- *
- * E.g. `@mvr/demo::a::A<@mvr/another-demo::b::B>` -> `0x5::a::A<0x6::b::B>`
- * will result in `{ '@mvr/demo': '0x5', '@mvr/another-demo': '0x6' }`
- */
-export function getNameMappingFromResult(
-	old: StructTag,
-	resolved: StructTag,
-	results: Record<string, string> = {},
-) {
-	if (isValidNamedPackage(old.address)) {
-		results[`${old.address}::${old.module}::${old.name}`] =
-			`${resolved.address}::${resolved.module}::${resolved.name}`;
-	}
-
-	if (old.typeParams.length !== resolved.typeParams.length) {
-		throw new Error('Type params length mismatch. You may have supplied non-equivalent types.');
-	}
-
-	for (let i = 0; i < old.typeParams.length; i++) {
-		const oldParam = old.typeParams[i];
-		const resolvedParam = resolved.typeParams[i];
-
-		if (isStructTag(oldParam) && isStructTag(resolvedParam)) {
-			getNameMappingFromResult(oldParam, resolvedParam, results);
-		}
-	}
-
-	return results;
+	return {
+		...type,
+		typeParams: type.typeParams.map((param) => findAndReplaceCachedTypes(param, typeCache)),
+	};
 }
 
 /**

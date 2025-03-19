@@ -1,15 +1,14 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { parseStructTag } from '../../utils/sui-types.js';
 import type { BuildTransactionOptions } from '../json-rpc-resolver.js';
 import type { TransactionDataBuilder } from '../TransactionData.js';
 import type { NamedPackagesPluginCache } from './utils.js';
 import {
 	batch,
-	composeCachedTypes,
-	findTransactionBlockNames,
-	getNameMappingFromResult,
+	findNamesInTransaction,
+	getFirstLevelNamedTypes,
+	populateNamedTypesFromCache,
 	replaceNames,
 } from './utils.js';
 
@@ -70,10 +69,7 @@ export const namedPackagesPlugin = ({
 		_buildOptions: BuildTransactionOptions,
 		next: () => Promise<void>,
 	) => {
-		const names = findTransactionBlockNames(transactionData);
-
-		// We try to compose all types that we might have them fully resolved.
-		const composedTypes: Record<string, string> = composeCachedTypes(names.types, cache.types);
+		const names = findNamesInTransaction(transactionData);
 
 		const [packages, types] = await Promise.all([
 			resolvePackages(
@@ -82,7 +78,7 @@ export const namedPackagesPlugin = ({
 				pageSize,
 			),
 			resolveTypes(
-				names.types.filter((x) => !cache.types[x] && !composedTypes[x]),
+				getFirstLevelNamedTypes(names.types).filter((x) => !cache.types[x]),
 				url,
 				pageSize,
 			),
@@ -92,8 +88,7 @@ export const namedPackagesPlugin = ({
 		Object.assign(cache.packages, packages);
 		Object.assign(cache.types, types);
 
-		// After the resolution, we re-compose all types that must now be fully resolved.
-		Object.assign(composedTypes, composeCachedTypes(names.types, cache.types));
+		const composedTypes = populateNamedTypesFromCache(names.types, cache.types);
 
 		// when replacing names, we also need to replace the "composed" types collected above.
 		replaceNames(transactionData, {
@@ -151,7 +146,7 @@ export const namedPackagesPlugin = ({
 
 		await Promise.all(
 			batches.map(async (batch) => {
-				const response = await fetch(`${apiUrl}/v1/type-resolution/bulk`, {
+				const response = await fetch(`${apiUrl}/v1/struct-definition/bulk`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
@@ -171,17 +166,8 @@ export const namedPackagesPlugin = ({
 				for (const type of Object.keys(data?.resolution)) {
 					const typeData = data.resolution[type]?.type_tag;
 					if (!typeData) continue;
-					// skip primitive types, though they shouldn't be here in the first place.
-					if (!typeData.includes('::')) continue;
 
-					// Save only "first-level" mappings.
-					const mapping = getNameMappingFromResult(
-						parseStructTag(type),
-						parseStructTag(typeData),
-						{},
-					);
-
-					Object.assign(results, mapping);
+					results[type] = typeData;
 				}
 			}),
 		);
