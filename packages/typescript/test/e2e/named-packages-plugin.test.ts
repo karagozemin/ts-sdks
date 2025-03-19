@@ -177,6 +177,18 @@ describe.concurrent('Utility functions', () => {
 				input: ['@mvr/demo::a::A<u64, @mvr/another-demo::b::B<u128>>', '@mvr/demo::c::C'],
 				output: ['@mvr/demo::a::A', '@mvr/another-demo::b::B', '@mvr/demo::c::C'],
 			},
+			{
+				input: [
+					'@mvr/demo::a::A<@mvr/demo::b::B<@mvr/demo::c::C<u64, bool,@mvr/demo::d::D>,@mvr/demo::e::E>>',
+				],
+				output: [
+					'@mvr/demo::a::A',
+					'@mvr/demo::b::B',
+					'@mvr/demo::c::C',
+					'@mvr/demo::d::D',
+					'@mvr/demo::e::E',
+				],
+			},
 		];
 
 		for (const testSet of testSets) {

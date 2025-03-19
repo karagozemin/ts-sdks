@@ -77,16 +77,20 @@ export function getFirstLevelNamedTypes(types: string[]) {
 /**
  * Extracts all named types from a given type.
  */
-function findMvrNames(type: string | StructTag, result: Set<string> = new Set()) {
-	if (typeof type === 'string' && !hasMvrName(type)) return result;
+function findMvrNames(type: string | StructTag) {
+	const types: Set<string> = new Set();
+
+	if (typeof type === 'string' && !hasMvrName(type)) return [];
 
 	let tag = isStructTag(type) ? type : parseStructTag(type);
 
-	if (hasMvrName(tag.address)) result.add(`${tag.address}::${tag.module}::${tag.name}`);
+	if (hasMvrName(tag.address)) types.add(`${tag.address}::${tag.module}::${tag.name}`);
 
-	for (const param of tag.typeParams) findMvrNames(param, result);
+	for (const param of tag.typeParams) {
+		findMvrNames(param).forEach((name) => types.add(name));
+	}
 
-	return result;
+	return [...types];
 }
 
 // /**
