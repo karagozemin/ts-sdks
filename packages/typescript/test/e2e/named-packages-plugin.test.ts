@@ -189,6 +189,10 @@ describe.concurrent('Utility functions', () => {
 					'@mvr/demo::e::E',
 				],
 			},
+			{
+				input: ['u64', '0x2::balance::Balance<0x2::sui::SUI>'],
+				output: [],
+			}
 		];
 
 		for (const testSet of testSets) {
