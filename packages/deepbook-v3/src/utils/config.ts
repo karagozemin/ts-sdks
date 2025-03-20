@@ -48,3 +48,11 @@ export class DeepBookConfig {
 		this.balanceManager = new BalanceManagerContract(this);
 	}
 }
+
+export const convertToDeepBookPrice = (
+	price: number,
+	baseDecimals: number,
+	quoteDecimals: number,
+): number => {
+	return price * FLOAT_SCALAR * 10 ** (quoteDecimals - baseDecimals);
+};

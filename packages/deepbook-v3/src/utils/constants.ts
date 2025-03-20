@@ -1,8 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { FLOAT_SCALAR } from './config.js';
-
 export interface DeepbookPackageIds {
 	DEEPBOOK_PACKAGE_ID: string;
 	REGISTRY_ID: string;
@@ -19,12 +17,7 @@ export const mainnetPackageIds = {
 	DEEPBOOK_PACKAGE_ID: '0x2c8d603bc51326b8c13cef9dd07031a408a48dddb541963357661df5d3204809',
 	REGISTRY_ID: '0xaf16199a2dff736e9f07a845f23c5da6df6f756eddb631aed9d24a93efc4549d',
 	DEEP_TREASURY_ID: '0x032abf8948dda67a271bcc18e776dbbcfb0d58c8d288a700ff0d5521e57a1ffe',
-};
+} satisfies DeepbookPackageIds;
 
-export const convertToDeepBookPrice = (
-	price: number,
-	baseDecimals: number,
-	quoteDecimals: number,
-): number => {
-	return price * FLOAT_SCALAR * 10 ** (quoteDecimals - baseDecimals);
-};
+export const MAINNET_DEEP_TYPE =
+	'0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP';

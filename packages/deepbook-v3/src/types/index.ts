@@ -56,6 +56,8 @@ export interface PlaceMarketOrderParams {
 export interface ProposalParams {
 	poolAddress: string;
 	balanceManagerAddress: string;
+	baseCoinType: string;
+	quoteCoinType: string;
 	takerFee: number;
 	makerFee: number;
 	stakeRequired: number;
@@ -63,6 +65,8 @@ export interface ProposalParams {
 
 export interface SwapParams {
 	poolAddress: string;
+	baseCoinType: string;
+	quoteCoinType: string;
 	amount: number;
 	deepAmount: number;
 	minOut: number;
@@ -72,8 +76,8 @@ export interface SwapParams {
 }
 
 export interface CreatePoolAdminParams {
-	baseCoinAddress: string;
-	quoteCoinAddress: string;
+	baseCoinType: string;
+	quoteCoinType: string;
 	tickSize: number;
 	lotSize: number;
 	minSize: number;
@@ -82,8 +86,8 @@ export interface CreatePoolAdminParams {
 }
 
 export interface CreatePermissionlessPoolParams {
-	baseCoinAddress: string;
-	quoteCoinAddress: string;
+	baseCoinType: string;
+	quoteCoinType: string;
 	tickSize: number;
 	lotSize: number;
 	minSize: number;
