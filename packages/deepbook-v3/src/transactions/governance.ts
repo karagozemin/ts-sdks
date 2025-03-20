@@ -2,21 +2,26 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Transaction } from '@mysten/sui/transactions';
 
-import type { ProposalParams } from '../types/index.js';
-import type { DeepBookConfig } from '../utils/config.js';
+import type { Environment, ProposalParams } from '../types/index.js';
 import { DEEP_SCALAR, FLOAT_SCALAR } from '../utils/config.js';
+import { mainnetPackageIds, testnetPackageIds } from '../utils/constants.js';
+import { BalanceManagerContract } from './balanceManager.js';
 
 /**
  * GovernanceContract class for managing governance operations in DeepBook.
  */
 export class GovernanceContract {
-	#config: DeepBookConfig;
-
+	#deepbookPackageId: string;
+	#balanceManagerContract: BalanceManagerContract;
 	/**
-	 * @param {DeepBookConfig} config Configuration for GovernanceContract
+	 * @param {Environment} env Environment for GovernanceContract
 	 */
-	constructor(config: DeepBookConfig) {
-		this.#config = config;
+	constructor(env: Environment) {
+		this.#deepbookPackageId =
+			env === 'mainnet'
+				? mainnetPackageIds.DEEPBOOK_PACKAGE_ID
+				: testnetPackageIds.DEEPBOOK_PACKAGE_ID;
+		this.#balanceManagerContract = new BalanceManagerContract(env);
 	}
 
 	/**
@@ -37,10 +42,10 @@ export class GovernanceContract {
 			quoteCoinType: string,
 		) =>
 		(tx: Transaction) => {
-			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
+			const tradeProof = tx.add(this.#balanceManagerContract.generateProof(balanceManagerAddress));
 
 			tx.moveCall({
-				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::stake`,
+				target: `${this.#deepbookPackageId}::pool::stake`,
 				arguments: [
 					tx.object(poolAddress),
 					tx.object(balanceManagerAddress),
@@ -67,10 +72,10 @@ export class GovernanceContract {
 			quoteCoinType: string,
 		) =>
 		(tx: Transaction) => {
-			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
+			const tradeProof = tx.add(this.#balanceManagerContract.generateProof(balanceManagerAddress));
 
 			tx.moveCall({
-				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::unstake`,
+				target: `${this.#deepbookPackageId}::pool::unstake`,
 				arguments: [tx.object(poolAddress), tx.object(balanceManagerAddress), tradeProof],
 				typeArguments: [baseCoinType, quoteCoinType],
 			});
@@ -92,10 +97,10 @@ export class GovernanceContract {
 			stakeRequired,
 		} = params;
 
-		const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
+		const tradeProof = tx.add(this.#balanceManagerContract.generateProof(balanceManagerAddress));
 
 		tx.moveCall({
-			target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::submit_proposal`,
+			target: `${this.#deepbookPackageId}::pool::submit_proposal`,
 			arguments: [
 				tx.object(poolAddress),
 				tx.object(balanceManagerAddress),
@@ -124,10 +129,10 @@ export class GovernanceContract {
 			quoteCoinType: string,
 		) =>
 		(tx: Transaction) => {
-			const tradeProof = tx.add(this.#config.balanceManager.generateProof(balanceManagerAddress));
+			const tradeProof = tx.add(this.#balanceManagerContract.generateProof(balanceManagerAddress));
 
 			tx.moveCall({
-				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::vote`,
+				target: `${this.#deepbookPackageId}::pool::vote`,
 				arguments: [
 					tx.object(poolAddress),
 					tx.object(balanceManagerAddress),

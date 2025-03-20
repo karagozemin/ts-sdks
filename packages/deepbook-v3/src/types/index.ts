@@ -11,6 +11,18 @@ export interface BalanceManager {
 	withdrawCap?: string;
 }
 
+export interface Coin {
+	address: string;
+	type: string;
+	scalar: number;
+}
+
+export interface Pool {
+	address: string;
+	baseCoin: string;
+	quoteCoin: string;
+}
+
 // Trading constants
 export enum OrderType {
 	NO_RESTRICTION,

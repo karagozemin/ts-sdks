@@ -2,19 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Transaction, TransactionObjectArgument } from '@mysten/sui/transactions';
 
-import type { DeepBookConfig } from '../utils/config.js';
+import type { Environment } from '../types/index.js';
+import { mainnetPackageIds, testnetPackageIds } from '../utils/constants.js';
 
 /**
  * FlashLoanContract class for managing flash loans.
  */
 export class FlashLoanContract {
-	#config: DeepBookConfig;
+	#deepbookPackageId: string;
 
 	/**
-	 * @param {DeepBookConfig} config Configuration object for DeepBook
+	 * @param {Environment} env Environment for FlashLoanContract
 	 */
-	constructor(config: DeepBookConfig) {
-		this.#config = config;
+	constructor(env: Environment) {
+		this.#deepbookPackageId =
+			env === 'mainnet'
+				? mainnetPackageIds.DEEPBOOK_PACKAGE_ID
+				: testnetPackageIds.DEEPBOOK_PACKAGE_ID;
 	}
 
 	/**
@@ -29,7 +33,7 @@ export class FlashLoanContract {
 		(poolAddress: string, baseCoinType: string, quoteCoinType: string, borrowAmount: number) =>
 		(tx: Transaction) => {
 			const [baseCoinResult, flashLoan] = tx.moveCall({
-				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::borrow_flashloan_base`,
+				target: `${this.#deepbookPackageId}::pool::borrow_flashloan_base`,
 				arguments: [tx.object(poolAddress), tx.pure.u64(borrowAmount)],
 				typeArguments: [baseCoinType, quoteCoinType],
 			});
@@ -58,7 +62,7 @@ export class FlashLoanContract {
 		(tx: Transaction) => {
 			const [baseCoinReturn] = tx.splitCoins(baseCoinInput, [tx.pure.u64(borrowAmount)]);
 			tx.moveCall({
-				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::return_flashloan_base`,
+				target: `${this.#deepbookPackageId}::pool::return_flashloan_base`,
 				arguments: [tx.object(poolAddress), baseCoinReturn, flashLoan],
 				typeArguments: [baseCoinType, quoteCoinType],
 			});
@@ -78,7 +82,7 @@ export class FlashLoanContract {
 		(poolAddress: string, baseCoinType: string, quoteCoinType: string, borrowAmount: number) =>
 		(tx: Transaction) => {
 			const [quoteCoinResult, flashLoan] = tx.moveCall({
-				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::borrow_flashloan_quote`,
+				target: `${this.#deepbookPackageId}::pool::borrow_flashloan_quote`,
 				arguments: [tx.object(poolAddress), tx.pure.u64(borrowAmount)],
 				typeArguments: [baseCoinType, quoteCoinType],
 			});
@@ -107,7 +111,7 @@ export class FlashLoanContract {
 		(tx: Transaction) => {
 			const [quoteCoinReturn] = tx.splitCoins(quoteCoinInput, [tx.pure.u64(borrowAmount)]);
 			tx.moveCall({
-				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::return_flashloan_quote`,
+				target: `${this.#deepbookPackageId}::pool::return_flashloan_quote`,
 				arguments: [tx.object(poolAddress), quoteCoinReturn, flashLoan],
 				typeArguments: [baseCoinType, quoteCoinType],
 			});
