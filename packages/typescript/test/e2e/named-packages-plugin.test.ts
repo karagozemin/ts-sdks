@@ -247,6 +247,22 @@ describe.concurrent('Utility functions', () => {
 			client: new SuiClient({ url: getFullnodeUrl('mainnet') }),
 		});
 	});
+
+	it('Should fail to initialize a plugin with generic type tags', () => {
+		const cache = {
+			packages: {},
+			types: {
+				'@mvr/demo::a::A<@mvr/demo::b::B>': '0x1::a::A<0x1::b::B>',
+			},
+		};
+
+		expect(() =>
+			namedPackagesPlugin({
+				url: '',
+				overrides: cache,
+			}),
+		).toThrow();
+	});
 });
 
 const simplePtb = async (network: 'mainnet' | 'testnet') => {

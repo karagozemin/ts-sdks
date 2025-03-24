@@ -1,6 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { parseStructTag } from '../../utils/sui-types.js';
 import type { BuildTransactionOptions } from '../json-rpc-resolver.js';
 import type { TransactionDataBuilder } from '../TransactionData.js';
 import type { NamedPackagesPluginCache } from './utils.js';
@@ -61,6 +62,14 @@ export const namedPackagesPlugin = ({
 	pageSize = 50,
 	overrides = { packages: {}, types: {} },
 }: NamedPackagesPluginOptions) => {
+	// validate that types are first-level only.
+	Object.keys(overrides.types).forEach((type) => {
+		if (parseStructTag(type).typeParams.length > 0)
+			throw new Error(
+				'Type overrides must be first-level only. If you want to supply generic types, just pass each type individually.',
+			);
+	});
+
 	const cache = overrides;
 
 	return async (
