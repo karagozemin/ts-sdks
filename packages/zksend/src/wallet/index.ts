@@ -194,11 +194,7 @@ export class StashedWallet implements Wallet {
 			this.#accounts = [
 				new ReadonlyWalletAccount({
 					address,
-<<<<<<< HEAD
 					chains: this.chains,
-=======
-					chains: [SUI_MAINNET_CHAIN],
->>>>>>> 0ae83ef (work)
 					features: ['sui:signTransaction', 'sui:signTransactionBlock', 'sui:signPersonalMessage'],
 					// NOTE: Stashed doesn't support getting public keys, and zkLogin accounts don't have meaningful public keys anyway
 					publicKey: new Uint8Array(),
