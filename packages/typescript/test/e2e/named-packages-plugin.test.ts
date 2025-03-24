@@ -192,11 +192,11 @@ describe.concurrent('Utility functions', () => {
 			{
 				input: ['u64', '0x2::balance::Balance<0x2::sui::SUI>'],
 				output: [],
-			}
+			},
 		];
 
 		for (const testSet of testSets) {
-			expect(getFirstLevelNamedTypes(testSet.input)).toEqual(testSet.output);
+			expect(getFirstLevelNamedTypes(testSet.input)).toEqual(new Set(testSet.output));
 		}
 	});
 	it('The plugin cache should properly hold a list of types', async () => {

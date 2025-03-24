@@ -71,7 +71,7 @@ export function getFirstLevelNamedTypes(types: string[]) {
 		findMvrNames(type).forEach((name) => results.add(name));
 	}
 
-	return [...results];
+	return results;
 }
 
 /**
@@ -90,7 +90,7 @@ function findMvrNames(type: string | StructTag) {
 		findMvrNames(param).forEach((name) => types.add(name));
 	}
 
-	return [...types];
+	return types;
 }
 
 // /**
@@ -204,7 +204,7 @@ function getNamesFromTypeList(types: string[]) {
 			names.add(type);
 		}
 	}
-	return [...names];
+	return names;
 }
 
 function hasMvrName(nameOrType: string) {

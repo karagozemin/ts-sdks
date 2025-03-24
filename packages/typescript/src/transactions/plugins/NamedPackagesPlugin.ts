@@ -26,8 +26,7 @@ export type NamedPackagesPluginOptions = {
 	 * Local overrides for the resolution plugin. Pass this to pre-populate
 	 * the cache with known packages / types (especially useful for local or CI testing).
 	 *
-	 * The types cache works best with first level types, so it might be better to list
-	 * non-generic types here.
+	 * The type cache expects ONLY first-level types to ensure the cache is more composable.
 	 *
 	 * 	Expected format example:
 	 *  {
@@ -78,7 +77,7 @@ export const namedPackagesPlugin = ({
 				pageSize,
 			),
 			resolveTypes(
-				getFirstLevelNamedTypes(names.types).filter((x) => !cache.types[x]),
+				[...getFirstLevelNamedTypes(names.types)].filter((x) => !cache.types[x]),
 				url,
 				pageSize,
 			),
@@ -94,7 +93,7 @@ export const namedPackagesPlugin = ({
 		replaceNames(transactionData, {
 			packages: { ...cache.packages },
 			// we include the "composed" type cache too.
-			types: { ...cache.types, ...composedTypes },
+			types: composedTypes,
 		});
 
 		await next();
