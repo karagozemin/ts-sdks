@@ -138,7 +138,7 @@ export const listToRequests = (
 
 const deduplicate = <T>(arr: T[]): T[] => [...new Set(arr)];
 
-const batch = <T>(arr: T[], size: number): T[][] => {
+export const batch = <T>(arr: T[], size: number): T[][] => {
 	const batches = [];
 	for (let i = 0; i < arr.length; i += size) {
 		batches.push(arr.slice(i, i + size));

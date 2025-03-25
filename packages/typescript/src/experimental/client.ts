@@ -2,60 +2,54 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/ban-types */
 
-import type { Experimental_ClientTransportMethods } from './transport.js';
+import type {
+	ClientWithExtensions,
+	Experimental_SuiClientTypes,
+	Simplify,
+	SuiClientRegistration,
+	UnionToIntersection,
+} from './types.js';
 
-type SuiClientRegistration<T, Name extends string = string, Extension = unknown> =
-	| {
-			readonly name: Name;
-			readonly register: (client: T) => Extension;
-	  }
-	| {
-			experimental_asClientExtension: () => {
-				readonly name: Name;
-				readonly register: (client: T) => Extension;
-			};
-	  };
+export class Experimental_SuiClient implements Experimental_SuiClientTypes.TransportMethods {
+	#transports: Experimental_SuiClientTypes.TransportMethods[] = [];
 
-type Simplify<T> = {
-	[K in keyof T]: T[K];
-} & {};
-
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
-	? I
-	: never;
-
-type ClientWithExtensions<T> = Experimental_SuiClient & T;
-
-export class Experimental_SuiClient implements Experimental_ClientTransportMethods {
-	#transports: Experimental_ClientTransportMethods[] = [];
-
-	// TODO: This is probably a little too simple, and we might want to support delegating to other transports
-	#transportMethod<T extends keyof Experimental_ClientTransportMethods>(method: T) {
-		// TODO: We use a `function` here because methods are assigned as props and we want to bind `this` at execution, not at creation (because of extensions)
-		// Do we want to attach these to the prototype instead?
-		return function (
-			this: Experimental_SuiClient,
-			...args: Parameters<NonNullable<Experimental_ClientTransportMethods[T]>>
-		): ReturnType<NonNullable<Experimental_ClientTransportMethods[T]>> {
-			for (const transport of this.#transports) {
-				if (transport[method]) {
-					return (transport[method] as (...args: any[]) => any)(...args);
-				}
+	#transportMethod<T extends keyof Experimental_SuiClientTypes.TransportMethods>(
+		method: T,
+		...args: Parameters<NonNullable<Experimental_SuiClientTypes.TransportMethods[T]>>
+	): ReturnType<NonNullable<Experimental_SuiClientTypes.TransportMethods[T]>> {
+		for (const transport of this.#transports) {
+			if (transport[method]) {
+				return (transport[method] as (...args: any[]) => any)(...args);
 			}
-			throw new Error(`No transport method found for ${method}`);
-		};
+		}
+		throw new Error(`No transport method found for ${method}`);
 	}
 
-	// TODO: DO we want different APIs for the client vs transport methods.
-	// Specifically this will affect things like: Do we parse effects in the client or the transport?
-	getBalance = this.#transportMethod('getBalance');
-	getAllBalances = this.#transportMethod('getAllBalances');
-	getTransaction = this.#transportMethod('getTransaction');
-	executeTransaction = this.#transportMethod('executeTransaction');
-	dryRunTransaction = this.#transportMethod('dryRunTransaction');
-	getReferenceGasPrice = this.#transportMethod('getReferenceGasPrice');
+	getBalance(options: Experimental_SuiClientTypes.GetBalanceOptions) {
+		return this.#transportMethod('getBalance', options);
+	}
 
-	$registerTransport(transport: Experimental_ClientTransportMethods) {
+	getAllBalances(options: Experimental_SuiClientTypes.GetAllBalancesOptions) {
+		return this.#transportMethod('getAllBalances', options);
+	}
+
+	getTransaction(options: Experimental_SuiClientTypes.GetTransactionOptions) {
+		return this.#transportMethod('getTransaction', options);
+	}
+
+	executeTransaction(options: Experimental_SuiClientTypes.ExecuteTransactionOptions) {
+		return this.#transportMethod('executeTransaction', options);
+	}
+
+	dryRunTransaction(options: Experimental_SuiClientTypes.DryRunTransactionOptions) {
+		return this.#transportMethod('dryRunTransaction', options);
+	}
+
+	getReferenceGasPrice() {
+		return this.#transportMethod('getReferenceGasPrice');
+	}
+
+	$registerTransport(transport: Experimental_SuiClientTypes.TransportMethods) {
 		this.#transports.push(transport);
 	}
 
