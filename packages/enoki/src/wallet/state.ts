@@ -66,7 +66,7 @@ export class INTERNAL_ONLY_EnokiFlow {
 		this.#encryption = createDefaultEncryption();
 		this.#store = createSessionStorage();
 		this.#storageKeys = createStorageKeys(config.apiKey, this.#network);
-		this.#idbStore = createStore('enoki', `${config.apiKey}/${this.#network}`);
+		this.#idbStore = createStore('enoki', `${config.apiKey}_${this.#network}`);
 
 		let storedState = null;
 		try {
