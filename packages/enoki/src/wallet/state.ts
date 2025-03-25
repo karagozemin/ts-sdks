@@ -3,13 +3,10 @@
 
 import type { ExportedWebCryptoKeypair } from '@mysten/signers/webcrypto';
 import { WebCryptoSigner } from '@mysten/signers/webcrypto';
-import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
-import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import { fromBase64, toBase64 } from '@mysten/sui/utils';
 import { decodeJwt } from '@mysten/sui/zklogin';
 import type { ZkLoginSignatureInputs } from '@mysten/sui/zklogin';
 import type { UseStore } from 'idb-keyval';
-import { createStore, get, set } from 'idb-keyval';
+import { clear, createStore, get, set } from 'idb-keyval';
 import type { WritableAtom } from 'nanostores';
 import { atom, onMount, onSet } from 'nanostores';
 
@@ -22,29 +19,7 @@ import { EnokiKeypair } from '../EnokiKeypair.js';
 import type { SyncStore } from '../stores.js';
 import { createSessionStorage } from '../stores.js';
 
-type EnokiFlowConfig = EnokiClientConfig & { network: EnokiNetwork } & (
-		| {
-				experimental_nativeCryptoSigner?: unknown;
-				/**
-				 * The storage interface to persist Enoki data locally.
-				 * If not provided, it will use a sessionStorage-backed store.
-				 */
-				store?: SyncStore;
-				/**
-				 * The encryption interface that will be used to encrypt data before storing it locally.
-				 * If not provided, it will use a default encryption interface.
-				 */
-				encryption?: Encryption;
-		  }
-		| {
-				store?: never;
-				encryption?: never;
-				/**
-				 * Enables the new native crypto signer for the EnokiFlow, which is more secure.
-				 */
-				experimental_nativeCryptoSigner: true;
-		  }
-	);
+type EnokiFlowConfig = EnokiClientConfig & { network: EnokiNetwork };
 
 // State that is not bound to a session, and is encrypted.
 interface ZkLoginState {
@@ -56,7 +31,6 @@ interface ZkLoginState {
 
 // State that session-bound, and is encrypted in storage.
 interface ZkLoginSession {
-	ephemeralKeyPair: string;
 	maxEpoch: number;
 	randomness: string;
 	expiresAt: number;
@@ -77,8 +51,7 @@ export class INTERNAL_ONLY_EnokiFlow {
 	#encryption: Encryption;
 	#encryptionKey: string;
 	#store: SyncStore;
-	#useNativeCryptoSigner: boolean;
-	#idbStore?: UseStore;
+	#idbStore: UseStore;
 
 	$zkLoginSession: WritableAtom<{ initialized: boolean; value: ZkLoginSession | null }>;
 	$zkLoginState: WritableAtom<ZkLoginState>;
@@ -90,17 +63,10 @@ export class INTERNAL_ONLY_EnokiFlow {
 		});
 		this.#network = config.network;
 		this.#encryptionKey = config.apiKey;
-
-		if (config.experimental_nativeCryptoSigner) {
-			this.#useNativeCryptoSigner = true;
-			this.#idbStore = createStore('enoki', `${config.apiKey}/${this.#network}`);
-		} else {
-			this.#useNativeCryptoSigner = false;
-		}
-
-		this.#encryption = config.encryption ?? createDefaultEncryption();
-		this.#store = config.store ?? createSessionStorage();
+		this.#encryption = createDefaultEncryption();
+		this.#store = createSessionStorage();
 		this.#storageKeys = createStorageKeys(config.apiKey, this.#network);
+		this.#idbStore = createStore('enoki', `${config.apiKey}/${this.#network}`);
 
 		let storedState = null;
 		try {
@@ -135,10 +101,7 @@ export class INTERNAL_ONLY_EnokiFlow {
 		redirectUrl: string;
 		extraParams?: Record<string, unknown>;
 	}) {
-		const ephemeralKeyPair = this.#useNativeCryptoSigner
-			? await WebCryptoSigner.generate()
-			: new Ed25519Keypair();
-
+		const ephemeralKeyPair = await WebCryptoSigner.generate();
 		const { nonce, randomness, maxEpoch, estimatedExpiration } =
 			await this.#enokiClient.createZkLoginNonce({
 				network: this.#network,
@@ -169,36 +132,26 @@ export class INTERNAL_ONLY_EnokiFlow {
 				oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 				break;
 			}
-
 			case 'facebook': {
 				oauthUrl = `https://www.facebook.com/v17.0/dialog/oauth?${params}`;
 				break;
 			}
-
 			case 'twitch': {
 				params.set('force_verify', 'true');
 				oauthUrl = `https://id.twitch.tv/oauth2/authorize?${params}`;
 				break;
 			}
-
 			default:
 				throw new Error(`Invalid provider: ${input.provider}`);
 		}
 
 		this.$zkLoginState.set({ provider: input.provider });
-		if (this.#useNativeCryptoSigner) {
-			await set('ephemeralKeyPair', ephemeralKeyPair, this.#idbStore);
-		}
 
+		await set('ephemeralKeyPair', ephemeralKeyPair, this.#idbStore);
 		await this.#setSession({
 			expiresAt: estimatedExpiration,
 			maxEpoch,
 			randomness,
-			ephemeralKeyPair: this.#useNativeCryptoSigner
-				? '@@native'
-				: toBase64(
-						decodeSuiPrivateKey((ephemeralKeyPair as Ed25519Keypair).getSecretKey()).secretKey,
-					),
 		});
 
 		return oauthUrl;
@@ -210,7 +163,7 @@ export class INTERNAL_ONLY_EnokiFlow {
 		// Before we handle the auth redirect and get the state, we need to restore it:
 		const zkp = await this.getSession();
 
-		if (!zkp || !zkp.ephemeralKeyPair || !zkp.maxEpoch || !zkp.randomness) {
+		if (!zkp || !zkp.maxEpoch || !zkp.randomness) {
 			throw new Error(
 				'Start of sign-in flow could not be found. Ensure you have started the sign-in flow before calling this.',
 			);
@@ -285,6 +238,7 @@ export class INTERNAL_ONLY_EnokiFlow {
 		this.$zkLoginState.set({});
 		this.#store.delete(this.#storageKeys.STATE);
 
+		await clear(this.#idbStore);
 		await this.#setSession(null);
 	}
 
@@ -305,18 +259,15 @@ export class INTERNAL_ONLY_EnokiFlow {
 			throw new Error('Missing required parameters for proof generation');
 		}
 
-		let storedNativeSigner: ExportedWebCryptoKeypair | undefined = undefined;
-		if (this.#useNativeCryptoSigner && zkp.ephemeralKeyPair === '@@native') {
-			storedNativeSigner = await get('ephemeralKeyPair', this.#idbStore);
-			if (!storedNativeSigner) {
-				throw new Error('Native signer not found in store.');
-			}
+		const storedNativeSigner = await get<ExportedWebCryptoKeypair>(
+			'ephemeralKeyPair',
+			this.#idbStore,
+		);
+		if (!storedNativeSigner) {
+			throw new Error('Native signer not found in store.');
 		}
 
-		const ephemeralKeyPair =
-			zkp.ephemeralKeyPair === '@@native'
-				? WebCryptoSigner.import(storedNativeSigner!)
-				: Ed25519Keypair.fromSecretKey(fromBase64(zkp.ephemeralKeyPair));
+		const ephemeralKeyPair = WebCryptoSigner.import(storedNativeSigner);
 
 		const proof = await this.#enokiClient.createZkLoginZkp({
 			network: this.#network,
@@ -350,18 +301,16 @@ export class INTERNAL_ONLY_EnokiFlow {
 			throw new Error('Stored proof is expired.');
 		}
 
-		let storedNativeSigner: ExportedWebCryptoKeypair | undefined = undefined;
-		if (this.#useNativeCryptoSigner && zkp.ephemeralKeyPair === '@@native') {
-			storedNativeSigner = await get('ephemeralKeyPair', this.#idbStore);
-			if (!storedNativeSigner) {
-				throw new Error('Native signer not found in store.');
-			}
+		const storedNativeSigner = await get<ExportedWebCryptoKeypair>(
+			'ephemeralKeyPair',
+			this.#idbStore,
+		);
+
+		if (!storedNativeSigner) {
+			throw new Error('Native signer not found in store.');
 		}
 
-		const ephemeralKeypair =
-			zkp.ephemeralKeyPair === '@@native'
-				? WebCryptoSigner.import(storedNativeSigner!)
-				: Ed25519Keypair.fromSecretKey(fromBase64(zkp.ephemeralKeyPair));
+		const ephemeralKeypair = WebCryptoSigner.import(storedNativeSigner);
 
 		return new EnokiKeypair({
 			address,

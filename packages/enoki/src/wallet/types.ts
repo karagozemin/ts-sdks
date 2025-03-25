@@ -4,10 +4,8 @@
 import type { SuiClient } from '@mysten/sui/client';
 import type { StandardEventsListeners } from '@mysten/wallet-standard';
 
-import type { Encryption } from '../encryption.js';
 import type { EnokiClientConfig } from '../EnokiClient/index.js';
 import type { AuthProvider, EnokiNetwork } from '../EnokiClient/type.js';
-import type { SyncStore } from '../stores.js';
 
 export type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
@@ -15,19 +13,7 @@ export type WalletEventsMap = {
 
 export interface RegisterEnokiWalletsOptions extends EnokiClientConfig {
 	/**
-	 * The storage interface to persist Enoki data locally.
-	 * If not provided, it will use a sessionStorage-backed store.
-	 */
-	store?: SyncStore;
-
-	/**
-	 * The encryption interface that will be used to encrypt data before storing it locally.
-	 * If not provided, it will use a default encryption interface.
-	 */
-	encryption?: Encryption;
-
-	/**
-	 * Conviguration for each OAuth provider.
+	 * Configuration for each OAuth provider.
 	 */
 	providers: Partial<
 		Record<

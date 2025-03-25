@@ -9,7 +9,7 @@ import { fromBase64, toBase64 } from '@mysten/sui/utils';
 import { decodeJwt } from '@mysten/sui/zklogin';
 import type { ZkLoginSignatureInputs } from '@mysten/sui/zklogin';
 import type { UseStore } from 'idb-keyval';
-import { createStore, get, set } from 'idb-keyval';
+import { clear, createStore, get, set } from 'idb-keyval';
 import type { WritableAtom } from 'nanostores';
 import { atom, onMount, onSet } from 'nanostores';
 
@@ -292,6 +292,9 @@ export class EnokiFlow {
 		this.$zkLoginState.set({});
 		this.#store.delete(this.#storageKeys.STATE);
 
+		if (this.#useNativeCryptoSigner) {
+			await clear(this.#idbStore);
+		}
 		await this.#setSession(null);
 	}
 
