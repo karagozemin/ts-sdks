@@ -125,18 +125,9 @@ function findAndReplaceCachedTypes(
 	let typeTag = `${type.address}::${type.module}::${type.name}`;
 	const cacheHit = typeCache[typeTag];
 
-	if (cacheHit) {
-		let [mvrName] = cacheHit.split('::');
-
-		return {
-			...type,
-			address: mvrName,
-			typeParams: type.typeParams.map((param) => findAndReplaceCachedTypes(param, typeCache)),
-		};
-	}
-
 	return {
 		...type,
+		address: cacheHit ? cacheHit.split('::')[0] : type.address,
 		typeParams: type.typeParams.map((param) => findAndReplaceCachedTypes(param, typeCache)),
 	};
 }
