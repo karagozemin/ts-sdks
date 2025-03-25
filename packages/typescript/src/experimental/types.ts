@@ -39,6 +39,11 @@ export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) ex
 export type ClientWithExtensions<T> = Experimental_SuiClient & T;
 
 export namespace Experimental_SuiClientTypes {
+	export type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet' | (string & {});
+
+	export interface SuiClientOptions {
+		network: Network;
+	}
 	/** Object methods */
 	export interface TransportMethods {
 		getObjects?: (options: GetObjectsOptions) => Promise<GetObjectsResponse>;

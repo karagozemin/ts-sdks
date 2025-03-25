@@ -12,6 +12,11 @@ import type {
 
 export class Experimental_SuiClient implements Experimental_SuiClientTypes.TransportMethods {
 	#transports: Experimental_SuiClientTypes.TransportMethods[] = [];
+	network: Experimental_SuiClientTypes.Network;
+
+	constructor({ network }: Experimental_SuiClientTypes.SuiClientOptions) {
+		this.network = network;
+	}
 
 	#transportMethod<T extends keyof Experimental_SuiClientTypes.TransportMethods>(
 		method: T,
@@ -92,3 +97,7 @@ export class Experimental_SuiClient implements Experimental_SuiClientTypes.Trans
 		>;
 	}
 }
+
+new Experimental_SuiClient({
+	network: 'mainnet',
+});
