@@ -80,7 +80,7 @@ export function getFirstLevelNamedTypes(types: string[]) {
 function findMvrNames(type: string | StructTag) {
 	const types: Set<string> = new Set();
 
-	if (typeof type === 'string' && !hasMvrName(type)) return [];
+	if (typeof type === 'string' && !hasMvrName(type)) return types;
 
 	let tag = isStructTag(type) ? type : parseStructTag(type);
 
