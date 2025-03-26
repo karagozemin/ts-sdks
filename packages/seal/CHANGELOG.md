@@ -1,9 +1,5 @@
 # @mysten/seal
 
-## 0.3.0
-
-- New interfaces
-
 ## 0.2.0
 
 ### Minor Changes
