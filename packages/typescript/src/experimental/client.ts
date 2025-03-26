@@ -97,7 +97,3 @@ export class Experimental_SuiClient implements Experimental_SuiClientTypes.Trans
 		>;
 	}
 }
-
-new Experimental_SuiClient({
-	network: 'mainnet',
-});
