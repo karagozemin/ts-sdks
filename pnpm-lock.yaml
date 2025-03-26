@@ -767,6 +767,40 @@ importers:
         specifier: ^0.13.0
         version: 0.13.1
 
+  packages/seal:
+    dependencies:
+      '@mysten/bcs':
+        specifier: workspace:*
+        version: link:../bcs
+      '@mysten/sui':
+        specifier: workspace:*
+        version: link:../typescript
+      '@noble/curves':
+        specifier: ^1.4.2
+        version: 1.8.0
+      '@noble/hashes':
+        specifier: ^1.4.0
+        version: 1.7.0
+      shamir-secret-sharing:
+        specifier: 0.0.3
+        version: 0.0.3
+    devDependencies:
+      '@hey-api/openapi-ts':
+        specifier: ^0.61.2
+        version: 0.61.3(typescript@5.8.2)
+      '@mysten/build-scripts':
+        specifier: workspace:*
+        version: link:../build-scripts
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.10.9
+      typescript:
+        specifier: ^5.7.2
+        version: 5.8.2
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.10.9)(happy-dom@16.3.0)(jsdom@25.0.1)(lightningcss@1.29.1)(msw@2.7.0(@types/node@22.10.9)(typescript@5.8.2))
+
   packages/signers:
     dependencies:
       '@google-cloud/kms':
@@ -8131,6 +8165,9 @@ packages:
 
   setimmediate@1.0.5:
     resolution: {integrity: sha512-MATJdZp8sLqDl/68LfQmbP8zKPLQNV6BIZoIgrscFDQ+RsvK/BxeDQOgyxKKoh0y/8h3BqVFnCqQ/gd+reiIXA==}
+
+  shamir-secret-sharing@0.0.3:
+    resolution: {integrity: sha512-GPIb+QZDyjwwKSlVXEjHoOaBeevmdWz2IM2tz07nQvd0L9eMfLhzEqr7imajjjXCAO/cWgzXCCj0yFNMx6+miQ==}
 
   sharp@0.33.5:
     resolution: {integrity: sha512-haPVm1EkS9pgvHrQ/F3Xy+hgcuMV0Wm9vfIBSiwZ05k+xgb0PkBQpGsAA/oWdDobNaZTH5ppvHtzCFbnSEwHVw==}
@@ -17833,6 +17870,8 @@ snapshots:
       es-object-atoms: 1.0.0
 
   setimmediate@1.0.5: {}
+
+  shamir-secret-sharing@0.0.3: {}
 
   sharp@0.33.5:
     dependencies:
