@@ -87,6 +87,7 @@ export class SessionKey {
 
 	async setPersonalMessageSignature(personalMessageSignature: string) {
 		try {
+			// TODO: Fix this to work with any network
 			await verifyPersonalMessageSignature(this.getPersonalMessage(), personalMessageSignature, {
 				address: this.#address,
 				client: new SuiGraphQLClient({
