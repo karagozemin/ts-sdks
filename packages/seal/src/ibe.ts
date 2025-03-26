@@ -3,7 +3,7 @@
 
 import { fromHex } from '@mysten/bcs';
 
-import type { IBEEncryptionsType } from './bcs.js';
+import type { IBEEncryptions } from './bcs.js';
 import type { GTElement } from './bls12381.js';
 import { G1Element, G2Element, Scalar } from './bls12381.js';
 import { kdf } from './kdf.js';
@@ -48,7 +48,7 @@ export abstract class IBEServers {
 		id: Uint8Array,
 		msgAndInfos: { msg: Uint8Array; info: Uint8Array }[],
 		randomnessKey: Uint8Array,
-	): IBEEncryptionsType;
+	): typeof IBEEncryptions.$inferType;
 }
 
 /**
@@ -67,7 +67,7 @@ export class BonehFranklinBLS12381Services extends IBEServers {
 		id: Uint8Array,
 		msgAndInfos: { msg: Uint8Array; info: Uint8Array }[],
 		randomnessKey: Uint8Array,
-	): IBEEncryptionsType {
+	): typeof IBEEncryptions.$inferType {
 		if (this.publicKeys.length === 0 || this.publicKeys.length !== msgAndInfos.length) {
 			throw new Error('Invalid public keys');
 		}

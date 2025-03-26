@@ -5,7 +5,7 @@ import { fromHex } from '@mysten/bcs';
 import { isValidSuiObjectId } from '@mysten/sui/utils';
 import { split as externalSplit } from 'shamir-secret-sharing';
 
-import type { IBEEncryptionsType } from './bcs.js';
+import type { IBEEncryptions } from './bcs.js';
 import { EncryptedObject } from './bcs.js';
 import type { EncryptionInput } from './dem.js';
 import { UserError } from './error.js';
@@ -115,7 +115,7 @@ function encryptBatched(
 	id: Uint8Array,
 	shares: { msg: Uint8Array; info: Uint8Array }[],
 	randomnessKey: Uint8Array,
-): IBEEncryptionsType {
+): typeof IBEEncryptions.$inferType {
 	switch (kemType) {
 		case KemType.BonehFranklinBLS12381DemCCA:
 			return new BonehFranklinBLS12381Services(keyServers).encryptBatched(

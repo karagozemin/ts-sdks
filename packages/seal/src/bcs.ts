@@ -11,7 +11,6 @@ export const IBEEncryptions = bcs.enum('IBEEncryptions', {
 		encryptedRandomness: bcs.bytes(32),
 	}),
 });
-export type IBEEncryptionsType = typeof IBEEncryptions.$inferType;
 
 export const Ciphertext = bcs.enum('Ciphertext', {
 	Aes256Gcm: bcs.struct('Aes256Gcm', {
@@ -25,7 +24,6 @@ export const Ciphertext = bcs.enum('Ciphertext', {
 	}),
 	Plain: bcs.struct('Plain', {}),
 });
-export type CiphertextType = typeof Ciphertext.$inferInput;
 
 /**
  * The encrypted object format. Should be aligned with the Rust implementation.

@@ -6,7 +6,7 @@ import { equalBytes } from '@noble/curves/abstract/utils';
 import { hmac } from '@noble/hashes/hmac';
 import { sha3_256 } from '@noble/hashes/sha3';
 
-import type { CiphertextType } from './bcs.js';
+import type { Ciphertext } from './bcs.js';
 import { InvalidCiphertextError } from './error.js';
 import { xorUnchecked } from './utils.js';
 
@@ -28,7 +28,7 @@ async function generateAesKey(): Promise<Uint8Array> {
 }
 
 export interface EncryptionInput {
-	encrypt(key: Uint8Array): Promise<CiphertextType>;
+	encrypt(key: Uint8Array): Promise<typeof Ciphertext.$inferInput>;
 	generateKey(): Promise<Uint8Array>;
 }
 
@@ -45,7 +45,7 @@ export class AesGcm256 implements EncryptionInput {
 		return generateAesKey();
 	}
 
-	async encrypt(key: Uint8Array): Promise<CiphertextType> {
+	async encrypt(key: Uint8Array): Promise<typeof Ciphertext.$inferInput> {
 		const aesCryptoKey = await crypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']);
 
 		const blob = new Uint8Array(
@@ -68,7 +68,10 @@ export class AesGcm256 implements EncryptionInput {
 		};
 	}
 
-	static async decrypt(key: Uint8Array, ciphertext: CiphertextType): Promise<Uint8Array> {
+	static async decrypt(
+		key: Uint8Array,
+		ciphertext: typeof Ciphertext.$inferInput,
+	): Promise<Uint8Array> {
 		if (!('Aes256Gcm' in ciphertext)) {
 			throw new InvalidCiphertextError(`Invalid ciphertext ${ciphertext}`);
 		}
@@ -90,7 +93,7 @@ export class AesGcm256 implements EncryptionInput {
 }
 
 export class Plain implements EncryptionInput {
-	async encrypt(_key: Uint8Array): Promise<CiphertextType> {
+	async encrypt(_key: Uint8Array): Promise<typeof Ciphertext.$inferInput> {
 		return {
 			Plain: {},
 		};
@@ -122,7 +125,7 @@ export class Hmac256Ctr implements EncryptionInput {
 		return generateAesKey();
 	}
 
-	async encrypt(key: Uint8Array): Promise<CiphertextType> {
+	async encrypt(key: Uint8Array): Promise<typeof Ciphertext.$inferInput> {
 		const blob = Hmac256Ctr.encryptInCtrMode(key, this.plaintext);
 		const mac = Hmac256Ctr.computeMac(key, this.aad, blob);
 		return {
@@ -134,7 +137,10 @@ export class Hmac256Ctr implements EncryptionInput {
 		};
 	}
 
-	static async decrypt(key: Uint8Array, ciphertext: CiphertextType): Promise<Uint8Array> {
+	static async decrypt(
+		key: Uint8Array,
+		ciphertext: typeof Ciphertext.$inferInput,
+	): Promise<Uint8Array> {
 		if (!('Hmac256Ctr' in ciphertext)) {
 			throw new InvalidCiphertextError(`Invalid ciphertext ${ciphertext}`);
 		}

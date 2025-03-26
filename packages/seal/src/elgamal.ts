@@ -22,22 +22,6 @@ function decrypt(sk: Scalar, encryption: [G1Element, G1Element]): G1Element {
 	return encryption[1].subtract(encryption[0].multiply(sk));
 }
 
-// /**
-//  * Encrypt a message with a given public key. Both the public key and the message must a compressed G1Element (48 bytes).
-//  */
-// function elgamal_encrypt(pk: Uint8Array, message: Uint8Array): [Uint8Array, Uint8Array] {
-// 	const ciphertext = encrypt(G1Element.fromBytes(pk), G1Element.fromBytes(message));
-// 	return [ciphertext[0].toBytes(), ciphertext[1].toBytes()];
-// }
-
-// /**
-//  * Encrypt a message with a given public key. Both the public key and the message must a compressed G1Element (48 bytes).
-//  */
-// function encrypt(pk: G1Element, message: G1Element): [G1Element, G1Element] {
-// 	const r = Scalar.random();
-// 	return [G1Element.generator().multiply(r), pk.multiply(r).add(message)];
-// }
-
 /** Generate a random secret key. */
 export function generateSecretKey(): Uint8Array {
 	return Scalar.random().toBytes();

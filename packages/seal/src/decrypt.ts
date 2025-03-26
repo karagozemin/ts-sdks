@@ -55,7 +55,7 @@ export async function decrypt({ encryptedObject, keys }: DecryptOptions): Promis
 		const [objectId, index] = encryptedObject.services[i];
 		// Use the index as the unique info parameter to allow for multiple shares per key server.
 		const info = new Uint8Array([index]);
-		let share = BonehFranklinBLS12381Services.decrypt(
+		const share = BonehFranklinBLS12381Services.decrypt(
 			nonce,
 			keys.get(`${fullId}:${objectId}`)!,
 			encryptedShares[i],
