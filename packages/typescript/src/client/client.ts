@@ -3,9 +3,12 @@
 import { fromBase58, toBase64, toHex } from '@mysten/bcs';
 
 import type { Signer } from '../cryptography/index.js';
-import type { Experimental_SuiClient } from '../experimental/client.js';
+import { Experimental_SuiClient } from '../experimental/client.js';
 import { JSONRpcTransport } from '../experimental/transports/jsonRPC.js';
-import type { SelfRegisteringClientExtension } from '../experimental/types.js';
+import type {
+	Experimental_SuiClientTypes,
+	SelfRegisteringClientExtension,
+} from '../experimental/types.js';
 import type { Transaction } from '../transactions/index.js';
 import { isTransaction } from '../transactions/index.js';
 import {
@@ -109,7 +112,9 @@ export interface OrderArguments {
  * Configuration options for the SuiClient
  * You must provide either a `url` or a `transport`
  */
-export type SuiClientOptions = NetworkOrTransport;
+export type SuiClientOptions = NetworkOrTransport & {
+	network?: Experimental_SuiClientTypes.Network;
+};
 
 type NetworkOrTransport =
 	| {
@@ -130,6 +135,8 @@ export function isSuiClient(client: unknown): client is SuiClient {
 }
 
 export class SuiClient implements SelfRegisteringClientExtension {
+	#network: Experimental_SuiClientTypes.Network;
+
 	protected transport: SuiTransport;
 
 	get [SUI_CLIENT_BRAND]() {
@@ -143,6 +150,7 @@ export class SuiClient implements SelfRegisteringClientExtension {
 	 */
 	constructor(options: SuiClientOptions) {
 		this.transport = options.transport ?? new SuiHTTPTransport({ url: options.url });
+		this.#network = options.network ?? 'unknown';
 	}
 
 	async getRpcApiVersion(): Promise<string | undefined> {
@@ -838,5 +846,11 @@ export class SuiClient implements SelfRegisteringClientExtension {
 				return this;
 			},
 		} as const;
+	}
+
+	experimental_asClient() {
+		return new Experimental_SuiClient({
+			network: this.#network,
+		}).$extend(this);
 	}
 }

@@ -48,6 +48,7 @@ export namespace Experimental_SuiClientTypes {
 	export interface TransportMethods {
 		getObjects?: (options: GetObjectsOptions) => Promise<GetObjectsResponse>;
 		getOwnedObjects?: (options: GetOwnedObjectsOptions) => Promise<GetOwnedObjectsResponse>;
+		getCoins?: (options: GetCoinsOptions) => Promise<GetCoinsResponse>;
 	}
 
 	export interface GetObjectsOptions {
@@ -61,12 +62,23 @@ export namespace Experimental_SuiClientTypes {
 		type?: string;
 	}
 
+	export interface GetCoinsOptions {
+		address: string;
+		coinType: string;
+	}
+
 	export interface GetObjectsResponse {
 		objects: (ObjectResponse | Error)[];
 	}
 
 	export interface GetOwnedObjectsResponse {
 		objects: ObjectResponse[];
+		hasNextPage: boolean;
+		cursor: string | null;
+	}
+
+	export interface GetCoinsResponse {
+		objects: CoinResponse[];
 		hasNextPage: boolean;
 		cursor: string | null;
 	}
@@ -78,6 +90,10 @@ export namespace Experimental_SuiClientTypes {
 		owner: ObjectOwner;
 		type: string;
 		content: Uint8Array;
+	}
+
+	export interface CoinResponse extends ObjectResponse {
+		balance: bigint;
 	}
 
 	/** Balance methods */
@@ -146,7 +162,6 @@ export namespace Experimental_SuiClientTypes {
 
 	export interface DryRunTransactionOptions {
 		transaction: Uint8Array;
-		signatures: string[];
 	}
 
 	export interface DryRunTransactionResponse {

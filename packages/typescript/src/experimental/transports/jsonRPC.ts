@@ -67,6 +67,38 @@ export class JSONRpcTransport implements Experimental_SuiClientTypes.TransportMe
 			cursor: objects.nextCursor ?? null,
 		};
 	}
+
+	async getCoins(options: Experimental_SuiClientTypes.GetCoinsOptions) {
+		const coins = await this.#jsonRpcClient.getCoins({
+			owner: options.address,
+			coinType: options.coinType,
+		});
+
+		return {
+			objects: coins.data.map((coin) => {
+				return {
+					id: coin.coinObjectId,
+					version: coin.version,
+					digest: coin.digest,
+					balance: BigInt(coin.balance),
+					type: `0x2::coin::Coin<${coin.coinType}>`,
+					content: Coin.serialize({
+						id: coin.coinObjectId,
+						balance: {
+							value: coin.balance,
+						},
+					}).toBytes(),
+					owner: {
+						$kind: 'ObjectOwner' as const,
+						ObjectOwner: options.address,
+					},
+				};
+			}),
+			hasNextPage: coins.hasNextPage,
+			cursor: coins.nextCursor ?? null,
+		};
+	}
+
 	async getBalance(options: Experimental_SuiClientTypes.GetBalanceOptions) {
 		const balance = await this.#jsonRpcClient.getBalance({
 			owner: options.address,
@@ -218,3 +250,12 @@ function parseTransaction(
 		signatures: parsedTx.txSignatures,
 	};
 }
+
+const Balance = bcs.struct('Balance', {
+	value: bcs.u64(),
+});
+
+const Coin = bcs.struct('Coin', {
+	id: bcs.Address,
+	balance: Balance,
+});

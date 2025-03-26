@@ -30,6 +30,18 @@ export class Experimental_SuiClient implements Experimental_SuiClientTypes.Trans
 		throw new Error(`No transport method found for ${method}`);
 	}
 
+	getObjects(options: Experimental_SuiClientTypes.GetObjectsOptions) {
+		return this.#transportMethod('getObjects', options);
+	}
+
+	getCoins(options: Experimental_SuiClientTypes.GetCoinsOptions) {
+		return this.#transportMethod('getCoins', options);
+	}
+
+	getOwnedObjects(options: Experimental_SuiClientTypes.GetOwnedObjectsOptions) {
+		return this.#transportMethod('getOwnedObjects', options);
+	}
+
 	getBalance(options: Experimental_SuiClientTypes.GetBalanceOptions) {
 		return this.#transportMethod('getBalance', options);
 	}
