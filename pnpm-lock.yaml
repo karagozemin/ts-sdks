@@ -476,6 +476,9 @@ importers:
       '@mysten/kiosk':
         specifier: workspace:*
         version: link:../kiosk
+      '@mysten/seal':
+        specifier: workspace:*
+        version: link:../seal
       '@mysten/signers':
         specifier: workspace:*
         version: link:../signers
