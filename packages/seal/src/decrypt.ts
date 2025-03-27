@@ -1,6 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { fromHex } from '@mysten/bcs';
 import { combine as externalCombine } from 'shamir-secret-sharing';
 
 import type { EncryptedObject } from './bcs.js';
@@ -12,7 +13,6 @@ import { BonehFranklinBLS12381Services, DST } from './ibe.js';
 import { deriveKey, KeyPurpose } from './kdf.js';
 import type { KeyCacheKey } from './types.js';
 import { createFullId } from './utils.js';
-import { fromHex } from '@mysten/bcs';
 
 export interface DecryptOptions {
 	encryptedObject: typeof EncryptedObject.$inferType;
