@@ -351,7 +351,7 @@ async function generatePackage(path: string, name: string) {
 }
 
 Promise.all(
-	['wal', 'wal_exchange', 'walrus'].map((name) =>
+	['wal', 'wal_exchange', 'walrus', 'subsidies'].map((name) =>
 		generatePackage(join(__dirname, '..', 'tests', 'move', name), name),
 	),
 ).then(console.log, console.error);
