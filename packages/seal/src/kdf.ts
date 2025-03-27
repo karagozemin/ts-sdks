@@ -5,7 +5,8 @@ import { hkdf } from '@noble/hashes/hkdf';
 import { hmac } from '@noble/hashes/hmac';
 import { sha3_256 } from '@noble/hashes/sha3';
 
-import { G1Element, type G2Element, type GTElement } from './bls12381.js';
+import { G1Element } from './bls12381.js';
+import type { G2Element, GTElement } from './bls12381.js';
 
 /**
  * The default key derivation function.
