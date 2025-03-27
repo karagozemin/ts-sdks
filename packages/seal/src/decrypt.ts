@@ -12,6 +12,7 @@ import { BonehFranklinBLS12381Services, DST } from './ibe.js';
 import { deriveKey, KeyPurpose } from './kdf.js';
 import type { KeyCacheKey } from './types.js';
 import { createFullId } from './utils.js';
+import { fromHex } from '@mysten/bcs';
 
 export interface DecryptOptions {
 	encryptedObject: typeof EncryptedObject.$inferType;
@@ -59,6 +60,7 @@ export async function decrypt({ encryptedObject, keys }: DecryptOptions): Promis
 			nonce,
 			keys.get(`${fullId}:${objectId}`)!,
 			encryptedShares[i],
+			fromHex(fullId),
 			info,
 		);
 		// The Shamir secret sharing library expects the index/x-coordinate to be at the end of the share.
