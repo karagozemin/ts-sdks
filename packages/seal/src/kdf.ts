@@ -5,7 +5,7 @@ import { hkdf } from '@noble/hashes/hkdf';
 import { hmac } from '@noble/hashes/hmac';
 import { sha3_256 } from '@noble/hashes/sha3';
 
-import type { G2Element, GTElement } from './bls12381.js';
+import { G1Element, type G2Element, type GTElement } from './bls12381.js';
 
 /**
  * The default key derivation function.
@@ -39,7 +39,11 @@ export function kdf(
 			pi * COEFFICIENT_SIZE,
 		);
 	});
-	const inputBytes = new Uint8Array([...permutedBytes, ...nonce.toBytes(), ...id]);
+	const inputBytes = new Uint8Array([
+		...permutedBytes,
+		...nonce.toBytes(),
+		...G1Element.hashToCurve(id).toBytes(),
+	]);
 	return hkdf(sha3_256, inputBytes, '', info, 32);
 }
 
