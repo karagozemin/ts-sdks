@@ -32,7 +32,6 @@ import type { Emitter } from 'mitt';
 import mitt from 'mitt';
 
 import { DEFAULT_STASHED_ORIGIN, StashedPopup } from './channel/index.js';
-import type { StashedSupportedNetwork } from './types.js';
 
 const PACKAGE_VERSION = 'v1';
 
