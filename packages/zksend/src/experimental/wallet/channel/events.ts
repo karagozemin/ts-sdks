@@ -3,21 +3,13 @@
 
 import type { InferOutput } from 'valibot';
 import {
-<<<<<<< HEAD
 	any,
 	array,
-=======
-	array,
-	instance,
->>>>>>> 627ab90 (working)
 	literal,
 	object,
 	optional,
 	pipe,
-<<<<<<< HEAD
 	record,
-=======
->>>>>>> 627ab90 (working)
 	string,
 	url,
 	uuid,
@@ -69,11 +61,7 @@ export const StashedResponseData = variant('type', [
 		accounts: array(
 			object({
 				address: string('`address` is required'),
-<<<<<<< HEAD
 				publicKey: optional(string('`publicKey` must be a string')),
-=======
-				publicKey: optional(instance(Uint8Array, '`publicKey` must be a Uint8Array')),
->>>>>>> 627ab90 (working)
 			}),
 		),
 		session: string('`session` is required'),
