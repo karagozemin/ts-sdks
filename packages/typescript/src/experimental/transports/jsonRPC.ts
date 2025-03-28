@@ -12,13 +12,15 @@ import type {
 } from '../../client/index.js';
 import { batch } from '../../transactions/plugins/utils.js';
 import { Transaction } from '../../transactions/Transaction.js';
+import { Experimental_CoreClient } from '../core.js';
 import { ObjectError } from '../errors.js';
 import type { Experimental_SuiClientTypes } from '../types.js';
 
-export class JSONRpcTransport implements Experimental_SuiClientTypes.TransportMethods {
+export class JSONRpcTransport extends Experimental_CoreClient {
 	#jsonRpcClient: SuiClient;
 
 	constructor(jsonRpcClient: SuiClient) {
+		super({ network: jsonRpcClient.network });
 		this.#jsonRpcClient = jsonRpcClient;
 	}
 

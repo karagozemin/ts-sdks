@@ -6,13 +6,15 @@ import { parse } from 'valibot';
 import type { BcsType } from '../bcs/index.js';
 import { bcs } from '../bcs/index.js';
 import type { SuiClient } from '../client/client.js';
-import { ObjectError } from '../experimental/errors.js';
 import { normalizeSuiAddress, normalizeSuiObjectId, SUI_TYPE_ARG } from '../utils/index.js';
 import { ObjectRef } from './data/internal.js';
 import type { Argument, CallArg, Command, OpenMoveTypeSignature } from './data/internal.js';
 import { Inputs } from './Inputs.js';
 import { getPureBcsSchema, isTxContext, normalizedTypeToMoveTypeSignature } from './serializer.js';
 import type { TransactionDataBuilder } from './TransactionData.js';
+
+// The maximum objects that can be fetched at once using multiGetObjects.
+const MAX_OBJECTS_PER_FETCH = 50;
 
 // An amount of gas (in gas units) that is added to transactions as an overhead to ensure transactions do not fail.
 const GAS_SAFE_OVERHEAD = 1000n;
@@ -67,7 +69,7 @@ async function setGasBudget(
 		return;
 	}
 
-	const dryRunResult = await getClient(options).jsonRPC.dryRunTransactionBlock({
+	const dryRunResult = await getClient(options).dryRunTransactionBlock({
 		transactionBlock: transactionData.build({
 			overrides: {
 				gasData: {
@@ -107,16 +109,16 @@ async function setGasPayment(
 ) {
 	if (!transactionData.gasConfig.payment) {
 		const coins = await getClient(options).getCoins({
-			address: transactionData.gasConfig.owner || transactionData.sender!,
+			owner: transactionData.gasConfig.owner || transactionData.sender!,
 			coinType: SUI_TYPE_ARG,
 		});
 
-		const paymentCoins = coins.objects
+		const paymentCoins = coins.data
 			// Filter out coins that are also used as input:
 			.filter((coin) => {
 				const matchingInput = transactionData.inputs.find((input) => {
 					if (input.Object?.ImmOrOwnedObject) {
-						return coin.id === input.Object.ImmOrOwnedObject.objectId;
+						return coin.coinObjectId === input.Object.ImmOrOwnedObject.objectId;
 					}
 
 					return false;
@@ -125,7 +127,7 @@ async function setGasPayment(
 				return !matchingInput;
 			})
 			.map((coin) => ({
-				objectId: coin.id,
+				objectId: coin.coinObjectId,
 				digest: coin.digest,
 				version: coin.version,
 			}));
@@ -157,37 +159,46 @@ async function resolveObjectReferences(
 		),
 	];
 
-	const objectResponse = await getClient(options).getObjects({
-		objectIds: dedupedIds,
-	});
+	const objectChunks = dedupedIds.length ? chunk(dedupedIds, MAX_OBJECTS_PER_FETCH) : [];
+	const resolved = (
+		await Promise.all(
+			objectChunks.map((chunk) =>
+				getClient(options).multiGetObjects({
+					ids: chunk,
+					options: { showOwner: true },
+				}),
+			),
+		)
+	).flat();
 
 	const responsesById = new Map(
 		dedupedIds.map((id, index) => {
-			return [id, objectResponse.objects[index]];
+			return [id, resolved[index]];
 		}),
 	);
 
 	const invalidObjects = Array.from(responsesById)
-		.filter(([_, obj]) => obj instanceof ObjectError)
-		.map(([id]) => id);
+		.filter(([_, obj]) => obj.error)
+		.map(([_, obj]) => JSON.stringify(obj.error));
 
 	if (invalidObjects.length) {
 		throw new Error(`The following input objects are invalid: ${invalidObjects.join(', ')}`);
 	}
 
-	const objects = objectResponse.objects.map((object) => {
-		if (object instanceof Error) {
-			throw object;
+	const objects = resolved.map((object) => {
+		if (object.error || !object.data) {
+			throw new Error(`Failed to fetch object: ${object.error}`);
 		}
-
-		const owner = object.owner;
+		const owner = object.data.owner;
 		const initialSharedVersion =
-			owner.$kind === 'Shared' ? owner.Shared.initialSharedVersion : null;
+			owner && typeof owner === 'object' && 'Shared' in owner
+				? owner.Shared.initial_shared_version
+				: null;
 
 		return {
-			objectId: object.id,
-			digest: object.digest,
-			version: object.version,
+			objectId: object.data.objectId,
+			digest: object.data.digest,
+			version: object.data.version,
 			initialSharedVersion,
 		};
 	});
@@ -291,7 +302,7 @@ async function normalizeInputs(
 		await Promise.all(
 			[...moveFunctionsToResolve].map(async (functionName) => {
 				const [packageId, moduleId, functionId] = functionName.split('::');
-				const def = await client.jsonRPC.getNormalizedMoveFunction({
+				const def = await client.getNormalizedMoveFunction({
 					package: packageId,
 					module: moduleId,
 					function: functionId,
@@ -459,12 +470,18 @@ function isReceivingType(type: OpenMoveTypeSignature): boolean {
 	);
 }
 
-export function getClient(options: BuildTransactionOptions) {
+export function getClient(options: BuildTransactionOptions): SuiClient {
 	if (!options.client) {
 		throw new Error(
 			`No sui client passed to Transaction#build, but transaction data was not sufficient to build offline.`,
 		);
 	}
 
-	return options.client.experimental_asClient();
+	return options.client;
+}
+
+function chunk<T>(arr: T[], size: number): T[][] {
+	return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+		arr.slice(i * size, i * size + size),
+	);
 }

@@ -134,9 +134,8 @@ export function isSuiClient(client: unknown): client is SuiClient {
 	);
 }
 
-export class SuiClient implements SelfRegisteringClientExtension {
-	#network: Experimental_SuiClientTypes.Network;
-
+export class SuiClient extends Experimental_SuiClient implements SelfRegisteringClientExtension {
+	core: JSONRpcTransport = new JSONRpcTransport(this);
 	protected transport: SuiTransport;
 
 	get [SUI_CLIENT_BRAND]() {
@@ -149,8 +148,8 @@ export class SuiClient implements SelfRegisteringClientExtension {
 	 * @param options configuration options for the API Client
 	 */
 	constructor(options: SuiClientOptions) {
+		super({ network: options.network ?? 'unknown' });
 		this.transport = options.transport ?? new SuiHTTPTransport({ url: options.url });
-		this.#network = options.network ?? 'unknown';
 	}
 
 	async getRpcApiVersion(): Promise<string | undefined> {
@@ -841,16 +840,9 @@ export class SuiClient implements SelfRegisteringClientExtension {
 	experimental_asClientExtension(this: SuiClient) {
 		return {
 			name: 'jsonRPC',
-			register: (client: Experimental_SuiClient) => {
-				client.$registerTransport(new JSONRpcTransport(this));
+			register: () => {
 				return this;
 			},
 		} as const;
-	}
-
-	experimental_asClient() {
-		return new Experimental_SuiClient({
-			network: this.#network,
-		}).$extend(this);
 	}
 }
