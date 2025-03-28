@@ -34,6 +34,8 @@ import mitt from 'mitt';
 import { DEFAULT_STASHED_ORIGIN, StashedPopup } from './channel/index.js';
 import type { StashedSupportedNetwork } from './types.js';
 
+const PACKAGE_VERSION = 'v1';
+
 type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
 };
@@ -152,6 +154,8 @@ export class StashedWallet implements Wallet {
 			chain,
 			session: getStashedSession().token,
 		});
+
+		console.log('response', response);
 
 		return {
 			transactionBlockBytes: response.bytes,
@@ -288,6 +292,7 @@ export class StashedWallet implements Wallet {
 			origin: this.#origin,
 		});
 
+		console.log('popup', popup);
 		const response = await popup.send({
 			type: 'connect',
 		});
@@ -322,6 +327,7 @@ export function registerStashedWallet(
 	} = {},
 ) {
 	const wallets = getWallets();
+	console.log('wallets', wallets);
 
 	const extension = wallets.get().find((wallet) => wallet.id === SUI_WALLET_EXTENSION_ID);
 	if (extension) {
