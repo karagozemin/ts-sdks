@@ -1,5 +1,38 @@
 # @mysten/sui.js
 
+## 1.25.0
+
+### Minor Changes
+
+- e8b5d04: Update NamedPackagesPlugin to use the new MVR API and support single-types in the cache
+
+## 1.24.0
+
+### Minor Changes
+
+- cf3d12d: Update json rpc types
+
+## 1.23.0
+
+### Minor Changes
+
+- 8baac61: remove jose dependency
+
+### Patch Changes
+
+- 8baac61: Add check for malformed google iss in toZkLoginPublicIdentifier
+
+## 1.22.0
+
+### Minor Changes
+
+- 03975f4: replace bs58 and bech32 packages with @scure/base
+
+### Patch Changes
+
+- Updated dependencies [03975f4]
+  - @mysten/bcs@1.5.0
+
 ## 1.21.2
 
 ### Patch Changes

@@ -71,16 +71,6 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function decoding_safety_limit(options: { arguments: [RawTransactionArgument<number>] }) {
-		const argumentsTypes = ['u16'];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'redstuff',
-				function: 'decoding_safety_limit',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function max_byzantine(options: { arguments: [RawTransactionArgument<number>] }) {
 		const argumentsTypes = ['u16'];
 		return (tx: Transaction) =>
@@ -98,7 +88,6 @@ export function init(packageAddress: string) {
 		n_source_symbols,
 		symbol_size,
 		metadata_size,
-		decoding_safety_limit,
 		max_byzantine,
 	};
 }

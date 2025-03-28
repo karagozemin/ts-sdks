@@ -3,8 +3,8 @@
   "collaborators": [
     "jonaslindstrom"
   ],
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.0.1",
+  "private": false,
   "files": [
     "walrus_wasm_bg.wasm",
     "walrus_wasm.js",

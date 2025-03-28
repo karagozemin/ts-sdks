@@ -34,16 +34,14 @@ you to connect to a different network or updated deployment of the walrus contra
 const walrusClient = new WalrusClient({
 	suiClient,
 	packageConfig: {
-		packageId: '0x795ddbc26b8cfff2551f45e198b87fc19473f2df50f995376b924ac80e56f88b',
 		systemObjectId: '0x98ebc47370603fe81d9e15491b2f1443d619d1dab720d586e429ed233e1255c1',
 		stakingPoolId: '0x20266a17b4f1a216727f3eef5772f8d486a9e3b5e319af80a5b75809c035561d',
-		walPackageId: '0x8190b041122eb492bf63cb464476bd68c6b7e570a4079645a8b28732b6197a82',
 	},
 });
 ```
 
-Walrus nodes currently use self-signed certificates. Until all nodes are updated to use valid
-certificates, you may need to configure your environment to ignore certificate errors.
+Walrus `testnet` nodes currently use self-signed certificates. Until all nodes are updated to use
+valid certificates, you may need to configure your environment to ignore certificate errors.
 
 In node this can be done though an environment variable:
 
@@ -72,10 +70,10 @@ any other desired behavior.
 
 ## SDK Overview
 
-The walrus SDK is designed to be used to build aggregators and publishers, and is not intended to be
-used in clients directly in apps. Reading and writing blobs with the SDK requires complex
-encoding/decoding and many requests to the different storage nodes and interactions with the
-contracts on sui.
+The walrus SDK is designed primarily to be used to build aggregators and publishers, and may not be
+optimal when used directly in client side apps. Reading and writing directly from storage nodes
+requires a lot of requests (~2200 to write a blob, ~335 to read a blob). For most apps, using
+aggregators and publishers with optimized reads/writes will provide a better user experience.
 
 The `WalrusClient` exposes high level methods for reading and writing blobs, as well as lower level
 methods for the individual steps in the process that can be used to implement more complex flows
@@ -155,3 +153,45 @@ successfully to read or publish a blob.
 When using the lower level methods to build your own read or publish flows, it is recommended to
 understand the number of shards/sliver that need to be successfully written or read for you
 operation to succeed, and gracefully handle cases where some nodes may be in a bad state.
+
+## Configuring network requests
+
+Reading and writing blobs directly from storage nodes requires a lot of requests. The walrus SDK
+will issue all requests needed to complete these operations, but does not handling all the
+complexities a robust aggregator or publisher might encounter.
+
+By default all requests are issued using the global `fetch` for whatever runtime the SDK is running
+in.
+
+This will not impose any limitations on concurrency, and will be subject to default timeouts and
+behavior defined by your runtime. To customize how requests are made, you can provide a custom
+`fetch` method:
+
+```ts
+import type { RequestInfo, RequestInit } from 'undici';
+import { Agent, fetch, setGlobalDispatcher } from 'undici';
+
+const walrusClient = new WalrusClient({
+	network: 'testnet',
+	suiClient,
+	storageNodeClientOptions: {
+		timeout: 60_000,
+		fetch: (url, init) => {
+			// Some casting may be required because undici types may not exactly match the @node/types types
+			return fetch(url as RequestInfo, {
+				...(init as RequestInit),
+				dispatcher: new Agent({
+					connectTimeout: 60_000,
+				}),
+			}) as unknown as Promise<Response>;
+		},
+	},
+});
+```
+
+### Known fetch limitations you might run into
+
+- Some nodes can be slow to respond. When running in node, the default connectTimeout is 10 seconds
+  and can cause request timeouts
+- In `bun` the `abort` signal will stop requests from responding, but they still wait for completion
+  before their promises reject

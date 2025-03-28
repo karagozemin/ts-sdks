@@ -13,7 +13,7 @@ import type {
 	StoreSliverRequestInput,
 	Uploadable,
 } from './storage-node/types.js';
-import type { BlobMetadata } from './utils/bcs.js';
+import type { BlobMetadata, EncodingType } from './utils/bcs.js';
 
 /**
  * Configuration for the Walrus package on sui
@@ -21,14 +21,11 @@ import type { BlobMetadata } from './utils/bcs.js';
  * This is used to configure the Walrus package to use a specific package ID, system object ID, staking pool ID, and WAL package ID.
  */
 export interface WalrusPackageConfig {
-	/** The package ID of the Walrus package */
-	packageId: string;
 	/** The system object ID of the Walrus package */
 	systemObjectId: string;
 	/** The staking pool ID of the Walrus package */
 	stakingPoolId: string;
-	/** The package ID of the WAL coin */
-	walPackageId: string;
+	subsidiesObjectId?: string;
 	exchange?: {
 		packageId: string;
 		exchangeIds: string[];
@@ -47,7 +44,7 @@ type SuiClientOrRpcUrl =
 
 type WalrusNetworkOrPackageConfig =
 	| {
-			network: 'testnet';
+			network: 'mainnet' | 'testnet';
 			packageConfig?: WalrusPackageConfig;
 	  }
 	| {
@@ -85,6 +82,8 @@ export interface StorageWithSizeOptions {
 	size: number;
 	/** The number of epoch the storage will be reserved for. */
 	epochs: number;
+	/** Owner of the storage object. */
+	owner: string;
 	/** optionally specify a WAL coin pay for the registration.  This will consume WAL from the signer by default. */
 	walCoin?: TransactionObjectArgument;
 }
@@ -95,6 +94,8 @@ export interface RegisterBlobOptions extends StorageWithSizeOptions {
 	deletable: boolean;
 	/** optionally specify a WAL coin pay for the registration.  This will consume WAL from the signer by default. */
 	walCoin?: TransactionObjectArgument;
+	/** The attributes to write for the blob. */
+	attributes?: Record<string, string | null>;
 }
 
 export interface CertifyBlobOptions {
@@ -104,6 +105,7 @@ export interface CertifyBlobOptions {
 	 * These confirmations must be provided in the same order as the nodes in the committee.
 	 * For nodes that have not provided a confirmation you can pass `null` */
 	confirmations: (StorageConfirmation | null)[];
+	deletable: boolean;
 }
 
 type DeletableConfirmationOptions =
@@ -165,6 +167,13 @@ export type WriteEncodedBlobOptions = {
 } & DeletableConfirmationOptions &
 	WalrusClientRequestOptions;
 
+export type WriteEncodedBlobToNodesOptions = {
+	blobId: string;
+	metadata: Uploadable | typeof BlobMetadata.$inferInput;
+	sliversByNode: SliversForNode[];
+} & DeletableConfirmationOptions &
+	WalrusClientRequestOptions;
+
 export type WriteBlobOptions = {
 	blob: Uint8Array;
 	deletable: boolean;
@@ -173,6 +182,8 @@ export type WriteBlobOptions = {
 	signer: Signer;
 	/** Where the blob should be transferred to after it is registered.  Defaults to the signer address. */
 	owner?: string;
+	/** The attributes to write for the blob. */
+	attributes?: Record<string, string | null>;
 } & WalrusClientRequestOptions;
 
 export interface DeleteBlobOptions {
@@ -181,6 +192,7 @@ export interface DeleteBlobOptions {
 
 export type ExtendBlobOptions = {
 	blobObjectId: string;
+	owner: string;
 	/** optionally specify a WAL coin pay for the registration.  This will consume WAL from the signer by default. */
 	walCoin?: TransactionObjectArgument;
 } & (
@@ -195,3 +207,18 @@ export type ExtendBlobOptions = {
 			epochs?: never;
 	  }
 );
+
+export type WriteBlobAttributesOptions = {
+	attributes: Record<string, string | null>;
+} & (
+	| {
+			blobObject: TransactionObjectArgument;
+			blobObjectId?: never;
+	  }
+	| {
+			blobObjectId: string;
+			blobObject?: never;
+	  }
+);
+
+export type EncodingType = Extract<typeof EncodingType.$inferInput, string>;

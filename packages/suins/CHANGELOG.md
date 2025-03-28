@@ -1,5 +1,35 @@
 # @mysten/suins
 
+## 0.7.6
+
+### Patch Changes
+
+- Updated dependencies [e8b5d04]
+  - @mysten/sui@1.25.0
+
+## 0.7.5
+
+### Patch Changes
+
+- Updated dependencies [cf3d12d]
+  - @mysten/sui@1.24.0
+
+## 0.7.4
+
+### Patch Changes
+
+- f7980e8: Bump axios version
+- Updated dependencies [8baac61]
+- Updated dependencies [8baac61]
+  - @mysten/sui@1.23.0
+
+## 0.7.3
+
+### Patch Changes
+
+- Updated dependencies [03975f4]
+  - @mysten/sui@1.22.0
+
 ## 0.7.2
 
 ### Patch Changes

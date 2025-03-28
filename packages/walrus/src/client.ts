@@ -5,22 +5,31 @@ import type { InferBcsType } from '@mysten/bcs';
 import { bcs, fromBase64 } from '@mysten/bcs';
 import { SuiClient } from '@mysten/sui/client';
 import type { Signer } from '@mysten/sui/cryptography';
+import type { TransactionObjectArgument } from '@mysten/sui/transactions';
 import { coinWithBalance, Transaction } from '@mysten/sui/transactions';
+import { normalizeStructTag, parseStructTag } from '@mysten/sui/utils';
 import { bls12381_min_pk_verify } from '@mysten/walrus-wasm';
 
-import { statusLifecycleRank, TESTNET_WALRUS_PACKAGE_CONFIG } from './constants.js';
-import { Blob } from './contracts/blob.js';
+import {
+	MAINNET_WALRUS_PACKAGE_CONFIG,
+	statusLifecycleRank,
+	TESTNET_WALRUS_PACKAGE_CONFIG,
+} from './constants.js';
+import { Blob, init as initBlobContract } from './contracts/blob.js';
 import type { Committee } from './contracts/committee.js';
+import { init as initMetadataContract } from './contracts/metadata.js';
 import { StakingInnerV1 } from './contracts/staking_inner.js';
 import { StakingPool } from './contracts/staking_pool.js';
 import { Staking } from './contracts/staking.js';
 import { Storage } from './contracts/storage_resource.js';
+import { init as initSubsidiesContract } from './contracts/subsidies.js';
 import { SystemStateInnerV1 } from './contracts/system_state_inner.js';
 import { init as initSystemContract, System } from './contracts/system.js';
 import {
 	BehindCurrentEpochError,
 	BlobBlockedError,
 	BlobNotCertifiedError,
+	InconsistentBlobError,
 	NoBlobMetadataReceivedError,
 	NoBlobStatusReceivedError,
 	NotEnoughBlobConfirmationsError,
@@ -49,52 +58,65 @@ import type {
 	StorageWithSizeOptions,
 	WalrusClientConfig,
 	WalrusPackageConfig,
+	WriteBlobAttributesOptions,
 	WriteBlobOptions,
 	WriteEncodedBlobOptions,
+	WriteEncodedBlobToNodesOptions,
 	WriteMetadataOptions,
 	WriteSliverOptions,
 	WriteSliversToNodeOptions,
 } from './types.js';
-import { blobIdToInt, IntentType, SliverData, StorageConfirmation } from './utils/bcs.js';
+import {
+	blobIdToInt,
+	IntentType,
+	SliverData,
+	StorageConfirmation,
+	TestnetSystemStateInnerV1,
+} from './utils/bcs.js';
 import {
 	chunk,
 	encodedBlobLength,
-	getPrimarySourceSymbols,
 	getShardIndicesByNodeId,
+	getSourceSymbols,
 	isAboveValidity,
 	isQuorum,
 	signersToBitmap,
 	storageUnitsFromSize,
 	toPairIndex,
 	toShardIndex,
+	toTypeString,
 } from './utils/index.js';
+import { MemoCache } from './utils/memo.js';
 import { SuiObjectDataLoader } from './utils/object-loader.js';
 import { shuffle, weightedShuffle } from './utils/randomness.js';
-import { combineSignatures, decodePrimarySlivers, encodeBlob } from './wasm.js';
+import { combineSignatures, computeMetadata, decodePrimarySlivers, encodeBlob } from './wasm.js';
 
 export class WalrusClient {
 	#storageNodeClient: StorageNodeClient;
 
-	packageConfig: WalrusPackageConfig;
+	#packageConfig: WalrusPackageConfig;
 	#suiClient: SuiClient;
 	#objectLoader: SuiObjectDataLoader;
 
 	#blobMetadataConcurrencyLimit = 10;
-	#activeCommittee?: CommitteeInfo | Promise<CommitteeInfo> | null;
 	#readCommittee?: CommitteeInfo | Promise<CommitteeInfo> | null;
+	#memo = new MemoCache();
 
 	constructor(config: WalrusClientConfig) {
 		if (config.network && !config.packageConfig) {
 			const network = config.network;
 			switch (network) {
 				case 'testnet':
-					this.packageConfig = TESTNET_WALRUS_PACKAGE_CONFIG;
+					this.#packageConfig = TESTNET_WALRUS_PACKAGE_CONFIG;
+					break;
+				case 'mainnet':
+					this.#packageConfig = MAINNET_WALRUS_PACKAGE_CONFIG;
 					break;
 				default:
 					throw new WalrusClientError(`Unsupported network: ${network}`);
 			}
 		} else {
-			this.packageConfig = config.packageConfig!;
+			this.#packageConfig = config.packageConfig!;
 		}
 
 		this.#suiClient =
@@ -108,40 +130,85 @@ export class WalrusClient {
 	}
 
 	/** The Move type for a WAL coin */
-	get walType() {
-		return `${this.packageConfig.walPackageId}::wal::WAL`;
-	}
+	#walType = this.#memo.create('walType', async () => {
+		const stakedWal = await this.#suiClient.getNormalizedMoveStruct({
+			package: await this.#getPackageId(),
+			module: 'staked_wal',
+			struct: 'StakedWal',
+		});
+
+		const balanceType = stakedWal.fields.find((field) => field.name === 'principal')?.type;
+
+		if (!balanceType) {
+			throw new WalrusClientError('WAL type not found');
+		}
+
+		const parsed = parseStructTag(toTypeString(balanceType));
+		const coinType = parsed.typeParams[0];
+
+		if (!coinType) {
+			throw new WalrusClientError('WAL type not found');
+		}
+
+		return normalizeStructTag(coinType);
+	});
+
+	#getPackageId = this.#memo.create('getPackageId', async () => {
+		const system = await this.#objectLoader.load(this.#packageConfig.systemObjectId);
+		return parseStructTag(system.type!).address;
+	});
 
 	/** The Move type for a Blob object */
-	get blobType() {
-		return `${this.packageConfig.packageId}::blob::Blob`;
-	}
+	#getBlobType = this.#memo.create('getBlobType', async () => {
+		return `${await this.#getPackageId()}::blob::Blob`;
+	});
 
-	/** The Move type for a Storage object */
-	get storageType() {
-		return `${this.packageConfig.packageId}::storage_resource::Storage`;
-	}
+	#getSystemContract = this.#memo.create('getSystemContract', async () => {
+		const { package_id } = await this.systemObject();
+		return initSystemContract(package_id);
+	});
 
-	get systemContract() {
-		return initSystemContract(this.packageConfig.packageId);
-	}
+	#getSubsidiesContract = this.#memo.create('getSubsidiesContract', async () => {
+		if (!this.#packageConfig.subsidiesObjectId) {
+			throw new WalrusClientError('Subsidies object ID not defined in package config');
+		}
+
+		const subsidiesObject = await this.#objectLoader.load(this.#packageConfig.subsidiesObjectId);
+
+		const packageId = parseStructTag(subsidiesObject.type!).address;
+
+		return initSubsidiesContract(packageId);
+	});
+
+	#getBlobContract = this.#memo.create('getBlobContract', async () => {
+		const { package_id } = await this.systemObject();
+		return initBlobContract(package_id);
+	});
+
+	#getMetadataContract = this.#memo.create('getMetadataContract', async () => {
+		const { package_id } = await this.systemObject();
+		return initMetadataContract(package_id);
+	});
 
 	/** The cached system object for the walrus package */
 	systemObject() {
-		return this.#objectLoader.load(this.packageConfig.systemObjectId, System());
+		return this.#objectLoader.load(this.#packageConfig.systemObjectId, System());
 	}
 
 	/** The cached staking pool object for the walrus package */
 	stakingObject() {
-		return this.#objectLoader.load(this.packageConfig.stakingPoolId, Staking());
+		return this.#objectLoader.load(this.#packageConfig.stakingPoolId, Staking());
 	}
 
 	/** The system state for the current version of walrus contract  */
 	async systemState() {
 		const systemState = await this.#objectLoader.loadFieldObject(
-			this.packageConfig.systemObjectId,
+			this.#packageConfig.systemObjectId,
 			{ type: 'u64', value: (await this.systemObject()).version },
-			SystemStateInnerV1(),
+
+			this.#packageConfig.systemObjectId === TESTNET_WALRUS_PACKAGE_CONFIG.systemObjectId
+				? (TestnetSystemStateInnerV1 as never)
+				: SystemStateInnerV1(),
 		);
 
 		return systemState;
@@ -150,7 +217,7 @@ export class WalrusClient {
 	/** The staking state for the current version of walrus contract */
 	async stakingState() {
 		return this.#objectLoader.loadFieldObject(
-			this.packageConfig.stakingPoolId,
+			this.#packageConfig.stakingPoolId,
 			{
 				type: 'u64',
 				value: (await this.stakingObject()).version,
@@ -167,17 +234,26 @@ export class WalrusClient {
 		const numShards = systemState.committee.n_shards;
 
 		const blobMetadata = await this.getBlobMetadata({ blobId, signal });
+
 		const slivers = await this.getSlivers({ blobId, signal });
 
-		return decodePrimarySlivers(numShards, blobMetadata.metadata.V1.unencoded_length, slivers);
+		const blobBytes = decodePrimarySlivers(
+			blobId,
+			numShards,
+			blobMetadata.metadata.V1.unencoded_length,
+			slivers,
+		);
+
+		const reconstructedBlobMetadata = computeMetadata(systemState.committee.n_shards, blobBytes);
+
+		if (reconstructedBlobMetadata.blob_id !== blobId) {
+			throw new InconsistentBlobError('The specified blob was encoded incorrectly.');
+		}
+
+		return blobBytes;
 	}
 
 	async getBlobMetadata({ blobId, signal }: GetBlobMetadataOptions) {
-		const controller = new AbortController();
-		signal?.addEventListener('abort', () => {
-			controller.abort(signal.reason);
-		});
-
 		const committee = await this.#getReadCommittee({ blobId, signal });
 		const randomizedNodes = shuffle(committee.nodes);
 
@@ -187,12 +263,16 @@ export class WalrusClient {
 		let numNotFoundWeight = 0;
 		let numBlockedWeight = 0;
 		let totalErrorCount = 0;
+		const controller = new AbortController();
 
 		const metadataExecutors = randomizedNodes.map((node) => async () => {
 			try {
 				return await this.#storageNodeClient.getBlobMetadata(
 					{ blobId },
-					{ nodeUrl: node.networkUrl, signal: controller.signal },
+					{
+						nodeUrl: node.networkUrl,
+						signal: signal ? AbortSignal.any([controller.signal, signal]) : controller.signal,
+					},
 				);
 			} catch (error) {
 				if (error instanceof NotFoundError) {
@@ -250,11 +330,6 @@ export class WalrusClient {
 	}
 
 	async getSlivers({ blobId, signal }: GetSliversOptions) {
-		const controller = new AbortController();
-		signal?.addEventListener('abort', () => {
-			controller.abort(signal.reason);
-		});
-
 		const committee = await this.#getReadCommittee({ blobId, signal });
 		const randomizedNodes = weightedShuffle(
 			committee.nodes.map((node) => ({
@@ -265,7 +340,7 @@ export class WalrusClient {
 
 		const stakingState = await this.stakingState();
 		const numShards = stakingState.n_shards;
-		const minSymbols = getPrimarySourceSymbols(numShards);
+		const { primarySymbols: minSymbols } = getSourceSymbols(numShards);
 
 		const sliverPairIndices = randomizedNodes.flatMap((node) =>
 			node.shardIndices.map((shardIndex) => ({
@@ -274,6 +349,7 @@ export class WalrusClient {
 			})),
 		);
 
+		const controller = new AbortController();
 		const chunkedSliverPairIndices = chunk(sliverPairIndices, minSymbols);
 		const slivers: GetSliverResponse[] = [];
 		const failedNodes = new Set<string>();
@@ -296,7 +372,10 @@ export class WalrusClient {
 
 						const sliver = await this.#storageNodeClient.getSliver(
 							{ blobId, sliverPairIndex, sliverType: 'primary' },
-							{ nodeUrl: url, signal: controller.signal },
+							{
+								nodeUrl: url,
+								signal: signal ? AbortSignal.any([controller.signal, signal]) : controller.signal,
+							},
 						);
 
 						if (slivers.length === minSymbols) {
@@ -350,16 +429,12 @@ export class WalrusClient {
 	 * Gets the blob status from multiple storage nodes and returns the latest status that can be verified.
 	 */
 	async getVerifiedBlobStatus({ blobId, signal }: GetVerifiedBlobStatusOptions) {
-		const controller = new AbortController();
-		signal?.addEventListener('abort', () => {
-			controller.abort(signal.reason);
-		});
-
 		// Read from the latest committee because, during epoch change, it is the committee
 		// that will have the most up-to-date information on old and newly certified blobs:
 		const committee = await this.#getActiveCommittee();
 		const stakingState = await this.stakingState();
 		const numShards = stakingState.n_shards;
+		const controller = new AbortController();
 
 		const statuses = await new Promise<{ status: BlobStatus; weight: number }[]>(
 			(resolve, reject) => {
@@ -374,7 +449,10 @@ export class WalrusClient {
 					try {
 						const status = await this.#storageNodeClient.getBlobStatus(
 							{ blobId },
-							{ nodeUrl: node.networkUrl, signal: controller.signal },
+							{
+								nodeUrl: node.networkUrl,
+								signal: signal ? AbortSignal.any([controller.signal, signal]) : controller.signal,
+							},
 						);
 
 						if (isQuorum(successWeight, numShards)) {
@@ -517,34 +595,77 @@ export class WalrusClient {
 	 * tx.transferObjects([await client.createStorage({ size: 1000, epochs: 3 })], owner);
 	 * ```
 	 */
-	async createStorage({ size, epochs, walCoin }: StorageWithSizeOptions) {
+	async createStorage({ size, epochs, walCoin, owner }: StorageWithSizeOptions) {
 		const systemObject = await this.systemObject();
 		const systemState = await this.systemState();
 		const encodedSize = encodedBlobLength(size, systemState.committee.n_shards);
 		const { storageCost } = await this.storageCost(size, epochs);
+		const systemContract = await this.#getSystemContract();
+		const subsidiesContract = this.#packageConfig.subsidiesObjectId
+			? await this.#getSubsidiesContract()
+			: null;
 
-		return (tx: Transaction) => {
-			const coin = walCoin
-				? tx.splitCoins(walCoin, [storageCost])[0]
+		return this.#withWal(
+			storageCost,
+			owner,
+			walCoin ?? null,
+			subsidiesContract !== null,
+			(coin, tx) => {
+				return tx.add(
+					subsidiesContract
+						? subsidiesContract.reserve_space({
+								arguments: [
+									this.#packageConfig.subsidiesObjectId!,
+									systemObject.id.id,
+									encodedSize,
+									epochs,
+									coin,
+								],
+							})
+						: systemContract.reserve_space({
+								arguments: [systemObject.id.id, encodedSize, epochs, coin],
+							}),
+				);
+			},
+		);
+	}
+
+	async #withWal<T>(
+		amount: bigint,
+		owner: string,
+		source: TransactionObjectArgument | null,
+		withSubsidies: boolean,
+		fn: (coin: TransactionObjectArgument, tx: Transaction) => T,
+	) {
+		const walType = await this.#walType();
+
+		return (tx: Transaction): T => {
+			const coin = source
+				? tx.splitCoins(source, [amount])[0]
 				: tx.add(
 						coinWithBalance({
-							balance: storageCost,
-							type: this.walType,
+							balance: amount,
+							type: walType,
 						}),
 					);
 
-			const storage = tx.add(
-				this.systemContract.reserve_space({
-					arguments: [systemObject.id.id, encodedSize, epochs, coin],
-				}),
-			);
-			tx.moveCall({
-				target: '0x2::coin::destroy_zero',
-				typeArguments: [this.walType],
-				arguments: [coin],
-			});
+			const result = fn(coin, tx);
 
-			return storage;
+			if (withSubsidies) {
+				if (source) {
+					tx.mergeCoins(source, [coin]);
+				} else {
+					tx.transferObjects([coin], owner);
+				}
+			} else {
+				tx.moveCall({
+					target: '0x2::coin::destroy_zero',
+					typeArguments: [walType],
+					arguments: [coin],
+				});
+			}
+
+			return result;
 		};
 	}
 
@@ -561,8 +682,8 @@ export class WalrusClient {
 		size,
 		epochs,
 		owner,
-	}: StorageWithSizeOptions & { transaction?: Transaction; owner: string }) {
-		transaction.transferObjects([await this.createStorage({ size, epochs })], owner);
+	}: StorageWithSizeOptions & { transaction?: Transaction }) {
+		transaction.transferObjects([await this.createStorage({ size, epochs, owner })], owner);
 
 		return transaction;
 	}
@@ -583,6 +704,7 @@ export class WalrusClient {
 			...options,
 			owner: options.transaction?.getData().sender ?? signer.toSuiAddress(),
 		});
+		const blobType = await this.#getBlobType();
 
 		const { digest, effects } = await this.#executeTransaction(
 			transaction,
@@ -600,7 +722,7 @@ export class WalrusClient {
 			},
 		});
 
-		const suiBlobObject = createdObjects.find((object) => object.data?.type === this.blobType);
+		const suiBlobObject = createdObjects.find((object) => object.data?.type === blobType);
 
 		if (!suiBlobObject || suiBlobObject.data?.bcs?.dataType !== 'moveObject') {
 			throw new WalrusClientError('Storage object not found in transaction effects');
@@ -620,43 +742,48 @@ export class WalrusClient {
 	 * tx.transferObjects([await client.registerBlob({ size: 1000, epochs: 3, blobId, rootHash, deletable: true })], owner);
 	 * ```
 	 */
-	async registerBlob({ size, epochs, blobId, rootHash, deletable, walCoin }: RegisterBlobOptions) {
-		const storage = await this.createStorage({ size, epochs, walCoin });
+	async registerBlob({
+		size,
+		epochs,
+		blobId,
+		rootHash,
+		deletable,
+		walCoin,
+		owner,
+		attributes,
+	}: RegisterBlobOptions) {
+		const storage = await this.createStorage({ size, epochs, walCoin, owner });
 		const { writeCost } = await this.storageCost(size, epochs);
+		const systemContract = await this.#getSystemContract();
+		const writeAttributes = attributes
+			? await this.#writeBlobAttributesForRef({
+					attributes,
+					existingAttributes: null,
+				})
+			: null;
 
-		return (tx: Transaction) => {
-			const writeCoin = walCoin
-				? tx.splitCoins(walCoin, [writeCost])[0]
-				: tx.add(
-						coinWithBalance({
-							balance: writeCost,
-							type: this.walType,
-						}),
-					);
-
+		return this.#withWal(writeCost, owner, walCoin ?? null, false, (writeCoin, tx) => {
 			const blob = tx.add(
-				this.systemContract.register_blob({
+				systemContract.register_blob({
 					arguments: [
-						tx.object(this.packageConfig.systemObjectId),
+						tx.object(this.#packageConfig.systemObjectId),
 						storage,
 						blobIdToInt(blobId),
 						BigInt(bcs.u256().parse(rootHash)),
 						size,
-						0,
+						1,
 						deletable,
 						writeCoin,
 					],
 				}),
 			);
 
-			tx.moveCall({
-				target: '0x2::coin::destroy_zero',
-				typeArguments: [this.walType],
-				arguments: [writeCoin],
-			});
+			if (writeAttributes) {
+				tx.add((tx) => writeAttributes(tx, blob));
+			}
 
 			return blob;
-		};
+		});
 	}
 
 	/**
@@ -669,12 +796,11 @@ export class WalrusClient {
 	 */
 	async registerBlobTransaction({
 		transaction = new Transaction(),
-		owner,
 		...options
-	}: RegisterBlobOptions & { transaction?: Transaction; owner: string }) {
+	}: RegisterBlobOptions & { transaction?: Transaction }) {
 		const registration = transaction.add(await this.registerBlob(options));
 
-		transaction.transferObjects([registration], owner);
+		transaction.transferObjects([registration], options.owner);
 
 		return transaction;
 	}
@@ -690,7 +816,7 @@ export class WalrusClient {
 	async executeRegisterBlobTransaction({
 		signer,
 		...options
-	}: RegisterBlobOptions & { transaction?: Transaction; signer: Signer; owner?: string }): Promise<{
+	}: RegisterBlobOptions & { transaction?: Transaction; signer: Signer }): Promise<{
 		blob: ReturnType<typeof Blob>['$inferType'];
 		digest: string;
 	}> {
@@ -698,7 +824,7 @@ export class WalrusClient {
 			...options,
 			owner: options.owner ?? options.transaction?.getData().sender ?? signer.toSuiAddress(),
 		});
-
+		const blobType = await this.#getBlobType();
 		const { digest, effects } = await this.#executeTransaction(
 			transaction,
 			signer,
@@ -715,7 +841,7 @@ export class WalrusClient {
 			},
 		});
 
-		const suiBlobObject = createdObjects.find((object) => object.data?.type === this.blobType);
+		const suiBlobObject = createdObjects.find((object) => object.data?.type === blobType);
 
 		if (!suiBlobObject || suiBlobObject.data?.bcs?.dataType !== 'moveObject') {
 			throw new WalrusClientError('Blob object not found in transaction effects');
@@ -735,7 +861,7 @@ export class WalrusClient {
 	 * tx.add(await client.certifyBlob({ blobId, blobObjectId, confirmations }));
 	 * ```
 	 */
-	async certifyBlob({ blobId, blobObjectId, confirmations }: CertifyBlobOptions) {
+	async certifyBlob({ blobId, blobObjectId, confirmations, deletable }: CertifyBlobOptions) {
 		const systemState = await this.systemState();
 		const committee = await this.#getActiveCommittee();
 
@@ -750,9 +876,15 @@ export class WalrusClient {
 			epoch: systemState.committee.epoch,
 			messageContents: {
 				blobId,
-				blobType: {
-					Permanent: null,
-				},
+				blobType: deletable
+					? {
+							Deletable: {
+								objectId: blobObjectId,
+							},
+						}
+					: {
+							Permanent: null,
+						},
 			},
 		}).toBase64();
 
@@ -775,15 +907,22 @@ export class WalrusClient {
 			})
 			.filter((confirmation) => confirmation !== null);
 
+		if (!isQuorum(filteredConfirmations.length, systemState.committee.members.length)) {
+			throw new NotEnoughBlobConfirmationsError(
+				`Too many invalid confirmations received for blob (${filteredConfirmations.length} of ${systemState.committee.members.length})`,
+			);
+		}
+
 		const combinedSignature = combineSignatures(
 			filteredConfirmations,
 			filteredConfirmations.map(({ index }) => index),
 		);
+		const systemContract = await this.#getSystemContract();
 
 		return (tx: Transaction) => {
-			this.systemContract.certify_blob({
+			systemContract.certify_blob({
 				arguments: [
-					tx.object(this.packageConfig.systemObjectId),
+					tx.object(this.#packageConfig.systemObjectId),
 					tx.object(blobObjectId),
 					tx.pure.vector('u8', fromBase64(combinedSignature.signature)),
 					tx.pure.vector(
@@ -809,10 +948,11 @@ export class WalrusClient {
 		blobId,
 		blobObjectId,
 		confirmations,
+		deletable,
 	}: CertifyBlobOptions & {
 		transaction?: Transaction;
 	}) {
-		transaction.add(await this.certifyBlob({ blobId, blobObjectId, confirmations }));
+		transaction.add(await this.certifyBlob({ blobId, blobObjectId, confirmations, deletable }));
 
 		return transaction;
 	}
@@ -851,10 +991,10 @@ export class WalrusClient {
 	deleteBlob({ blobObjectId }: DeleteBlobOptions) {
 		return (tx: Transaction) =>
 			tx.moveCall({
-				package: this.packageConfig.systemObjectId,
+				package: this.#packageConfig.systemObjectId,
 				module: 'system',
 				function: 'delete_blob',
-				arguments: [tx.object(this.packageConfig.systemObjectId), tx.object(blobObjectId)],
+				arguments: [tx.object(this.#packageConfig.systemObjectId), tx.object(blobObjectId)],
 			});
 	}
 
@@ -910,7 +1050,7 @@ export class WalrusClient {
 	 * const tx = await client.extendBlobTransaction({ blobObjectId, epochs });
 	 * ```
 	 */
-	async extendBlob({ blobObjectId, epochs, endEpoch, walCoin }: ExtendBlobOptions) {
+	async extendBlob({ blobObjectId, epochs, endEpoch, walCoin, owner }: ExtendBlobOptions) {
 		const blob = await this.#objectLoader.load(blobObjectId, Blob());
 		const numEpochs = typeof epochs === 'number' ? epochs : endEpoch - blob.storage.end_epoch;
 
@@ -919,35 +1059,34 @@ export class WalrusClient {
 		}
 
 		const { storageCost } = await this.storageCost(Number(blob.storage.storage_size), numEpochs);
+		const systemContract = await this.#getSystemContract();
+		const subsidiesContract = this.#packageConfig.subsidiesObjectId
+			? await this.#getSubsidiesContract()
+			: null;
 
-		return (tx: Transaction) => {
-			const coin = walCoin
-				? tx.splitCoins(walCoin, [storageCost])[0]
-				: tx.add(
-						coinWithBalance({
-							balance: storageCost,
-
-							type: this.walType,
-						}),
-					);
-
-			tx.add(
-				this.systemContract.extend_blob({
-					arguments: [
-						tx.object(this.packageConfig.systemObjectId),
-						tx.object(blobObjectId),
-						numEpochs,
-						coin,
-					],
-				}),
-			);
-
-			tx.moveCall({
-				target: '0x2::coin::destroy_zero',
-				typeArguments: [this.walType],
-				arguments: [coin],
-			});
-		};
+		return this.#withWal(
+			storageCost,
+			owner,
+			walCoin ?? null,
+			subsidiesContract !== null,
+			(coin, tx) => {
+				tx.add(
+					subsidiesContract
+						? subsidiesContract.extend_blob({
+								arguments: [
+									this.#packageConfig.subsidiesObjectId!,
+									this.#packageConfig.systemObjectId,
+									blobObjectId,
+									numEpochs,
+									coin,
+								],
+							})
+						: systemContract.extend_blob({
+								arguments: [this.#packageConfig.systemObjectId, blobObjectId, numEpochs, coin],
+							}),
+				);
+			},
+		);
 	}
 
 	/**
@@ -985,6 +1124,163 @@ export class WalrusClient {
 			'extend blob',
 		);
 
+		return { digest };
+	}
+
+	async readBlobAttributes({
+		blobObjectId,
+	}: {
+		blobObjectId: string;
+	}): Promise<Record<string, string> | null> {
+		const response = await this.#suiClient.getDynamicFieldObject({
+			parentId: blobObjectId,
+			name: {
+				type: 'vector<u8>',
+				value: [...new TextEncoder().encode('metadata')],
+			},
+		});
+
+		if (response.error?.code === 'dynamicFieldNotFound') {
+			return null;
+		}
+
+		if (response.error || !response.data) {
+			throw new WalrusClientError(
+				`Failed to fetch metadata for object ${blobObjectId}: ${response.error}`,
+			);
+		}
+
+		const metadata = (
+			response.data as unknown as {
+				content: {
+					fields: {
+						value: {
+							fields: {
+								metadata: {
+									fields: { contents: { fields: { key: string; value: string } }[] };
+								};
+							};
+						};
+					};
+				};
+			}
+		).content.fields.value.fields.metadata.fields.contents;
+
+		return Object.fromEntries(metadata.map(({ fields: { key, value } }) => [key, value]));
+	}
+
+	async #writeBlobAttributesForRef({
+		attributes,
+		existingAttributes,
+	}: {
+		attributes: Record<string, string | null>;
+		existingAttributes: Record<string, string> | null;
+	}) {
+		const blobContract = await this.#getBlobContract();
+		const metadataContract = await this.#getMetadataContract();
+		return (tx: Transaction, blob: TransactionObjectArgument) => {
+			if (!existingAttributes) {
+				tx.add(
+					blobContract.add_metadata({
+						arguments: [
+							blob,
+							metadataContract._new({
+								arguments: [],
+							}),
+						],
+					}),
+				);
+			}
+
+			Object.keys(attributes).forEach((key) => {
+				const value = attributes[key];
+
+				if (value === null) {
+					if (existingAttributes && key in existingAttributes) {
+						tx.add(
+							blobContract.remove_metadata_pair({
+								arguments: [blob, key],
+							}),
+						);
+					}
+				} else {
+					tx.add(
+						blobContract.insert_or_update_metadata_pair({
+							arguments: [blob, key, value],
+						}),
+					);
+				}
+			});
+		};
+	}
+
+	/**
+	 * Write attributes to a blob
+	 *
+	 * If attributes already exists, their previous values will be overwritten
+	 * If an attribute is set to `null`, it will be removed from the blob
+	 *
+	 * @usage
+	 * ```ts
+	 * tx.add(await client.writeBlobAttributes({ blobObjectId, attributes: { key: 'value', keyToRemove: null } }));
+	 * ```
+	 */
+	async writeBlobAttributes({ blobObject, blobObjectId, attributes }: WriteBlobAttributesOptions) {
+		const existingAttributes = blobObjectId
+			? await this.readBlobAttributes({ blobObjectId })
+			: null;
+
+		const writeAttributes = await this.#writeBlobAttributesForRef({
+			attributes,
+			existingAttributes,
+		});
+
+		return (tx: Transaction) => {
+			const blob = blobObject ?? tx.object(blobObjectId);
+
+			tx.add((tx) => writeAttributes(tx, blob));
+		};
+	}
+
+	/**
+	 * Create a transaction that writes attributes to a blob
+	 *
+	 * If attributes already exists, their previous values will be overwritten
+	 * If an attribute is set to `null`, it will be removed from the blob
+	 *
+	 * @usage
+	 * ```ts
+	 * const tx = await client.writeBlobAttributesTransaction({ blobObjectId, attributes: { key: 'value', keyToRemove: null } });
+	 * ```
+	 */
+	async writeBlobAttributesTransaction({
+		transaction = new Transaction(),
+		...options
+	}: WriteBlobAttributesOptions & { transaction?: Transaction }) {
+		transaction.add(await this.writeBlobAttributes(options));
+		return transaction;
+	}
+
+	/**
+	 * Execute a transaction that writes attributes to a blob
+	 *
+	 * If attributes already exists, their previous values will be overwritten
+	 * If an attribute is set to `null`, it will be removed from the blob
+	 *
+	 * @usage
+	 * ```ts
+	 * const { digest } = await client.executeWriteBlobAttributesTransaction({ blobObjectId, signer });
+	 * ```
+	 */
+	async executeWriteBlobAttributesTransaction({
+		signer,
+		...options
+	}: WriteBlobAttributesOptions & { signer: Signer; transaction?: Transaction }) {
+		const { digest } = await this.#executeTransaction(
+			await this.writeBlobAttributesTransaction(options),
+			signer,
+			'write blob attributes',
+		);
 		return { digest };
 	}
 
@@ -1055,7 +1351,7 @@ export class WalrusClient {
 					{ nodeUrl: node.networkUrl, signal },
 				);
 
-		return result;
+		return result?.success?.data?.signed ?? null;
 	}
 
 	/**
@@ -1121,10 +1417,9 @@ export class WalrusClient {
 	 */
 	async writeSliversToNode({ blobId, slivers, signal }: WriteSliversToNodeOptions) {
 		const controller = new AbortController();
-
-		signal?.addEventListener('abort', () => {
-			controller.abort(signal.reason);
-		});
+		const combinedSignal = signal
+			? AbortSignal.any([controller.signal, signal])
+			: controller.signal;
 
 		const primarySliverWrites = slivers.primary.map(({ sliverPairIndex, sliver }) => {
 			return this.writeSliver({
@@ -1132,7 +1427,7 @@ export class WalrusClient {
 				sliverPairIndex,
 				sliverType: 'primary',
 				sliver,
-				signal: controller.signal,
+				signal: combinedSignal,
 			});
 		});
 
@@ -1142,7 +1437,7 @@ export class WalrusClient {
 				sliverPairIndex,
 				sliverType: 'secondary',
 				sliver,
-				signal: controller.signal,
+				signal: combinedSignal,
 			});
 		});
 
@@ -1150,6 +1445,55 @@ export class WalrusClient {
 			controller.abort(error);
 			throw error;
 		});
+	}
+
+	/**
+	 * Write a blob to all storage nodes
+	 *
+	 * @usage
+	 * ```ts
+	 * await client.writeEncodedBlobToNodes({ blob, deletable, epochs, signer });
+	 * ```
+	 */
+	async writeEncodedBlobToNodes({
+		blobId,
+		metadata,
+		sliversByNode,
+		signal,
+		...options
+	}: WriteEncodedBlobToNodesOptions) {
+		const systemState = await this.systemState();
+		const committee = await this.#getActiveCommittee();
+
+		const controller = new AbortController();
+		let failures = 0;
+
+		const confirmations = await Promise.all(
+			sliversByNode.map((slivers, nodeIndex) => {
+				return this.writeEncodedBlobToNode({
+					blobId,
+					nodeIndex,
+					metadata,
+					slivers,
+					signal: signal ? AbortSignal.any([controller.signal, signal]) : controller.signal,
+					...options,
+				}).catch(() => {
+					failures += committee.nodes[nodeIndex].shardIndices.length;
+
+					if (isAboveValidity(failures, systemState.committee.n_shards)) {
+						controller.abort();
+
+						throw new NotEnoughBlobConfirmationsError(
+							`Too many failures while writing blob ${blobId} to nodes`,
+						);
+					}
+
+					return null;
+				});
+			}),
+		);
+
+		return confirmations;
 	}
 
 	/**
@@ -1192,15 +1536,15 @@ export class WalrusClient {
 	 * const { blobId, blobObject } = await client.writeBlob({ blob, deletable, epochs, signer });
 	 * ```
 	 */
-	async writeBlob({ blob, deletable, epochs, signer, signal, owner }: WriteBlobOptions) {
-		const systemState = await this.systemState();
-		const committee = await this.#getActiveCommittee();
-		const controller = new AbortController();
-
-		signal?.addEventListener('abort', () => {
-			controller.abort(signal.reason);
-		});
-
+	async writeBlob({
+		blob,
+		deletable,
+		epochs,
+		signer,
+		signal,
+		owner,
+		attributes,
+	}: WriteBlobOptions) {
 		const { sliversByNode, blobId, metadata, rootHash } = await this.encodeBlob(blob);
 
 		const suiBlobObject = await this.executeRegisterBlobTransaction({
@@ -1210,42 +1554,27 @@ export class WalrusClient {
 			blobId,
 			rootHash,
 			deletable,
-			owner,
+			owner: owner ?? signer.toSuiAddress(),
+			attributes,
 		});
 
 		const blobObjectId = suiBlobObject.blob.id.id;
-		let failures = 0;
 
-		const confirmations = await Promise.all(
-			sliversByNode.map((slivers, nodeIndex) => {
-				return this.writeEncodedBlobToNode({
-					blobId,
-					nodeIndex,
-					metadata,
-					slivers,
-					deletable: false,
-					signal: controller.signal,
-				}).catch(() => {
-					failures += committee.nodes[nodeIndex].shardIndices.length;
-
-					if (isAboveValidity(failures, systemState.committee.n_shards)) {
-						controller.abort();
-
-						throw new NotEnoughBlobConfirmationsError(
-							`Too many failures while writing blob ${blobId} to nodes`,
-						);
-					}
-
-					return null;
-				});
-			}),
-		);
+		const confirmations = await this.writeEncodedBlobToNodes({
+			blobId,
+			metadata,
+			sliversByNode,
+			deletable,
+			objectId: blobObjectId,
+			signal,
+		});
 
 		await this.executeCertifyBlobTransaction({
 			signer,
 			blobId,
 			blobObjectId,
 			confirmations,
+			deletable,
 		});
 
 		return {
@@ -1302,15 +1631,10 @@ export class WalrusClient {
 		};
 	}
 
-	async #getActiveCommittee() {
-		if (!this.#activeCommittee) {
-			const stakingState = await this.stakingState();
-			this.#activeCommittee = this.#getCommittee(stakingState.committee);
-			this.#activeCommittee = await this.#activeCommittee;
-		}
-
-		return this.#activeCommittee;
-	}
+	#getActiveCommittee = this.#memo.create('getActiveCommittee', async () => {
+		const stakingState = await this.stakingState();
+		return this.#getCommittee(stakingState.committee);
+	});
 
 	async #stakingPool(committee: InferBcsType<ReturnType<typeof Committee>>) {
 		const nodeIds = committee.pos0.contents.map((node) => node.key);
@@ -1335,8 +1659,8 @@ export class WalrusClient {
 	 */
 	reset() {
 		this.#objectLoader.clearAll();
-		this.#activeCommittee = null;
 		this.#readCommittee = null;
+		this.#memo.reset();
 	}
 
 	#retryOnPossibleEpochChange<T extends (...args: any[]) => Promise<any>>(fn: T): T {

@@ -1,5 +1,54 @@
 # @mysten/signers
 
+## 0.1.16
+
+### Patch Changes
+
+- Updated dependencies [e8b5d04]
+  - @mysten/sui@1.25.0
+
+## 0.1.15
+
+### Patch Changes
+
+- 850369a: Prevent exported webcrypto keys from being serialized.
+
+## 0.1.14
+
+### Patch Changes
+
+- 5217cab: Fix signature not having lowS enforced
+- a08ead6: Add webcrypto to the files allowlist
+- b34f523: Fix re-constructing signers from exported bytes, and introduce import / export methods
+
+## 0.1.13
+
+### Patch Changes
+
+- 1e87d03: Add new WebCrypto signer
+
+## 0.1.12
+
+### Patch Changes
+
+- Updated dependencies [cf3d12d]
+  - @mysten/sui@1.24.0
+
+## 0.1.11
+
+### Patch Changes
+
+- Updated dependencies [8baac61]
+- Updated dependencies [8baac61]
+  - @mysten/sui@1.23.0
+
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies [03975f4]
+  - @mysten/sui@1.22.0
+
 ## 0.1.9
 
 ### Patch Changes

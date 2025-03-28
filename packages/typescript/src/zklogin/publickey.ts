@@ -11,9 +11,10 @@ import { SIGNATURE_SCHEME_TO_FLAG } from '../cryptography/signature-scheme.js';
 import { SuiGraphQLClient } from '../graphql/client.js';
 import { graphql } from '../graphql/schemas/latest/index.js';
 import { normalizeSuiAddress, SUI_ADDRESS_LENGTH } from '../utils/sui-types.js';
+import type { ZkLoginSignatureInputs } from './bcs.js';
 import { extractClaimValue } from './jwt-utils.js';
 import { parseZkLoginSignature } from './signature.js';
-import { toBigEndianBytes, toPaddedBigEndianBytes } from './utils.js';
+import { normalizeZkLoginIssuer, toBigEndianBytes, toPaddedBigEndianBytes } from './utils.js';
 
 /**
  * A zkLogin public identifier
@@ -44,6 +45,29 @@ export class ZkLoginPublicIdentifier extends PublicKey {
 		if (this.#legacyAddress) {
 			this.#data = normalizeZkLoginPublicKeyBytes(this.#data);
 		}
+	}
+
+	static fromProof(address: string, proof: ZkLoginSignatureInputs) {
+		const { issBase64Details, addressSeed } = proof;
+		const iss = extractClaimValue<string>(issBase64Details, 'iss');
+
+		const legacyPublicKey = toZkLoginPublicIdentifier(BigInt(addressSeed), iss, {
+			legacyAddress: true,
+		});
+
+		if (legacyPublicKey.toSuiAddress() === address) {
+			return legacyPublicKey;
+		}
+
+		const publicKey = toZkLoginPublicIdentifier(BigInt(addressSeed), iss, {
+			legacyAddress: false,
+		});
+
+		if (publicKey.toSuiAddress() !== address) {
+			throw new Error('Proof does not match address');
+		}
+
+		return publicKey;
 	}
 
 	/**
@@ -142,7 +166,7 @@ export function toZkLoginPublicIdentifier(
 		? toBigEndianBytes(addressSeed, 32)
 		: toPaddedBigEndianBytes(addressSeed, 32);
 
-	const issBytes = new TextEncoder().encode(iss);
+	const issBytes = new TextEncoder().encode(normalizeZkLoginIssuer(iss));
 	const tmp = new Uint8Array(1 + issBytes.length + addressSeedBytesBigEndian.length);
 	tmp.set([issBytes.length], 0);
 	tmp.set(issBytes, 1);

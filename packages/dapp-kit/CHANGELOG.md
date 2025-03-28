@@ -1,5 +1,49 @@
 # @mysten/dapp-kit
 
+## 0.15.0
+
+### Minor Changes
+
+- 68a9ecd: Default the `chain` identifier to the active network for all signing operations
+- 132e67d: Add a `walletFilter` prop to the ConnectButton/ConnectModal components
+
+### Patch Changes
+
+- Updated dependencies [68a9ecd]
+- Updated dependencies [e8b5d04]
+- Updated dependencies [68a9ecd]
+  - @mysten/wallet-standard@0.14.0
+  - @mysten/sui@1.25.0
+  - @mysten/zksend@0.12.20
+
+## 0.14.53
+
+### Patch Changes
+
+- Updated dependencies [cf3d12d]
+  - @mysten/sui@1.24.0
+  - @mysten/wallet-standard@0.13.29
+  - @mysten/zksend@0.12.19
+
+## 0.14.52
+
+### Patch Changes
+
+- Updated dependencies [8baac61]
+- Updated dependencies [8baac61]
+  - @mysten/sui@1.23.0
+  - @mysten/wallet-standard@0.13.28
+  - @mysten/zksend@0.12.18
+
+## 0.14.51
+
+### Patch Changes
+
+- Updated dependencies [03975f4]
+  - @mysten/sui@1.22.0
+  - @mysten/wallet-standard@0.13.27
+  - @mysten/zksend@0.12.17
+
 ## 0.14.50
 
 ### Patch Changes

@@ -1,5 +1,47 @@
 # @mysten/deepbook-v3
 
+## 0.13.3
+
+### Patch Changes
+
+- 98d25ad: WAL pools support
+- Updated dependencies [e8b5d04]
+  - @mysten/sui@1.25.0
+
+## 0.13.2
+
+### Patch Changes
+
+- b93b0f2: Add WAL token
+
+## 0.13.1
+
+### Patch Changes
+
+- Updated dependencies [cf3d12d]
+  - @mysten/sui@1.24.0
+
+## 0.13.0
+
+### Minor Changes
+
+- 27a1e7d: Support for permissionless pool creation and balance manager functions
+
+### Patch Changes
+
+- ba6f895: SEND pool
+- Updated dependencies [8baac61]
+- Updated dependencies [8baac61]
+  - @mysten/sui@1.23.0
+
+## 0.12.30
+
+### Patch Changes
+
+- da31bc5: Add SEND token to SDK
+- Updated dependencies [03975f4]
+  - @mysten/sui@1.22.0
+
 ## 0.12.29
 
 ### Patch Changes

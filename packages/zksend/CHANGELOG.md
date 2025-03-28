@@ -1,5 +1,40 @@
 # @mysten/zksend
 
+## 0.12.20
+
+### Patch Changes
+
+- 68a9ecd: Fix the chain and feature list for the wallet standard interface
+- Updated dependencies [68a9ecd]
+- Updated dependencies [e8b5d04]
+  - @mysten/wallet-standard@0.14.0
+  - @mysten/sui@1.25.0
+
+## 0.12.19
+
+### Patch Changes
+
+- Updated dependencies [cf3d12d]
+  - @mysten/sui@1.24.0
+  - @mysten/wallet-standard@0.13.29
+
+## 0.12.18
+
+### Patch Changes
+
+- Updated dependencies [8baac61]
+- Updated dependencies [8baac61]
+  - @mysten/sui@1.23.0
+  - @mysten/wallet-standard@0.13.28
+
+## 0.12.17
+
+### Patch Changes
+
+- Updated dependencies [03975f4]
+  - @mysten/sui@1.22.0
+  - @mysten/wallet-standard@0.13.27
+
 ## 0.12.16
 
 ### Patch Changes

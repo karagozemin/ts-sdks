@@ -1,5 +1,63 @@
 # @mysten/enoki
 
+## 0.6.0
+
+### Minor Changes
+
+- 132e67d: Add `registerEnokiWallets` for better compatibility with the wallet-standard and dApp-kit
+- 132e67d: Deprecate `EnokiFlow` and remove sponsorship and execution from the EnokiFlow class
+
+### Patch Changes
+
+- 132e67d: Clear the ephemeral keypair from IDB for the experimental web crypto signer
+- Updated dependencies [68a9ecd]
+- Updated dependencies [e8b5d04]
+  - @mysten/wallet-standard@0.14.0
+  - @mysten/sui@1.25.0
+  - @mysten/signers@0.1.16
+
+## 0.5.3
+
+### Patch Changes
+
+- 850369a: Add experimental support for WebCrypto signer
+- Updated dependencies [850369a]
+  - @mysten/signers@0.1.15
+
+## 0.5.2
+
+### Patch Changes
+
+- e8c4cd8: fix enoki sdk build
+- 402c126: expose zkLogin public key
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [cf3d12d]
+  - @mysten/sui@1.24.0
+
+## 0.5.0
+
+### Minor Changes
+
+- 8baac61: remove jose dependency
+- d3cff85: Update EnokiKeypair and EnokiPublicKey classes to use correct publicKey bytes
+
+### Patch Changes
+
+- Updated dependencies [8baac61]
+- Updated dependencies [8baac61]
+  - @mysten/sui@1.23.0
+
+## 0.4.26
+
+### Patch Changes
+
+- Updated dependencies [03975f4]
+  - @mysten/sui@1.22.0
+
 ## 0.4.25
 
 ### Patch Changes
