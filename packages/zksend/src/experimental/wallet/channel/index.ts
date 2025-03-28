@@ -166,7 +166,6 @@ export class StashedHost {
 			appName,
 			...rest,
 		});
-
 		return new StashedHost(request);
 	}
 
