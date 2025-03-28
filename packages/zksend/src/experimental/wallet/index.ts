@@ -43,7 +43,11 @@ type WalletEventsMap = {
 const STASHED_SESSION_KEY = 'stashed:session';
 
 export const STASHED_WALLET_NAME = 'Stashed' as const;
+<<<<<<< HEAD
 type StashedAccount = { address: string; publicKey?: string };
+=======
+type StashedAccount = { address: string; publicKey?: Uint8Array };
+>>>>>>> 627ab90 (working)
 
 const getStashedSession = (): { accounts: StashedAccount[]; token: string } => {
 	const { accounts = [], token } = JSON.parse(localStorage.getItem(STASHED_SESSION_KEY) || '{}');
@@ -131,6 +135,15 @@ export class StashedWallet implements Wallet {
 		this.#events = mitt();
 		this.#origin = origin;
 		this.#name = name;
+<<<<<<< HEAD
+=======
+		this.#network = network;
+		this.#chain = chain;
+
+		if (address) {
+			this.#setAccounts([{ address }]);
+		}
+>>>>>>> 627ab90 (working)
 	}
 
 	#signTransactionBlock: SuiSignTransactionBlockMethod = async ({
@@ -304,6 +317,11 @@ export class StashedWallet implements Wallet {
 		);
 
 		this.#setAccounts(response.accounts);
+<<<<<<< HEAD
+=======
+
+		embedStashedIframe();
+>>>>>>> 627ab90 (working)
 
 		return { accounts: this.accounts };
 	};
