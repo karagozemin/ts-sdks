@@ -155,8 +155,6 @@ export class StashedWallet implements Wallet {
 			session: getStashedSession().token,
 		});
 
-		console.log('response', response);
-
 		return {
 			transactionBlockBytes: response.bytes,
 			signature: response.signature,
@@ -292,7 +290,6 @@ export class StashedWallet implements Wallet {
 			origin: this.#origin,
 		});
 
-		console.log('popup', popup);
 		const response = await popup.send({
 			type: 'connect',
 		});
@@ -327,7 +324,6 @@ export function registerStashedWallet(
 	} = {},
 ) {
 	const wallets = getWallets();
-	console.log('wallets', wallets);
 
 	const extension = wallets.get().find((wallet) => wallet.id === SUI_WALLET_EXTENSION_ID);
 	if (extension) {

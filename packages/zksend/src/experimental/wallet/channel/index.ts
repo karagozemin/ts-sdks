@@ -167,7 +167,6 @@ export class StashedHost {
 			...rest,
 		});
 
-		console.log('request', request);
 		return new StashedHost(request);
 	}
 
