@@ -56,7 +56,7 @@ export class StashedWallet implements Wallet {
 	#origin: string;
 	#name: string;
 	#network: StashedSupportedNetwork;
-
+	#chain: SuiChain;
 	get name() {
 		return STASHED_WALLET_NAME;
 	}
@@ -119,6 +119,7 @@ export class StashedWallet implements Wallet {
 	constructor({
 		name,
 		origin = DEFAULT_STASHED_ORIGIN,
+		chain = SUI_MAINNET_CHAIN,
 	}: {
 		name: string;
 		origin?: string;

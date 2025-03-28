@@ -35,6 +35,13 @@ export const StashedRequestData = variant('type', [
 		session: string('`session` is required'),
 	}),
 	object({
+		type: literal('sign-and-execute'),
+		bytes: string('`bytes` is required'),
+		address: string('`address` is required'),
+		session: string('`session` is required'),
+		network: string('`network` is required'),
+	}),
+	object({
 		type: literal('sign-personal-message'),
 		chain: optional(string('`chain` is required')),
 		message: string('`message` is required'),
@@ -80,6 +87,11 @@ export const StashedResponseData = variant('type', [
 	}),
 	object({
 		type: literal('sign-personal-message'),
+		bytes: string(),
+		signature: string(),
+	}),
+	object({
+		type: literal('sign-and-execute'),
 		bytes: string(),
 		signature: string(),
 	}),
