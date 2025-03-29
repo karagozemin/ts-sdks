@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build task dependencies
+      - name: Build Seal dependencies
         run: pnpm turbo build --filter @mysten/seal   
 
       - name: Run integration tests
