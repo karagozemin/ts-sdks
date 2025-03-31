@@ -11,5 +11,8 @@
     "walrus_wasm.d.ts"
   ],
   "main": "walrus_wasm.js",
-  "types": "walrus_wasm.d.ts"
+  "types": "walrus_wasm.d.ts",
+  "exports": {
+      "browser": "./web/walrus_wasm.js"
+  }
 }
