@@ -5,6 +5,7 @@ import type { InferBcsType } from '@mysten/bcs';
 import { bcs, fromBase64 } from '@mysten/bcs';
 import { SuiClient } from '@mysten/sui/client';
 import type { Signer } from '@mysten/sui/cryptography';
+import type { ClientWithExtensions } from '@mysten/sui/experimental';
 import type { TransactionObjectArgument } from '@mysten/sui/transactions';
 import { coinWithBalance, Transaction } from '@mysten/sui/transactions';
 import { normalizeStructTag, parseStructTag } from '@mysten/sui/utils';
@@ -57,6 +58,7 @@ import type {
 	StorageNode,
 	StorageWithSizeOptions,
 	WalrusClientConfig,
+	WalrusClientExtensionOptions,
 	WalrusPackageConfig,
 	WriteBlobAttributesOptions,
 	WriteBlobOptions,
@@ -95,7 +97,9 @@ export class WalrusClient {
 	#storageNodeClient: StorageNodeClient;
 
 	#packageConfig: WalrusPackageConfig;
-	#suiClient: SuiClient;
+	#suiClient: ClientWithExtensions<{
+		jsonRpc: SuiClient;
+	}>;
 	#objectLoader: SuiObjectDataLoader;
 
 	#blobMetadataConcurrencyLimit = 10;
@@ -129,9 +133,24 @@ export class WalrusClient {
 		this.#objectLoader = new SuiObjectDataLoader(this.#suiClient);
 	}
 
+	static experimental_asClientExtension(options: WalrusClientExtensionOptions) {
+		return {
+			name: 'walrus' as const,
+			register: (
+				client: ClientWithExtensions<{
+					jsonRpc: SuiClient;
+				}>,
+			) => {
+				return new WalrusClient({
+					...options,
+					suiClient: client,
+				});
+			},
+		};
+	}
 	/** The Move type for a WAL coin */
 	#walType = this.#memo.create('walType', async () => {
-		const stakedWal = await this.#suiClient.getNormalizedMoveStruct({
+		const stakedWal = await this.#suiClient.jsonRpc.getNormalizedMoveStruct({
 			package: await this.#getPackageId(),
 			module: 'staked_wal',
 			struct: 'StakedWal',
@@ -714,23 +733,21 @@ export class WalrusClient {
 
 		const createdObjectIds = effects?.created?.map((effect) => effect.reference.objectId) ?? [];
 
-		const createdObjects = await this.#suiClient.multiGetObjects({
-			ids: createdObjectIds,
-			options: {
-				showType: true,
-				showBcs: true,
-			},
+		const createdObjects = await this.#suiClient.core.getObjects({
+			objectIds: createdObjectIds,
 		});
 
-		const suiBlobObject = createdObjects.find((object) => object.data?.type === blobType);
+		const suiBlobObject = createdObjects.objects.find(
+			(object) => !(object instanceof Error) && object.type === blobType,
+		);
 
-		if (!suiBlobObject || suiBlobObject.data?.bcs?.dataType !== 'moveObject') {
+		if (suiBlobObject instanceof Error || !suiBlobObject) {
 			throw new WalrusClientError('Storage object not found in transaction effects');
 		}
 
 		return {
 			digest,
-			storage: Storage().fromBase64(suiBlobObject.data.bcs.bcsBytes),
+			storage: Storage().parse(suiBlobObject.content),
 		};
 	}
 
@@ -833,23 +850,21 @@ export class WalrusClient {
 
 		const createdObjectIds = effects?.created?.map((effect) => effect.reference.objectId) ?? [];
 
-		const createdObjects = await this.#suiClient.multiGetObjects({
-			ids: createdObjectIds,
-			options: {
-				showType: true,
-				showBcs: true,
-			},
+		const createdObjects = await this.#suiClient.core.getObjects({
+			objectIds: createdObjectIds,
 		});
 
-		const suiBlobObject = createdObjects.find((object) => object.data?.type === blobType);
+		const suiBlobObject = createdObjects.objects.find(
+			(object) => !(object instanceof Error) && object.type === blobType,
+		);
 
-		if (!suiBlobObject || suiBlobObject.data?.bcs?.dataType !== 'moveObject') {
+		if (suiBlobObject instanceof Error || !suiBlobObject) {
 			throw new WalrusClientError('Blob object not found in transaction effects');
 		}
 
 		return {
 			digest,
-			blob: Blob().fromBase64(suiBlobObject.data.bcs.bcsBytes),
+			blob: Blob().parse(suiBlobObject.content),
 		};
 	}
 
@@ -1132,7 +1147,7 @@ export class WalrusClient {
 	}: {
 		blobObjectId: string;
 	}): Promise<Record<string, string> | null> {
-		const response = await this.#suiClient.getDynamicFieldObject({
+		const response = await this.#suiClient.jsonRpc.getDynamicFieldObject({
 			parentId: blobObjectId,
 			name: {
 				type: 'vector<u8>',
@@ -1584,7 +1599,7 @@ export class WalrusClient {
 	}
 
 	async #executeTransaction(transaction: Transaction, signer: Signer, action: string) {
-		const { digest, effects } = await this.#suiClient.signAndExecuteTransaction({
+		const { digest, effects } = await this.#suiClient.jsonRpc.signAndExecuteTransaction({
 			transaction,
 			signer,
 			options: {
@@ -1596,7 +1611,7 @@ export class WalrusClient {
 			throw new WalrusClientError(`Failed to ${action}: ${effects?.status.error}`);
 		}
 
-		await this.#suiClient.waitForTransaction({
+		await this.#suiClient.jsonRpc.waitForTransaction({
 			digest,
 		});
 
