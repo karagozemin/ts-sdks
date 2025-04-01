@@ -172,13 +172,13 @@ cryptographic operations.
 
 ```typescript
 import Transport from '@ledgerhq/hw-transport-node-hid';
-import Sui from '@mysten/ledgerjs-hw-app-sui';
+import SuiLedgerClient from '@mysten/ledgerjs-hw-app-sui';
 import { LedgerSigner } from '@mysten/signers/ledger';
 import { SuiClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 
 const transport = await Transport.open(undefined);
-const ledgerClient = new Sui(transport);
+const ledgerClient = new SuiLedgerClient(transport);
 const suiClient = new SuiClient({ url: getNetworkUrl('testnet') });
 
 const signer = await LedgerSigner.fromDerivationPath({
