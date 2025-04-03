@@ -30,7 +30,10 @@ import {
 } from '@mysten/wallet-standard';
 import type { Emitter } from 'mitt';
 import mitt from 'mitt';
+import { parse } from 'valibot';
 
+import getClientMetadata from '../utils/getClientMetadata.js';
+import { IframeMessageWalletStatusPayload } from './channel/events.js';
 import { DEFAULT_STASHED_ORIGIN, StashedPopup } from './channel/index.js';
 
 type WalletEventsMap = {
@@ -48,12 +51,15 @@ const getStashedSession = (): { accounts: StashedAccount[]; token: string } => {
 };
 
 const SUI_WALLET_EXTENSION_ID = 'com.mystenlabs.suiwallet' as const;
-
+let stashedWalletOrigin: string;
 export class StashedWallet implements Wallet {
 	#events: Emitter<WalletEventsMap>;
 	#accounts: ReadonlyWalletAccount[];
 	#origin: string;
 	#name: string;
+	#embeddedIframe: HTMLIFrameElement | null;
+	#walletStatusCheckEnabled: boolean;
+	#walletStatusIntervalId: NodeJS.Timeout | null = null;
 
 	get name() {
 		return STASHED_WALLET_NAME;
@@ -126,7 +132,68 @@ export class StashedWallet implements Wallet {
 		this.#events = mitt();
 		this.#origin = origin;
 		this.#name = name;
+		this.#embeddedIframe = null;
+		this.#walletStatusCheckEnabled = false;
+		this.#walletStatusIntervalId = null;
 	}
+
+	#handleWalletStatusMessage = (event: MessageEvent) => {
+		if (event.origin !== stashedWalletOrigin || !this.#walletStatusCheckEnabled) return;
+		try {
+			const message = parse(IframeMessageWalletStatusPayload, event.data);
+			if (message.type === 'WALLET_STATUS') {
+				this.#accounts.forEach((account) => {
+					const foundAddress = message.payload.accounts.some(
+						(item) => item.account.address === account.address,
+					);
+					if (!foundAddress) {
+						this.removeAccount(account.address);
+					}
+				});
+			}
+		} catch (error) {
+			console.warn('Invalid wallet status message:', error);
+		}
+	};
+
+	// Function to clear the interval
+	#clearWalletStatusInterval = () => {
+		if (this.#walletStatusIntervalId !== null) {
+			clearInterval(this.#walletStatusIntervalId);
+			this.#walletStatusIntervalId = null;
+		}
+	};
+
+	#embedStashedIframe = () => {
+		try {
+			/* @ts-ignore */
+			this.#embeddedIframe = document.createElement('iframe');
+			this.#embeddedIframe.style.display = 'none';
+			this.#embeddedIframe.src = `${stashedWalletOrigin}/embed`;
+			document.body.appendChild(this.#embeddedIframe);
+
+			this.#walletStatusCheckEnabled = true;
+
+			// Wait 5 seconds before checking wallet status to avoid race condition which returns empty accounts
+			setTimeout(() => {
+				this.#walletStatusIntervalId = setInterval(() => {
+					if (!this.#walletStatusCheckEnabled || !this.#embeddedIframe) return;
+					this.#embeddedIframe.contentWindow?.postMessage(
+						{
+							type: 'WALLET_STATUS_REQUEST',
+							payload: getClientMetadata(),
+							session: getStashedSession().token,
+						},
+						stashedWalletOrigin,
+					);
+				}, 1000);
+			}, 5000);
+
+			window.addEventListener('message', this.#handleWalletStatusMessage);
+		} catch (error) {
+			console.warn('Wallet status check setup failed:', error);
+		}
+	};
 
 	#signTransactionBlock: SuiSignTransactionBlockMethod = async ({
 		transactionBlock,
@@ -253,6 +320,10 @@ export class StashedWallet implements Wallet {
 
 		this.#accounts = this.#accounts.filter((account) => account.address !== address);
 
+		if (this.#accounts.length === 0) {
+			this.#handleWalletIframeDisconnect();
+		}
+
 		this.#events.emit('change', { accounts: this.accounts });
 	}
 
@@ -281,6 +352,8 @@ export class StashedWallet implements Wallet {
 				this.#setAccounts(accounts);
 			}
 
+			this.#embedStashedIframe();
+
 			return { accounts: this.accounts };
 		}
 		const popup = new StashedPopup({
@@ -303,13 +376,38 @@ export class StashedWallet implements Wallet {
 
 		this.#setAccounts(response.accounts);
 
+		this.#embedStashedIframe();
+
 		return { accounts: this.accounts };
 	};
 
+	#handleWalletIframeDisconnect = () => {
+		this.#walletStatusCheckEnabled = false;
+
+		setTimeout(() => {
+			if (this.#embeddedIframe) {
+				document.body.removeChild(this.#embeddedIframe);
+			}
+			window.removeEventListener('message', () => {});
+			this.#clearWalletStatusInterval();
+		}, 2000);
+	};
+
 	#disconnect: StandardDisconnectMethod = async () => {
+		this.#embeddedIframe?.contentWindow?.postMessage(
+			{
+				type: 'WALLET_DISCONNECTED',
+				payload: getPostMessagePayload(),
+				session: getStashedSession().token,
+			},
+			this.#origin,
+		);
+
 		localStorage.removeItem(STASHED_SESSION_KEY);
 
 		this.#setAccounts();
+
+		this.#handleWalletIframeDisconnect();
 	};
 }
 
@@ -332,6 +430,8 @@ export function registerStashedWallet(
 		name,
 		origin,
 	});
+
+	stashedWalletOrigin = origin || DEFAULT_STASHED_ORIGIN;
 
 	const unregister = wallets.register(stashedWalletInstance);
 
