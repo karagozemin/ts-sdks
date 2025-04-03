@@ -20,6 +20,7 @@ import {
 export const IframeMessageWalletStatusAccount = object({
 	account: object({
 		address: string(),
+		publicKey: optional(string()),
 	}),
 });
 
