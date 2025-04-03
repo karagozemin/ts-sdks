@@ -98,6 +98,7 @@ export class StashedPopup {
 	}
 
 	close() {
+		console.log('closing popup');
 		this.#cleanup();
 		this.#popup.close();
 	}
@@ -171,6 +172,7 @@ export class StashedHost {
 	}
 
 	close(payload?: StashedResponsePayload) {
+		console.log('closing host', payload);
 		if (payload) {
 			this.sendMessage(payload);
 		}

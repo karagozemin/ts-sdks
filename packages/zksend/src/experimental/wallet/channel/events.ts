@@ -23,17 +23,6 @@ export const IframeMessageWalletStatusAccount = object({
 	}),
 });
 
-export type IframeMessageType = 'WALLET_STATUS' | 'IFRAME_READY';
-
-export const IframeMessageWalletStatusPayload = object({
-	type: union([literal('WALLET_STATUS'), literal('IFRAME_READY')]),
-	payload: optional(
-		object({
-			accounts: optional(array(IframeMessageWalletStatusAccount), []),
-		}),
-	),
-});
-
 export const StashedRequestData = variant('type', [
 	object({
 		type: literal('connect'),
@@ -131,3 +120,27 @@ export type StashedRequestTypes = Record<string, any> & {
 export type StashedResponseTypes = {
 	[P in StashedResponseData as P['type']]: P;
 };
+
+// Define the iframe message account schema
+export const IframeMessageAccount = object({
+	account: object({
+		address: string(),
+	}),
+});
+
+// Define the iframe message schemas
+export const IframeMessageWalletStatus = object({
+	type: literal('WALLET_STATUS'),
+	payload: object({
+		accounts: optional(array(IframeMessageAccount), []),
+	}),
+});
+
+export const IframeMessageIframeReady = object({
+	type: literal('IFRAME_READY'),
+});
+
+// Combined schema for all inbound iframe messages
+export const InboundIframeMessage = union([IframeMessageWalletStatus, IframeMessageIframeReady]);
+
+export type InboundIframeMessage = InferOutput<typeof InboundIframeMessage>;

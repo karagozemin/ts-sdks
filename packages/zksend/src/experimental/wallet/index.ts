@@ -33,7 +33,7 @@ import mitt from 'mitt';
 import { parse } from 'valibot';
 
 import getClientMetadata from '../utils/getClientMetadata.js';
-import { IframeMessageWalletStatusPayload } from './channel/events.js';
+import { InboundIframeMessage } from './channel/events.js';
 import { DEFAULT_STASHED_ORIGIN, StashedPopup } from './channel/index.js';
 
 type WalletEventsMap = {
@@ -137,7 +137,7 @@ export class StashedWallet implements Wallet {
 	#handleWalletStatusMessage = (event: MessageEvent) => {
 		if (event.origin !== this.#origin) return;
 		try {
-			const message = parse(IframeMessageWalletStatusPayload, event.data);
+			const message = parse(InboundIframeMessage, event.data);
 			if (message.type === 'IFRAME_READY') {
 				console.log('sending init embed');
 				this.#embeddedIframe?.contentWindow?.postMessage(
@@ -251,7 +251,6 @@ export class StashedWallet implements Wallet {
 		tx.setSenderIfNotSet(account.address);
 
 		const data = await tx.toJSON();
-
 		const response = await popup.send({
 			type: 'sign-and-execute-transaction',
 			transaction: data,
@@ -259,6 +258,7 @@ export class StashedWallet implements Wallet {
 			chain,
 			session: getStashedSession().token,
 		});
+		console.log('got response', response);
 		return {
 			bytes: response.bytes,
 			signature: response.signature,
