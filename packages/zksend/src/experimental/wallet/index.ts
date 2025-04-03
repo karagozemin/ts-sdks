@@ -51,7 +51,6 @@ const getStashedSession = (): { accounts: StashedAccount[]; token: string } => {
 };
 
 const SUI_WALLET_EXTENSION_ID = 'com.mystenlabs.suiwallet' as const;
-let stashedWalletOrigin: string;
 export class StashedWallet implements Wallet {
 	#events: Emitter<WalletEventsMap>;
 	#accounts: ReadonlyWalletAccount[];
@@ -136,7 +135,7 @@ export class StashedWallet implements Wallet {
 	}
 
 	#handleWalletStatusMessage = (event: MessageEvent) => {
-		if (event.origin !== stashedWalletOrigin) return;
+		if (event.origin !== this.#origin) return;
 		try {
 			const message = parse(IframeMessageWalletStatusPayload, event.data);
 			if (message.type === 'IFRAME_READY') {
@@ -175,7 +174,7 @@ export class StashedWallet implements Wallet {
 			/* @ts-ignore */
 			this.#embeddedIframe = document.createElement('iframe');
 			this.#embeddedIframe.style.display = 'none';
-			this.#embeddedIframe.src = `${stashedWalletOrigin}/embed`;
+			this.#embeddedIframe.src = `${this.#origin}/embed`;
 			document.body.appendChild(this.#embeddedIframe);
 			window.addEventListener('message', this.#handleWalletStatusMessage);
 		} catch (error) {
@@ -416,8 +415,6 @@ export function registerStashedWallet(
 		name,
 		origin,
 	});
-
-	stashedWalletOrigin = origin || DEFAULT_STASHED_ORIGIN;
 
 	const unregister = wallets.register(stashedWalletInstance);
 
