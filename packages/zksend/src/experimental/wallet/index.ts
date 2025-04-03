@@ -58,7 +58,6 @@ export class StashedWallet implements Wallet {
 	#origin: string;
 	#name: string;
 	#embeddedIframe: HTMLIFrameElement | null;
-	#walletStatusCheckEnabled: boolean;
 	#walletStatusIntervalId: NodeJS.Timeout | null = null;
 
 	get name() {
@@ -133,17 +132,24 @@ export class StashedWallet implements Wallet {
 		this.#origin = origin;
 		this.#name = name;
 		this.#embeddedIframe = null;
-		this.#walletStatusCheckEnabled = false;
 		this.#walletStatusIntervalId = null;
 	}
 
 	#handleWalletStatusMessage = (event: MessageEvent) => {
-		if (event.origin !== stashedWalletOrigin || !this.#walletStatusCheckEnabled) return;
+		if (event.origin !== stashedWalletOrigin) return;
 		try {
 			const message = parse(IframeMessageWalletStatusPayload, event.data);
-			if (message.type === 'WALLET_STATUS') {
+			if (message.type === 'IFRAME_READY') {
+				console.log('sending init embed');
+				this.#embeddedIframe?.contentWindow?.postMessage(
+					{
+						type: 'INIT_EMBED',
+					},
+					this.#origin,
+				);
+			} else if (message.type === 'WALLET_STATUS') {
 				this.#accounts.forEach((account) => {
-					const foundAddress = message.payload.accounts.some(
+					const foundAddress = message.payload?.accounts?.some(
 						(item) => item.account.address === account.address,
 					);
 					if (!foundAddress) {
@@ -171,24 +177,6 @@ export class StashedWallet implements Wallet {
 			this.#embeddedIframe.style.display = 'none';
 			this.#embeddedIframe.src = `${stashedWalletOrigin}/embed`;
 			document.body.appendChild(this.#embeddedIframe);
-
-			this.#walletStatusCheckEnabled = true;
-
-			// Wait 5 seconds before checking wallet status to avoid race condition which returns empty accounts
-			setTimeout(() => {
-				this.#walletStatusIntervalId = setInterval(() => {
-					if (!this.#walletStatusCheckEnabled || !this.#embeddedIframe) return;
-					this.#embeddedIframe.contentWindow?.postMessage(
-						{
-							type: 'WALLET_STATUS_REQUEST',
-							payload: getClientMetadata(),
-							session: getStashedSession().token,
-						},
-						stashedWalletOrigin,
-					);
-				}, 1000);
-			}, 5000);
-
 			window.addEventListener('message', this.#handleWalletStatusMessage);
 		} catch (error) {
 			console.warn('Wallet status check setup failed:', error);
@@ -382,8 +370,6 @@ export class StashedWallet implements Wallet {
 	};
 
 	#handleWalletIframeDisconnect = () => {
-		this.#walletStatusCheckEnabled = false;
-
 		setTimeout(() => {
 			if (this.#embeddedIframe) {
 				document.body.removeChild(this.#embeddedIframe);

@@ -11,6 +11,7 @@ import {
 	pipe,
 	record,
 	string,
+	union,
 	url,
 	uuid,
 	variant,
@@ -22,11 +23,15 @@ export const IframeMessageWalletStatusAccount = object({
 	}),
 });
 
+export type IframeMessageType = 'WALLET_STATUS' | 'IFRAME_READY';
+
 export const IframeMessageWalletStatusPayload = object({
-	type: literal('WALLET_STATUS'),
-	payload: object({
-		accounts: optional(array(IframeMessageWalletStatusAccount), []),
-	}),
+	type: union([literal('WALLET_STATUS'), literal('IFRAME_READY')]),
+	payload: optional(
+		object({
+			accounts: optional(array(IframeMessageWalletStatusAccount), []),
+		}),
+	),
 });
 
 export const StashedRequestData = variant('type', [
