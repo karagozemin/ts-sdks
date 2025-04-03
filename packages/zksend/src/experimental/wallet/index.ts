@@ -397,7 +397,7 @@ export class StashedWallet implements Wallet {
 		this.#embeddedIframe?.contentWindow?.postMessage(
 			{
 				type: 'WALLET_DISCONNECTED',
-				payload: getPostMessagePayload(),
+				payload: getClientMetadata(),
 				session: getStashedSession().token,
 			},
 			this.#origin,
