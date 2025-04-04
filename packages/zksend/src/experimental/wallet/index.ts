@@ -139,7 +139,6 @@ export class StashedWallet implements Wallet {
 		try {
 			const message = parse(InboundIframeMessage, event.data);
 			if (message.type === 'IFRAME_READY') {
-				console.log('sending init embed');
 				this.#embeddedIframe?.contentWindow?.postMessage(
 					{
 						type: 'INIT_EMBED',
@@ -258,7 +257,7 @@ export class StashedWallet implements Wallet {
 			chain,
 			session: getStashedSession().token,
 		});
-		console.log('got response', response);
+
 		return {
 			bytes: response.bytes,
 			signature: response.signature,

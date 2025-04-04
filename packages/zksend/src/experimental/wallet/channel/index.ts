@@ -171,7 +171,6 @@ export class StashedHost {
 	}
 
 	close(payload?: StashedResponsePayload) {
-		console.log('closing host', payload);
 		if (payload) {
 			this.sendMessage(payload);
 		}
