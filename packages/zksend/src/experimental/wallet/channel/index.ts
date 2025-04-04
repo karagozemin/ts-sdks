@@ -98,7 +98,6 @@ export class StashedPopup {
 	}
 
 	close() {
-		console.log('closing popup');
 		this.#cleanup();
 		this.#popup.close();
 	}
