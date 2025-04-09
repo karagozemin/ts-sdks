@@ -56,6 +56,7 @@ export class StashedWallet implements Wallet {
 	#accounts: ReadonlyWalletAccount[];
 	#origin: string;
 	#name: string;
+	#embeddedIframe: HTMLIFrameElement | null;
 
 	get name() {
 		return STASHED_WALLET_NAME;
@@ -128,7 +129,47 @@ export class StashedWallet implements Wallet {
 		this.#events = mitt();
 		this.#origin = origin;
 		this.#name = name;
+		this.#embeddedIframe = null;
 	}
+
+	#embedStashedIframe = () => {
+		/* @ts-ignore */
+		this.#embeddedIframe = document.createElement('iframe');
+		this.#embeddedIframe.style.display = 'none';
+		this.#embeddedIframe.src = `${stashedWalletOrigin}/embed`;
+		document.body.appendChild(this.#embeddedIframe);
+		// every second, check if the wallet is connected
+		walletStatusCheckEnabled = true;
+		walletStatusIntervalId = setInterval(() => {
+			if (!walletStatusCheckEnabled || !this.#embeddedIframe) return;
+			this.#embeddedIframe.contentWindow?.postMessage(
+				{
+					type: 'WALLET_STATUS_REQUEST',
+					payload: getPostMessagePayload(),
+					session: getStashedSession().token,
+				},
+				stashedWalletOrigin,
+			);
+		}, 1000);
+
+		window.addEventListener('message', (event) => {
+			if (event.origin !== stashedWalletOrigin) return;
+			const { type, payload } = event.data;
+
+			if (type === 'WALLET_STATUS') {
+				if (!walletStatusCheckEnabled) return;
+
+				this.#accounts.forEach((account) => {
+					const foundAddress = (payload?.accounts || []).some((item: any) => {
+						return item.account.address === account.address;
+					});
+					if (!foundAddress) {
+						this.removeAccount(account.address);
+					}
+				});
+			}
+		});
+	};
 
 	#signTransactionBlock: SuiSignTransactionBlockMethod = async ({
 		transactionBlock,
