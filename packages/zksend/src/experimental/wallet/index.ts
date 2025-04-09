@@ -11,6 +11,7 @@ import type {
 	StandardEventsFeature,
 	StandardEventsListeners,
 	StandardEventsOnMethod,
+	SuiChain,
 	SuiSignAndExecuteTransactionFeature,
 	SuiSignAndExecuteTransactionMethod,
 	SuiSignPersonalMessageFeature,
@@ -139,6 +140,7 @@ export class StashedWallet implements Wallet {
 	}: {
 		name: string;
 		origin?: string;
+		chain?: SuiChain;
 		metadata: WalletMetadata;
 	}) {
 		this.#id = metadata.id;
@@ -242,7 +244,6 @@ export class StashedWallet implements Wallet {
 			type: 'sign-personal-message',
 			message: toBase64(message),
 			address: account.address,
-			chain: SUI_MAINNET_CHAIN,
 			session: getStashedSession().token,
 		});
 
