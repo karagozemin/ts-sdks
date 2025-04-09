@@ -49,6 +49,13 @@ const getStashedSession = (): { accounts: StashedAccount[]; token: string } => {
 
 const SUI_WALLET_EXTENSION_ID = 'com.mystenlabs.suiwallet' as const;
 const METADATA_API_URL = ' http://localhost:3001/api/wallet/metadata';
+
+type WalletMetadata = {
+	icon: WalletIcon;
+	walletName: string;
+	enabled: boolean;
+};
+
 export class StashedWallet implements Wallet {
 	#events: Emitter<WalletEventsMap>;
 	#accounts: ReadonlyWalletAccount[];
@@ -120,20 +127,18 @@ export class StashedWallet implements Wallet {
 	constructor({
 		name,
 		origin,
-		icon,
-		walletName,
+		metadata,
 	}: {
 		name: string;
 		origin?: string;
-		icon?: WalletIcon;
-		walletName?: string;
+		metadata?: WalletMetadata;
 	}) {
 		this.#accounts = [];
 		this.#events = mitt();
 		this.#origin = origin || DEFAULT_STASHED_ORIGIN;
 		this.#name = name;
-		this.#walletName = walletName || STASHED_WALLET_NAME;
-		this.#icon = icon || this.#icon;
+		this.#walletName = metadata?.walletName || STASHED_WALLET_NAME;
+		this.#icon = metadata?.icon || this.#icon;
 	}
 
 	#signTransactionBlock: SuiSignTransactionBlockMethod = async ({
@@ -323,10 +328,10 @@ export async function registerStashedWallet(
 	name: string,
 	{
 		origin,
-		useDynamicMetadata = true,
+		metadataApiUrl = METADATA_API_URL,
 	}: {
 		origin?: string;
-		useDynamicMetadata?: boolean;
+		metadataApiUrl?: string;
 	} = {},
 ) {
 	const wallets = getWallets();
@@ -336,21 +341,23 @@ export async function registerStashedWallet(
 		return;
 	}
 
-	let metadata = null;
+	let metadata: WalletMetadata | undefined;
 	try {
-		const response = await fetch(METADATA_API_URL);
+		const response = await fetch(metadataApiUrl);
 		if (!response.ok) throw new Error('Failed to fetch wallet metadata');
 		metadata = await response.json();
 	} catch (error) {
-		console.log('Error fetching metadata', error);
+		console.error('Error fetching metadata', error);
 	}
-	if (!metadata) {
+
+	if (!metadata?.enabled) {
+		console.error('Stashed wallet is not currently enabled.');
 		return;
 	}
 	const stashedWalletInstance = new StashedWallet({
 		name,
 		origin,
-		...metadata,
+		metadata,
 	});
 
 	const unregister = wallets.register(stashedWalletInstance);
