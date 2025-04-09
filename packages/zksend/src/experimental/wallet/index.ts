@@ -32,6 +32,7 @@ import type { Emitter } from 'mitt';
 import mitt from 'mitt';
 
 import { DEFAULT_STASHED_ORIGIN, StashedPopup } from './channel/index.js';
+import type { StashedSupportedNetwork } from './types.js';
 
 type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
@@ -54,6 +55,7 @@ export class StashedWallet implements Wallet {
 	#accounts: ReadonlyWalletAccount[];
 	#origin: string;
 	#name: string;
+	#network: StashedSupportedNetwork;
 
 	get name() {
 		return STASHED_WALLET_NAME;
