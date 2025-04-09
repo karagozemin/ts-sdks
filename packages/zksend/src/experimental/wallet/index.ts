@@ -32,7 +32,7 @@ import {
 import type { Emitter } from 'mitt';
 import mitt from 'mitt';
 import type { InferOutput } from 'valibot';
-import { boolean, custom, object, parse, string } from 'valibot';
+import { boolean, object, parse, string } from 'valibot';
 
 import { DEFAULT_STASHED_ORIGIN, StashedPopup } from './channel/index.js';
 
