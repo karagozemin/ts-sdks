@@ -57,8 +57,7 @@ export class StashedWallet implements Wallet {
 	#accounts: ReadonlyWalletAccount[];
 	#origin: string;
 	#name: string;
-	#network: StashedSupportedNetwork;
-	#chain: SuiChain;
+
 	get name() {
 		return STASHED_WALLET_NAME;
 	}
@@ -120,8 +119,11 @@ export class StashedWallet implements Wallet {
 
 	constructor({
 		name,
+<<<<<<< HEAD
+=======
+		address,
+>>>>>>> 24d5268 (working)
 		origin = DEFAULT_STASHED_ORIGIN,
-		chain = SUI_MAINNET_CHAIN,
 	}: {
 		name: string;
 		origin?: string;
@@ -131,6 +133,13 @@ export class StashedWallet implements Wallet {
 		this.#events = mitt();
 		this.#origin = origin;
 		this.#name = name;
+<<<<<<< HEAD
+=======
+
+		if (address) {
+			this.#setAccounts([{ address }]);
+		}
+>>>>>>> 24d5268 (working)
 	}
 
 	#signTransactionBlock: SuiSignTransactionBlockMethod = async ({
@@ -172,7 +181,11 @@ export class StashedWallet implements Wallet {
 
 		const response = await popup.send({
 			type: 'sign-transaction',
+<<<<<<< HEAD
 			transaction: tx,
+=======
+			transaction: data,
+>>>>>>> 24d5268 (working)
 			address: account.address,
 			chain,
 			session: getStashedSession().token,
@@ -184,6 +197,7 @@ export class StashedWallet implements Wallet {
 		};
 	};
 
+<<<<<<< HEAD
 	#signAndExecuteTransaction: SuiSignAndExecuteTransactionMethod = async ({
 		transaction,
 		account,
@@ -219,12 +233,23 @@ export class StashedWallet implements Wallet {
 		const popup = new StashedPopup({
 			name: this.#name,
 			origin: this.#origin,
+=======
+	#signPersonalMessage: SuiSignPersonalMessageMethod = async ({ message, account, chain }) => {
+		const popup = new StashedPopup({
+			name: this.#name,
+			origin: this.#origin,
+			chain,
+>>>>>>> 24d5268 (working)
 		});
 
 		const response = await popup.send({
 			type: 'sign-personal-message',
 			message: toBase64(message),
 			address: account.address,
+<<<<<<< HEAD
+=======
+			chain,
+>>>>>>> 24d5268 (working)
 			session: getStashedSession().token,
 		});
 

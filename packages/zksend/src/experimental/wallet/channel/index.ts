@@ -1,9 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { SUI_MAINNET_CHAIN } from '@mysten/wallet-standard';
-import type { SuiChain } from '@mysten/wallet-standard';
-
 import '@mysten/wallet-standard';
 
 import type { InferOutput } from 'valibot';
@@ -37,7 +34,10 @@ export class StashedPopup {
 	#id: string;
 	#origin: string;
 	#name: string;
+<<<<<<< HEAD
 	#chain: string | undefined;
+=======
+>>>>>>> 24d5268 (working)
 
 	#promise: Promise<unknown>;
 	#resolve: (data: unknown) => void;
@@ -48,7 +48,10 @@ export class StashedPopup {
 	constructor({
 		name,
 		origin = DEFAULT_STASHED_ORIGIN,
+<<<<<<< HEAD
 		chain,
+=======
+>>>>>>> 24d5268 (working)
 	}: {
 		name: string;
 		origin?: string;
@@ -95,6 +98,7 @@ export class StashedPopup {
 		const requestData = {
 			version: this.#version,
 			requestId: this.#id,
+<<<<<<< HEAD
 			appUrl: window.location.href.split('#')[0],
 			appName: this.#name,
 			payload: {
@@ -103,6 +107,10 @@ export class StashedPopup {
 				...data,
 			},
 			metadata: getClientMetadata(),
+=======
+			appOrigin: window.origin,
+			appName: this.#name,
+>>>>>>> 24d5268 (working)
 		};
 		const encodedRequestData = btoa(JSON.stringify(requestData));
 
