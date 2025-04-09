@@ -63,10 +63,7 @@ export class StashedPopup {
 		this.#name = name;
 		this.#version = 'v1';
 		this.#chain = chain;
-<<<<<<< HEAD
 
-=======
->>>>>>> 3388ae7 (working)
 		const { promise, resolve, reject } = withResolvers();
 		this.#promise = promise;
 		this.#resolve = resolve;
@@ -97,16 +94,12 @@ export class StashedPopup {
 			requestId: this.#id,
 			appUrl: window.location.href.split('#')[0],
 			appName: this.#name,
-<<<<<<< HEAD
 			payload: {
 				type,
 				chain: this.#chain,
 				...data,
 			},
 			metadata: getClientMetadata(),
-=======
-			chain: this.#chain,
->>>>>>> 3388ae7 (working)
 		};
 		const encodedRequestData = btoa(JSON.stringify(requestData));
 
@@ -170,8 +163,7 @@ export class StashedHost {
 			appName,
 			...rest,
 		});
-		console.log('here');
-		console.log('request', request);
+
 		return new StashedHost(request);
 	}
 
