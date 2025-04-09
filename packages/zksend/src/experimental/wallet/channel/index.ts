@@ -61,7 +61,6 @@ export class StashedPopup {
 		this.#name = name;
 		this.#version = 'v1';
 		this.#chain = chain;
-
 		const { promise, resolve, reject } = withResolvers();
 		this.#promise = promise;
 		this.#resolve = resolve;
