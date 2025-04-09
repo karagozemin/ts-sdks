@@ -16,19 +16,6 @@ import {
 	variant,
 } from 'valibot';
 
-export const IframeMessageWalletStatusAccount = object({
-	account: object({
-		address: string(),
-	}),
-});
-
-export const IframeMessageWalletStatusPayload = object({
-	type: literal('WALLET_STATUS'),
-	payload: object({
-		accounts: optional(array(IframeMessageWalletStatusAccount), []),
-	}),
-});
-
 export const StashedRequestData = variant('type', [
 	object({
 		type: literal('connect'),
