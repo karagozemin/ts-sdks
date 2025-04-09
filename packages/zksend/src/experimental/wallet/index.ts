@@ -322,7 +322,6 @@ export function registerStashedWallet(
 		origin?: string;
 	} = {},
 ) {
-	console.log('Registering Stashed Wallet');
 	const wallets = getWallets();
 
 	const extension = wallets.get().find((wallet) => wallet.id === SUI_WALLET_EXTENSION_ID);
