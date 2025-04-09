@@ -50,7 +50,7 @@ const getStashedSession = (): { accounts: StashedAccount[]; token: string } => {
 };
 
 const SUI_WALLET_EXTENSION_ID = 'com.mystenlabs.suiwallet' as const;
-const METADATA_API_URL = ' http://localhost:3001/api/wallet/metadata';
+const METADATA_API_URL = 'http://localhost:3001/api/wallet/metadata';
 
 const WalletMetadataSchema = object({
 	id: string('Wallet ID is required'),
