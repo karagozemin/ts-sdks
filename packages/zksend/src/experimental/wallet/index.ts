@@ -227,6 +227,8 @@ export class StashedWallet implements Wallet {
 			session: getStashedSession().token,
 		});
 
+		console.log('response', response);
+
 		return {
 			bytes: response.bytes,
 			signature: response.signature,
