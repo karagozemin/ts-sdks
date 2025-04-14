@@ -2,6 +2,6 @@
 </script>
 
 <ul class="wallet-list">
-	<ul>abc</ul>
-	<ul>def</ul>
+	<li>abc</li>
+	<li>def</li>
 </ul>
