@@ -1,4 +1,3 @@
-import './App.css';
 import { useStore } from '@nanostores/react';
 import { getDefaultStore, getWalletUniqueIdentifier } from '@mysten/dapp-kit-next';
 
