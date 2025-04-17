@@ -9,6 +9,7 @@ import { verifyJwtSession } from '../jwt-session/index.js';
 
 export class WalletPostMessageChannel {
 	#request: RequestType;
+	#isSendCalled: boolean = false;
 
 	constructor(request: RequestType) {
 		if (typeof window === 'undefined' || !window.opener) {
@@ -59,6 +60,12 @@ export class WalletPostMessageChannel {
 	}
 
 	sendMessage(payload: ResponsePayloadType) {
+		if (this.#isSendCalled) {
+			throw new Error('sendMessage() can only be called once');
+		}
+
+		this.#isSendCalled = true;
+
 		window.opener.postMessage(
 			{
 				id: this.#request.requestId,
