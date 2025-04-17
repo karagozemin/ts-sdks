@@ -1,1 +1,0 @@
-# @mysten/window-connect-adapter

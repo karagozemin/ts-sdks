@@ -1,7 +1,7 @@
 {
-	"name": "@mysten/wallet-core",
+	"name": "@mysten/window-wallet-core",
 	"version": "0.0.1",
-	"description": "Core wallet functionality",
+	"description": "Window wallet core functionality",
 	"license": "Apache-2.0",
 	"author": "Mysten Labs <build@mystenlabs.com>",
 	"type": "commonjs",
