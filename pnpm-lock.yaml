@@ -1172,12 +1172,12 @@ importers:
       '@mysten/utils':
         specifier: workspace:*
         version: link:../utils
-      '@mysten/wallet-core':
-        specifier: workspace:*
-        version: link:../wallet-core
       '@mysten/wallet-standard':
         specifier: workspace:*
         version: link:../wallet-standard
+      '@mysten/window-wallet-core':
+        specifier: workspace:*
+        version: link:../window-wallet-core
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
