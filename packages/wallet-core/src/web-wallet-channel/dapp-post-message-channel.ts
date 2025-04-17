@@ -27,6 +27,7 @@ export class DappPostMessageChannel {
 	#resolve: (data: unknown) => void;
 	#reject: (error: Error) => void;
 	#interval: ReturnType<typeof setInterval> | null = null;
+	#isSendCalled: boolean = false;
 
 	constructor({
 		appName,
@@ -70,6 +71,16 @@ export class DappPostMessageChannel {
 	}: {
 		type: T;
 	} & Extract<RequestDataType, { type: T }>): Promise<ResponseTypes[T]> {
+		if (this.#popup.closed) {
+			throw new Error('User closed the wallet window');
+		}
+
+		if (this.#isSendCalled) {
+			throw new Error('send() can only be called once');
+		}
+
+		this.#isSendCalled = true;
+
 		window.addEventListener('message', this.#listener);
 
 		const requestData = {
