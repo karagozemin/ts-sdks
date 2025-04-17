@@ -2,23 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as v from 'valibot';
-import type { JWTPayload } from 'jose';
 import { SignJWT, decodeJwt, jwtVerify } from 'jose';
 
 const AccountSchema = v.object({
 	address: v.string(),
 	publicKey: v.string(),
-	nickname: v.optional(v.string()),
-	icon: v.optional(v.string()),
-	chains: v.optional(v.array(v.pipe(v.string(), v.regex<`${string}:${string}`>(/^.+:.+$/)))),
-	features: v.optional(v.array(v.pipe(v.string(), v.regex<`${string}:${string}`>(/^.+:.+$/)))),
 });
 
-const JwtSessionSchema = v.looseObject({
-	session: v.object({
-		appName: v.string(),
-		appOrigin: v.pipe(v.string(), v.url()),
-		appUrl: v.pipe(v.string(), v.url()),
+const JwtSessionSchema = v.object({
+	exp: v.number(), // Expiration Time
+	iat: v.number(), // Issued At
+	iss: v.string(), // Issuer
+	aud: v.string(), // Audience (the dapp origin)
+	payload: v.object({
 		accounts: v.array(AccountSchema),
 	}),
 });
@@ -26,33 +22,32 @@ const JwtSessionSchema = v.looseObject({
 type JwtSessionPayload = v.InferOutput<typeof JwtSessionSchema>;
 
 export async function createJwtSession(
-	session: JwtSessionPayload['session'],
+	payload: JwtSessionPayload['payload'],
 	options: {
 		secretKey: Parameters<SignJWT['sign']>[0];
 		expirationTime: Parameters<SignJWT['setExpirationTime']>[0];
 		issuer: Parameters<SignJWT['setIssuer']>[0];
+		audience: Parameters<SignJWT['setAudience']>[0];
 	},
 ) {
-	const token = await new SignJWT({ session })
+	const token = await new SignJWT({ payload })
 		.setProtectedHeader({ alg: 'HS256' })
 		.setExpirationTime(options.expirationTime)
 		.setIssuedAt()
 		.setIssuer(options.issuer)
+		.setAudience(options.audience)
 		.sign(options.secretKey);
 
 	return token;
 }
 
-export function decodeJwtSession(jwt: string): JwtSessionPayload & JWTPayload {
+export function decodeJwtSession(jwt: string) {
 	const decodedJwt = decodeJwt(jwt);
 
 	return v.parse(JwtSessionSchema, decodedJwt);
 }
 
-export async function verifyJwtSession(
-	jwt: string,
-	secretKey: Uint8Array,
-): Promise<JwtSessionPayload & JWTPayload> {
+export async function verifyJwtSession(jwt: string, secretKey: Uint8Array) {
 	const verified = await jwtVerify(jwt, secretKey, { algorithms: ['HS256'] });
 
 	return v.parse(JwtSessionSchema, verified.payload);

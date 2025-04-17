@@ -51,17 +51,16 @@ export class WalletPostMessageChannel {
 
 		const openerOrigin = new URL(window.opener.location.href).origin;
 
-		const { session } = await verifyJwtSession(this.#request.payload.session, secretKey);
+		const session = await verifyJwtSession(this.#request.payload.session, secretKey);
 
-		if (
-			session.appOrigin !== new URL(this.#request.appUrl).origin ||
-			session.appOrigin !== openerOrigin
-		) {
+		if (session.aud !== new URL(this.#request.appUrl).origin || session.aud !== openerOrigin) {
 			throw new Error('App and session origin mismatch');
 		}
 
 		const requestAddress = this.#request.payload.address;
-		const addressInSession = session.accounts.find((account) => account.address === requestAddress);
+		const addressInSession = session.payload.accounts.find(
+			(account) => account.address === requestAddress,
+		);
 
 		if (!addressInSession) {
 			throw new Error('Requested account not found in session');
