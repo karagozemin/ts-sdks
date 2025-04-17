@@ -1,6 +1,6 @@
 {
 	"name": "@mysten/wallet-core",
-	"version": "0.0.1-experimental",
+	"version": "0.0.1",
 	"description": "Core wallet functionality",
 	"license": "Apache-2.0",
 	"author": "Mysten Labs <build@mystenlabs.com>",
