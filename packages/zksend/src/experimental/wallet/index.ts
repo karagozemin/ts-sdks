@@ -23,12 +23,7 @@ import type {
 	Wallet,
 	WalletIcon,
 } from '@mysten/wallet-standard';
-import {
-	getWallets,
-	ReadonlyWalletAccount,
-	SUI_CHAINS,
-	SUI_MAINNET_CHAIN,
-} from '@mysten/wallet-standard';
+import { getWallets, ReadonlyWalletAccount, SUI_CHAINS } from '@mysten/wallet-standard';
 import type { Emitter } from 'mitt';
 import mitt from 'mitt';
 import type { InferOutput } from 'valibot';
@@ -69,15 +64,23 @@ function getSessionFromStorage() {
 	return session;
 }
 
+const walletAccountFeatures = [
+	'sui:signTransaction',
+	'sui:signAndExecuteTransaction',
+	'sui:signPersonalMessage',
+	'sui:signTransactionBlock',
+	'sui:signAndExecuteTransactionBlock',
+] as const;
+
 async function getAccountsFromSession(session: string) {
 	const { payload } = await decodeJwtSession(session);
 
 	return payload.accounts.map((account) => {
 		return new ReadonlyWalletAccount({
 			address: account.address,
-			chains: [SUI_MAINNET_CHAIN],
-			features: ['sui:signTransactionBlock', 'sui:signPersonalMessage'],
-			publicKey: account.publicKey ? fromBase64(account.publicKey) : new Uint8Array(),
+			chains: SUI_CHAINS,
+			features: walletAccountFeatures,
+			publicKey: fromBase64(account.publicKey),
 		});
 	});
 }
