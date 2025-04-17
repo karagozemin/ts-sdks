@@ -18,7 +18,7 @@ export const ResponseData = v.variant('type', [
 		bytes: v.string(),
 		signature: v.string(),
 		digest: v.string(),
-		effects: v.optional(v.string()),
+		effects: v.string(),
 	}),
 	v.object({
 		type: v.literal('sign-personal-message'),
