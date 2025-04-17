@@ -43,9 +43,20 @@ export class WalletPostMessageChannel {
 			return null;
 		}
 
+		if (!window.opener?.location.href) {
+			throw new Error(
+				'This functionality requires a window opened through `window.open`. `window.opener` is not available.',
+			);
+		}
+
+		const openerOrigin = new URL(window.opener.location.href).origin;
+
 		const { session } = await verifyJwtSession(this.#request.payload.session, secretKey);
 
-		if (session.appOrigin !== new URL(this.#request.appUrl).origin) {
+		if (
+			session.appOrigin !== new URL(this.#request.appUrl).origin ||
+			session.appOrigin !== openerOrigin
+		) {
 			throw new Error('App and session origin mismatch');
 		}
 
