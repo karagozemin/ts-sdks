@@ -44,6 +44,7 @@
 		"vitest": "^3.1.1"
 	},
 	"dependencies": {
+		"@mysten/utils": "workspace:*",
 		"jose": "^6.0.10",
 		"valibot": "^0.36.0"
 	}

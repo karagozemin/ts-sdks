@@ -5,7 +5,7 @@ import { safeParse } from 'valibot';
 import type { JsonData, RequestDataType, RequestType } from './requests.js';
 import type { ResponseTypes } from './responses.js';
 import { Response } from './responses.js';
-import { withResolvers } from '../utils.js';
+import { promiseWithResolvers } from '@mysten/utils';
 import { getClientMetadata } from './utils.js';
 
 type DappPostMessageChannelOptions = {
@@ -46,7 +46,7 @@ export class DappPostMessageChannel {
 		this.#hostPathname = hostPathname;
 		this.#appName = appName;
 
-		const { promise, resolve, reject } = withResolvers();
+		const { promise, resolve, reject } = promiseWithResolvers();
 
 		this.#promise = promise;
 		this.#resolve = resolve;
