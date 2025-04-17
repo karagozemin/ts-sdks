@@ -52,6 +52,7 @@
 	"dependencies": {
 		"@mysten/sui": "workspace:*",
 		"@mysten/utils": "workspace:*",
+		"@mysten/wallet-core": "workspace:*",
 		"@mysten/wallet-standard": "workspace:*",
 		"mitt": "^3.0.1",
 		"nanostores": "^0.10.3",

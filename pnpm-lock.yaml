@@ -1172,6 +1172,9 @@ importers:
       '@mysten/utils':
         specifier: workspace:*
         version: link:../utils
+      '@mysten/wallet-core':
+        specifier: workspace:*
+        version: link:../wallet-core
       '@mysten/wallet-standard':
         specifier: workspace:*
         version: link:../wallet-standard

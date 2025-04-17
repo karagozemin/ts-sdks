@@ -33,8 +33,9 @@ import type { Emitter } from 'mitt';
 import mitt from 'mitt';
 import type { InferOutput } from 'valibot';
 import { boolean, object, parse, string } from 'valibot';
+import { DappPostMessageChannel, decodeJwtSession } from '@mysten/wallet-core';
 
-import { DEFAULT_STASHED_ORIGIN, StashedPopup } from './channel/index.js';
+const DEFAULT_STASHED_ORIGIN = 'https://getstashed.com';
 
 type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
@@ -161,10 +162,7 @@ export class StashedWallet implements Wallet {
 
 		const data = await transactionBlock.toJSON();
 
-		const popup = new StashedPopup({
-			name: this.#name,
-			origin: this.#origin,
-		});
+		const popup = this.#getNewPopupChannel();
 
 		const response = await popup.send({
 			type: 'sign-transaction',
@@ -181,11 +179,7 @@ export class StashedWallet implements Wallet {
 	};
 
 	#signTransaction: SuiSignTransactionMethod = async ({ transaction, account, chain }) => {
-		const popup = new StashedPopup({
-			name: this.#name,
-			origin: this.#origin,
-			chain,
-		});
+		const popup = this.#getNewPopupChannel();
 
 		const tx = await transaction.toJSON();
 
@@ -208,11 +202,7 @@ export class StashedWallet implements Wallet {
 		account,
 		chain,
 	}) => {
-		const popup = new StashedPopup({
-			name: this.#name,
-			origin: this.#origin,
-			chain,
-		});
+		const popup = this.#getNewPopupChannel();
 
 		const tx = Transaction.from(await transaction.toJSON());
 		tx.setSenderIfNotSet(account.address);
@@ -235,16 +225,14 @@ export class StashedWallet implements Wallet {
 	};
 
 	#signPersonalMessage: SuiSignPersonalMessageMethod = async ({ message, account }) => {
-		const popup = new StashedPopup({
-			name: this.#name,
-			origin: this.#origin,
-		});
+		const popup = this.#getNewPopupChannel();
 
 		const response = await popup.send({
 			type: 'sign-personal-message',
 			message: toBase64(message),
 			address: account.address,
 			session: getStashedSession().token,
+			chain: account.chains[0],
 		});
 
 		return {
@@ -304,10 +292,8 @@ export class StashedWallet implements Wallet {
 
 			return { accounts: this.accounts };
 		}
-		const popup = new StashedPopup({
-			name: this.#name,
-			origin: this.#origin,
-		});
+
+		const popup = this.#getNewPopupChannel();
 
 		const response = await popup.send({
 			type: 'connect',
@@ -322,7 +308,14 @@ export class StashedWallet implements Wallet {
 			JSON.stringify({ accounts: response.accounts, token: response.session }),
 		);
 
-		this.#setAccounts(response.accounts);
+		const { session } = await decodeJwtSession(response.session);
+
+		this.#setAccounts(
+			session.accounts.map((anAccount) => ({
+				address: anAccount.address,
+				publicKey: anAccount.publicKey,
+			})),
+		);
 
 		return { accounts: this.accounts };
 	};
@@ -332,7 +325,15 @@ export class StashedWallet implements Wallet {
 
 		this.#setAccounts();
 	};
+
+	#getNewPopupChannel() {
+		return new DappPostMessageChannel({
+			appName: this.#name,
+			hostOrigin: this.#origin,
+		});
+	}
 }
+
 async function fetchMetadata(metadataApiUrl: string): Promise<WalletMetadata> {
 	const response = await fetch(metadataApiUrl);
 	if (!response.ok) {
