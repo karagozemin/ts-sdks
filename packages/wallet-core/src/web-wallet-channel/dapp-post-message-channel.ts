@@ -17,7 +17,7 @@ type DappPostMessageChannelOptions = {
 
 export class DappPostMessageChannel {
 	#popup: Window;
-	#version = 'v1' as const;
+	#version = '1' as const;
 	#id: string;
 	#hostOrigin: string;
 	#hostPathname: string;

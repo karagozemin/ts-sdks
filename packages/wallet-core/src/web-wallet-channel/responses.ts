@@ -44,7 +44,7 @@ export const Response = v.object({
 	id: v.pipe(v.string(), v.uuid()),
 	source: v.literal('web-wallet-channel'),
 	payload: ResponsePayload,
-	version: v.literal('v1'),
+	version: v.literal('1'),
 });
 export type ResponseType = v.InferOutput<typeof Response>;
 

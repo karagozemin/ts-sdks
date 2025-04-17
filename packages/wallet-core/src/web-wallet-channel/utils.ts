@@ -3,7 +3,7 @@
 
 export function getClientMetadata() {
 	return {
-		version: 'v1',
+		version: '1',
 		originUrl: window.location.href,
 		userAgent: navigator.userAgent,
 		screenResolution: `${window.screen.width}x${window.screen.height}`,

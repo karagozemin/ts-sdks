@@ -45,7 +45,7 @@ export const RequestData = v.variant('type', [
 export type RequestDataType = v.InferOutput<typeof RequestData>;
 
 export const Request = v.object({
-	version: v.literal('v1'),
+	version: v.literal('1'),
 	requestId: v.pipe(v.string('`requestId` is required'), v.uuid()),
 	appUrl: v.pipe(v.string(), v.url('`appUrl` must be a valid URL')),
 	appName: v.string('`appName` is required'),
