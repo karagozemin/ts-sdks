@@ -1,9 +1,9 @@
 {
-	"name": "@mysten/kiosk",
-	"author": "Mysten Labs <build@mystenlabs.com>",
-	"description": "Sui Kiosk library",
-	"version": "0.12.1",
+	"name": "@mysten/window-wallet-core",
+	"version": "0.0.2",
+	"description": "Window wallet core functionality",
 	"license": "Apache-2.0",
+	"author": "Mysten Labs <build@mystenlabs.com>",
 	"type": "commonjs",
 	"main": "./dist/cjs/index.js",
 	"module": "./dist/esm/index.js",
@@ -17,37 +17,35 @@
 	"sideEffects": false,
 	"files": [
 		"CHANGELOG.md",
-		"dist",
-		"src"
+		"dist"
 	],
-	"engines": {
-		"node": ">=18"
-	},
 	"scripts": {
+		"clean": "rm -rf tsconfig.tsbuildinfo ./dist",
 		"build": "build-package",
-		"test": "echo 'No unit tests for kiosk SDK'",
-		"pre-commit": "pnpm prettier:fix && pnpm lint && pnpm build",
 		"prepublishOnly": "pnpm turbo build",
 		"prettier:check": "prettier -c --ignore-unknown .",
 		"prettier:fix": "prettier -w --ignore-unknown .",
 		"eslint:check": "eslint --max-warnings=0 .",
 		"eslint:fix": "pnpm run eslint:check --fix",
 		"lint": "pnpm run eslint:check && pnpm run prettier:check",
-		"lint:fix": "pnpm run eslint:fix && pnpm run prettier:fix",
-		"test:e2e": "vitest run e2e"
+		"lint:fix": "pnpm run eslint:fix && pnpm run prettier:fix"
 	},
-	"dependencies": {
-		"@mysten/sui": "workspace:*",
-		"@mysten/utils": "workspace:*"
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mystenlabs/ts-sdks.git"
 	},
+	"bugs": {
+		"url": "https://github.com/mystenlabs/ts-sdks/issues"
+	},
+	"homepage": "https://github.com/mystenlabs/ts-sdks#readme",
 	"devDependencies": {
 		"@mysten/build-scripts": "workspace:*",
-		"cross-env": "^7.0.3",
-		"tmp": "^0.2.3",
-		"ts-retry-promise": "^0.8.1",
 		"typescript": "^5.8.2",
-		"vite": "^6.2.5",
-		"vitest": "^3.1.1",
-		"wait-on": "^8.0.3"
+		"vitest": "^3.1.1"
+	},
+	"dependencies": {
+		"@mysten/utils": "workspace:*",
+		"jose": "^6.0.10",
+		"valibot": "^0.36.0"
 	}
 }
