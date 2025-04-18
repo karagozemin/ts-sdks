@@ -6,8 +6,8 @@ enviornments until further notice.
 
 This package provides support for the new **Slush** web wallet.
 
-If you're currently using `@mysten/stashed-wallet`, you should migrate to this package (no sooner
-than 0X/XX/2025) to ensure compatibility with the new Slush experience.
+If you're currently using `@mysten/zksend`'s `registerStashedWallet`, you should migrate to this
+package (no sooner than 0X/XX/2025) to ensure compatibility with the new Slush experience.
 
 ## 🚀 Installation
 
@@ -30,7 +30,7 @@ If you're using `registerStashedWallet`, switch to `registerSlushWallet`:
 ```ts
 import { registerStashedWallet } from '@mysten/stashed-wallet';
 
-registerStashedWallet();
+registerStashedWallet(...);
 ```
 
 **After:**
@@ -38,7 +38,7 @@ registerStashedWallet();
 ```ts
 import { registerSlushWallet } from '@mysten/slush-wallet';
 
-registerSlushWallet();
+registerSlushWallet(...);
 ```
 
 That's it — you're now using Slush!
