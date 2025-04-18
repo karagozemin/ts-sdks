@@ -12,13 +12,7 @@ package (no sooner than 0X/XX/2025) to ensure compatibility with the new Slush e
 ## 🚀 Installation
 
 ```bash
-npm install @mysten/slush-wallet
-```
-
-or
-
-```bash
-yarn add @mysten/slush-wallet
+pnpm install @mysten/slush-wallet
 ```
 
 ## 🔁 Migration
