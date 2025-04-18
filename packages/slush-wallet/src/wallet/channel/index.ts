@@ -5,17 +5,12 @@ import type { InferOutput } from 'valibot';
 import { parse, safeParse } from 'valibot';
 
 import { promiseWithResolvers } from '@mysten/utils';
-import type {
-	SlushRequestData,
-	SlushResponsePayload,
-	SlushResponseTypes,
-	SlushRequest,
-	SlushResponse,
-} from './events.js';
+import type { StashedRequestData, StashedResponsePayload, StashedResponseTypes } from './events.js';
+import { StashedRequest, StashedResponse } from './events.js';
 
-export const DEFAULT_SLUSH_ORIGIN = 'https://getslush.com';
+export const DEFAULT_STASHED_ORIGIN = 'https://getstashed.com';
 
-export { SlushRequest, SlushResponse };
+export { StashedRequest, StashedResponse };
 
 const getClientMetadata = () => {
 	return {
@@ -30,7 +25,7 @@ const getClientMetadata = () => {
 	};
 };
 
-export class SlushPopup {
+export class StashedPopup {
 	#popup: Window;
 
 	#version: string;
@@ -47,7 +42,7 @@ export class SlushPopup {
 
 	constructor({
 		name,
-		origin = DEFAULT_SLUSH_ORIGIN,
+		origin = DEFAULT_STASHED_ORIGIN,
 		chain,
 	}: {
 		name: string;
@@ -75,7 +70,7 @@ export class SlushPopup {
 			try {
 				if (this.#popup.closed) {
 					this.#cleanup();
-					reject(new Error('User closed the Slush window'));
+					reject(new Error('User closed the Stashed window'));
 				}
 			} catch {
 				// This can error during the login flow, but that's fine.
@@ -83,12 +78,12 @@ export class SlushPopup {
 		}, 1000);
 	}
 
-	send<T extends SlushRequestData['type']>({
+	send<T extends StashedRequestData['type']>({
 		type,
 		...data
 	}: {
 		type: T;
-	} & Extract<SlushRequestData, { type: T }>): Promise<SlushResponseTypes[T]> {
+	} & Extract<StashedRequestData, { type: T }>): Promise<StashedResponseTypes[T]> {
 		window.addEventListener('message', this.#listener);
 
 		const requestData = {
@@ -109,7 +104,7 @@ export class SlushPopup {
 			`${this.#origin}/dapp-request${data ? `#${encodedRequestData}` : ''}`,
 		);
 
-		return this.#promise as Promise<SlushResponseTypes[T]>;
+		return this.#promise as Promise<StashedResponseTypes[T]>;
 	}
 
 	close() {
@@ -121,7 +116,7 @@ export class SlushPopup {
 		if (event.origin !== this.#origin) {
 			return;
 		}
-		const { success, output } = safeParse(SlushResponse, event.data);
+		const { success, output } = safeParse(StashedResponse, event.data);
 		if (!success || output.id !== this.#id) return;
 
 		this.#cleanup();
@@ -142,23 +137,23 @@ export class SlushPopup {
 	}
 }
 
-export class SlushHost {
-	#request: InferOutput<typeof SlushRequest>;
+export class StashedHost {
+	#request: InferOutput<typeof StashedRequest>;
 
-	constructor(request: InferOutput<typeof SlushRequest>) {
+	constructor(request: InferOutput<typeof StashedRequest>) {
 		if (typeof window === 'undefined' || !window.opener) {
 			throw new Error(
-				'SlushHost can only be used in a window opened through `window.open`. `window.opener` is not available.',
+				'StashedHost can only be used in a window opened through `window.open`. `window.opener` is not available.',
 			);
 		}
 
 		this.#request = request;
 	}
 
-	static fromPayload(payload: SlushRequest) {
+	static fromPayload(payload: StashedRequest) {
 		const { requestId, appUrl, appName, version, ...rest } = payload;
 
-		const request = parse(SlushRequest, {
+		const request = parse(StashedRequest, {
 			version,
 			requestId,
 			appUrl,
@@ -166,26 +161,26 @@ export class SlushHost {
 			...rest,
 		});
 
-		return new SlushHost(request);
+		return new StashedHost(request);
 	}
 
 	getRequestData() {
 		return this.#request;
 	}
 
-	sendMessage(payload: SlushResponsePayload) {
+	sendMessage(payload: StashedResponsePayload) {
 		window.opener.postMessage(
 			{
 				id: this.#request.requestId,
-				source: 'slush-channel',
+				source: 'stashed-channel',
 				payload,
 				version: this.#request.version,
-			} satisfies SlushResponse,
+			} satisfies StashedResponse,
 			this.#request.appUrl,
 		);
 	}
 
-	close(payload?: SlushResponsePayload) {
+	close(payload?: StashedResponsePayload) {
 		if (payload) {
 			this.sendMessage(payload);
 		}

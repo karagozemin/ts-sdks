@@ -16,7 +16,7 @@ import {
 	variant,
 } from 'valibot';
 
-export const SlushRequestData = variant('type', [
+export const StashedRequestData = variant('type', [
 	object({
 		type: literal('connect'),
 	}),
@@ -42,20 +42,20 @@ export const SlushRequestData = variant('type', [
 		session: string('`session` is required'),
 	}),
 ]);
-export type SlushRequestData = InferOutput<typeof SlushRequestData>;
+export type StashedRequestData = InferOutput<typeof StashedRequestData>;
 
-export const SlushRequest = object({
+export const StashedRequest = object({
 	version: literal('v1'),
 	requestId: pipe(string('`requestId` is required'), uuid()),
 	appUrl: pipe(string(), url('`appUrl` must be a valid URL')),
 	appName: string('`appName` is required'),
-	payload: SlushRequestData,
+	payload: StashedRequestData,
 	metadata: optional(record(string(), any())),
 });
 
-export type SlushRequest = InferOutput<typeof SlushRequest>;
+export type StashedRequest = InferOutput<typeof StashedRequest>;
 
-export const SlushResponseData = variant('type', [
+export const StashedResponseData = variant('type', [
 	object({
 		type: literal('connect'),
 		accounts: array(
@@ -84,32 +84,32 @@ export const SlushResponseData = variant('type', [
 		signature: string(),
 	}),
 ]);
-export type SlushResponseData = InferOutput<typeof SlushResponseData>;
+export type StashedResponseData = InferOutput<typeof StashedResponseData>;
 
-export const SlushResponsePayload = variant('type', [
+export const StashedResponsePayload = variant('type', [
 	object({
 		type: literal('reject'),
 		reason: optional(string('`reason` must be a string')),
 	}),
 	object({
 		type: literal('resolve'),
-		data: SlushResponseData,
+		data: StashedResponseData,
 	}),
 ]);
-export type SlushResponsePayload = InferOutput<typeof SlushResponsePayload>;
+export type StashedResponsePayload = InferOutput<typeof StashedResponsePayload>;
 
-export const SlushResponse = object({
+export const StashedResponse = object({
 	id: pipe(string(), uuid()),
-	source: literal('slush-channel'),
-	payload: SlushResponsePayload,
+	source: literal('stashed-channel'),
+	payload: StashedResponsePayload,
 	version: literal('v1'),
 });
-export type SlushResponse = InferOutput<typeof SlushResponse>;
+export type StashedResponse = InferOutput<typeof StashedResponse>;
 
-export type SlushRequestTypes = Record<string, any> & {
-	[P in SlushRequestData as P['type']]: P;
+export type StashedRequestTypes = Record<string, any> & {
+	[P in StashedRequestData as P['type']]: P;
 };
 
-export type SlushResponseTypes = {
-	[P in SlushResponseData as P['type']]: P;
+export type StashedResponseTypes = {
+	[P in StashedResponseData as P['type']]: P;
 };
