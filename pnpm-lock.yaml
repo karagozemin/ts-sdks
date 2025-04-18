@@ -75,11 +75,7 @@ importers:
         version: 3.2.0(@typescript-eslint/eslint-plugin@8.19.0(@typescript-eslint/parser@8.19.0(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1)
       graphql-config:
         specifier: ^5.0.3
-<<<<<<< Updated upstream
         version: 5.1.3(@types/node@22.13.17)(graphql@16.10.0)(typescript@5.8.2)
-=======
-        version: 5.1.3(@types/node@22.10.5)(graphql@16.10.0)(typescript@5.7.2)
->>>>>>> Stashed changes
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
@@ -917,7 +913,6 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1(@types/debug@4.1.12)(@types/node@22.13.17)(happy-dom@16.3.0)(jiti@2.4.2)(jsdom@25.0.1)(lightningcss@1.29.2)(msw@2.7.3(@types/node@22.13.17)(typescript@5.8.2))(tsx@4.19.3)(yaml@2.7.1)
 
-<<<<<<< Updated upstream
   packages/slush-wallet:
     dependencies:
       '@mysten/sui':
@@ -929,31 +924,15 @@ importers:
       '@mysten/wallet-standard':
         specifier: workspace:*
         version: link:../wallet-standard
-=======
-  packages/stashed:
-    dependencies:
-      '@mysten/sui':
-        specifier: latest
-        version: 1.21.2(typescript@5.7.3)
-      '@mysten/wallet-standard':
-        specifier: latest
-        version: 0.13.26(typescript@5.7.3)
->>>>>>> Stashed changes
+      '@mysten/window-wallet-core':
+        specifier: workspace:*
+        version: link:../window-wallet-core
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
-      nanostores:
-        specifier: ^0.10.3
-        version: 0.10.3
       valibot:
         specifier: ^0.36.0
         version: 0.36.0
-<<<<<<< Updated upstream
-=======
-      watch:
-        specifier: ^1.0.2
-        version: 1.0.2
->>>>>>> Stashed changes
     devDependencies:
       '@mysten/build-scripts':
         specifier: workspace:*
@@ -9453,12 +9432,6 @@ snapshots:
       graphql: 16.10.0
       typescript: 5.8.2
 
-  '@0no-co/graphqlsp@1.12.16(graphql@16.10.0)(typescript@5.7.3)':
-    dependencies:
-      '@gql.tada/internal': 1.0.8(graphql@16.10.0)(typescript@5.7.3)
-      graphql: 16.10.0
-      typescript: 5.7.3
-
   '@adobe/css-tools@4.4.1': {}
 
   '@alloc/quick-lru@5.2.0': {}
@@ -10952,28 +10925,11 @@ snapshots:
       graphql: 16.10.0
       typescript: 5.8.2
 
-<<<<<<< Updated upstream
   '@gql.tada/internal@1.0.8(graphql@16.10.0)(typescript@5.8.2)':
-=======
-  '@gql.tada/cli-utils@1.6.3(@0no-co/graphqlsp@1.12.16(graphql@16.10.0)(typescript@5.7.3))(graphql@16.10.0)(typescript@5.7.3)':
-    dependencies:
-      '@0no-co/graphqlsp': 1.12.16(graphql@16.10.0)(typescript@5.7.3)
-      '@gql.tada/internal': 1.0.8(graphql@16.10.0)(typescript@5.7.3)
-      graphql: 16.10.0
-      typescript: 5.7.3
-
-  '@gql.tada/internal@1.0.8(graphql@16.10.0)(typescript@5.7.2)':
->>>>>>> Stashed changes
     dependencies:
       '@0no-co/graphql.web': 1.0.12(graphql@16.10.0)
       graphql: 16.10.0
       typescript: 5.8.2
-
-  '@gql.tada/internal@1.0.8(graphql@16.10.0)(typescript@5.7.3)':
-    dependencies:
-      '@0no-co/graphql.web': 1.0.12(graphql@16.10.0)
-      graphql: 16.10.0
-      typescript: 5.7.3
 
   '@graphql-codegen/add@5.0.3(graphql@16.10.0)':
     dependencies:
@@ -11279,7 +11235,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-<<<<<<< Updated upstream
   '@graphql-tools/executor-http@1.3.2(@types/node@22.13.17)(graphql@16.10.0)':
     dependencies:
       '@graphql-hive/signal': 1.0.0
@@ -11307,8 +11262,6 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-=======
->>>>>>> Stashed changes
   '@graphql-tools/executor-legacy-ws@1.1.9(graphql@16.10.0)':
     dependencies:
       '@graphql-tools/utils': 10.7.1(graphql@16.10.0)
@@ -11534,7 +11487,6 @@ snapshots:
       - encoding
       - utf-8-validate
 
-<<<<<<< Updated upstream
   '@graphql-tools/url-loader@8.0.31(@types/node@22.13.17)(graphql@16.10.0)':
     dependencies:
       '@graphql-tools/executor-graphql-ws': 2.0.5(graphql@16.10.0)
@@ -11557,8 +11509,6 @@ snapshots:
       - uWebSockets.js
       - utf-8-validate
 
-=======
->>>>>>> Stashed changes
   '@graphql-tools/utils@10.7.1(graphql@16.10.0)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.10.0)
@@ -11931,71 +11881,6 @@ snapshots:
       outvariant: 1.4.3
       strict-event-emitter: 0.5.1
 
-<<<<<<< Updated upstream
-=======
-  '@mysten/bcs@1.4.0':
-    dependencies:
-      bs58: 6.0.0
-
-  '@mysten/sui@1.21.2(typescript@5.7.2)':
-    dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@16.10.0)
-      '@mysten/bcs': 1.4.0
-      '@noble/curves': 1.8.0
-      '@noble/hashes': 1.7.0
-      '@scure/bip32': 1.6.1
-      '@scure/bip39': 1.5.1
-      '@suchipi/femver': 1.0.0
-      bech32: 2.0.0
-      gql.tada: 1.8.10(graphql@16.10.0)(typescript@5.7.2)
-      graphql: 16.10.0
-      jose: 5.9.6
-      poseidon-lite: 0.2.1
-      valibot: 0.36.0
-    transitivePeerDependencies:
-      - '@gql.tada/svelte-support'
-      - '@gql.tada/vue-support'
-      - typescript
-
-  '@mysten/sui@1.21.2(typescript@5.7.3)':
-    dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@16.10.0)
-      '@mysten/bcs': 1.4.0
-      '@noble/curves': 1.8.0
-      '@noble/hashes': 1.7.0
-      '@scure/bip32': 1.6.1
-      '@scure/bip39': 1.5.1
-      '@suchipi/femver': 1.0.0
-      bech32: 2.0.0
-      gql.tada: 1.8.10(graphql@16.10.0)(typescript@5.7.3)
-      graphql: 16.10.0
-      jose: 5.9.6
-      poseidon-lite: 0.2.1
-      valibot: 0.36.0
-    transitivePeerDependencies:
-      - '@gql.tada/svelte-support'
-      - '@gql.tada/vue-support'
-      - typescript
-
-  '@mysten/wallet-standard@0.13.26(typescript@5.7.2)':
-    dependencies:
-      '@mysten/sui': 1.21.2(typescript@5.7.2)
-      '@wallet-standard/core': 1.1.0
-    transitivePeerDependencies:
-      - '@gql.tada/svelte-support'
-      - '@gql.tada/vue-support'
-      - typescript
-
-  '@mysten/wallet-standard@0.13.26(typescript@5.7.3)':
-    dependencies:
-      '@mysten/sui': 1.21.2(typescript@5.7.3)
-      '@wallet-standard/core': 1.1.0
-    transitivePeerDependencies:
-      - '@gql.tada/svelte-support'
-      - '@gql.tada/vue-support'
-      - typescript
-
->>>>>>> Stashed changes
   '@nanostores/react@0.7.3(nanostores@0.10.3)(react@18.3.1)':
     dependencies:
       nanostores: 0.10.3
@@ -15878,18 +15763,6 @@ snapshots:
       - '@gql.tada/vue-support'
       - graphql
 
-  gql.tada@1.8.10(graphql@16.10.0)(typescript@5.7.3):
-    dependencies:
-      '@0no-co/graphql.web': 1.0.12(graphql@16.10.0)
-      '@0no-co/graphqlsp': 1.12.16(graphql@16.10.0)(typescript@5.7.3)
-      '@gql.tada/cli-utils': 1.6.3(@0no-co/graphqlsp@1.12.16(graphql@16.10.0)(typescript@5.7.3))(graphql@16.10.0)(typescript@5.7.3)
-      '@gql.tada/internal': 1.0.8(graphql@16.10.0)(typescript@5.7.3)
-      typescript: 5.7.3
-    transitivePeerDependencies:
-      - '@gql.tada/svelte-support'
-      - '@gql.tada/vue-support'
-      - graphql
-
   graceful-fs@4.2.10: {}
 
   graceful-fs@4.2.11: {}
@@ -15904,11 +15777,7 @@ snapshots:
       '@graphql-tools/merge': 9.0.16(graphql@16.10.0)
       '@graphql-tools/url-loader': 8.0.22(@types/node@22.13.17)(graphql@16.10.0)
       '@graphql-tools/utils': 10.7.1(graphql@16.10.0)
-<<<<<<< Updated upstream
       cosmiconfig: 8.3.6(typescript@5.8.2)
-=======
-      cosmiconfig: 8.3.6(typescript@5.7.2)
->>>>>>> Stashed changes
       graphql: 16.10.0
       jiti: 2.4.2
       minimatch: 9.0.5
@@ -16841,11 +16710,7 @@ snapshots:
 
   meros@1.3.0(@types/node@22.13.17):
     optionalDependencies:
-<<<<<<< Updated upstream
       '@types/node': 22.13.17
-=======
-      '@types/node': 22.10.5
->>>>>>> Stashed changes
 
   micromark-core-commonmark@2.0.2:
     dependencies:
