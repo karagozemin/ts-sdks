@@ -5,12 +5,17 @@ import type { InferOutput } from 'valibot';
 import { parse, safeParse } from 'valibot';
 
 import { promiseWithResolvers } from '@mysten/utils';
-import type { StashedRequestData, StashedResponsePayload, StashedResponseTypes } from './events.js';
-import { StashedRequest, StashedResponse } from './events.js';
+import type {
+	SlushRequestData,
+	SlushResponsePayload,
+	SlushResponseTypes,
+	SlushRequest,
+	SlushResponse,
+} from './events.js';
 
-export const DEFAULT_STASHED_ORIGIN = 'https://getstashed.com';
+export const DEFAULT_SLUSH_ORIGIN = 'https://getslush.com';
 
-export { StashedRequest, StashedResponse };
+export { SlushRequest, SlushResponse };
 
 const getClientMetadata = () => {
 	return {
@@ -25,7 +30,7 @@ const getClientMetadata = () => {
 	};
 };
 
-export class StashedPopup {
+export class SlushPopup {
 	#popup: Window;
 
 	#version: string;
@@ -42,7 +47,7 @@ export class StashedPopup {
 
 	constructor({
 		name,
-		origin = DEFAULT_STASHED_ORIGIN,
+		origin = DEFAULT_SLUSH_ORIGIN,
 		chain,
 	}: {
 		name: string;
@@ -70,7 +75,7 @@ export class StashedPopup {
 			try {
 				if (this.#popup.closed) {
 					this.#cleanup();
-					reject(new Error('User closed the Stashed window'));
+					reject(new Error('User closed the Slush window'));
 				}
 			} catch {
 				// This can error during the login flow, but that's fine.
@@ -78,12 +83,12 @@ export class StashedPopup {
 		}, 1000);
 	}
 
-	send<T extends StashedRequestData['type']>({
+	send<T extends SlushRequestData['type']>({
 		type,
 		...data
 	}: {
 		type: T;
-	} & Extract<StashedRequestData, { type: T }>): Promise<StashedResponseTypes[T]> {
+	} & Extract<SlushRequestData, { type: T }>): Promise<SlushResponseTypes[T]> {
 		window.addEventListener('message', this.#listener);
 
 		const requestData = {
@@ -104,7 +109,7 @@ export class StashedPopup {
 			`${this.#origin}/dapp-request${data ? `#${encodedRequestData}` : ''}`,
 		);
 
-		return this.#promise as Promise<StashedResponseTypes[T]>;
+		return this.#promise as Promise<SlushResponseTypes[T]>;
 	}
 
 	close() {
@@ -116,7 +121,7 @@ export class StashedPopup {
 		if (event.origin !== this.#origin) {
 			return;
 		}
-		const { success, output } = safeParse(StashedResponse, event.data);
+		const { success, output } = safeParse(SlushResponse, event.data);
 		if (!success || output.id !== this.#id) return;
 
 		this.#cleanup();
@@ -137,23 +142,23 @@ export class StashedPopup {
 	}
 }
 
-export class StashedHost {
-	#request: InferOutput<typeof StashedRequest>;
+export class SlushHost {
+	#request: InferOutput<typeof SlushRequest>;
 
-	constructor(request: InferOutput<typeof StashedRequest>) {
+	constructor(request: InferOutput<typeof SlushRequest>) {
 		if (typeof window === 'undefined' || !window.opener) {
 			throw new Error(
-				'StashedHost can only be used in a window opened through `window.open`. `window.opener` is not available.',
+				'SlushHost can only be used in a window opened through `window.open`. `window.opener` is not available.',
 			);
 		}
 
 		this.#request = request;
 	}
 
-	static fromPayload(payload: StashedRequest) {
+	static fromPayload(payload: SlushRequest) {
 		const { requestId, appUrl, appName, version, ...rest } = payload;
 
-		const request = parse(StashedRequest, {
+		const request = parse(SlushRequest, {
 			version,
 			requestId,
 			appUrl,
@@ -161,26 +166,26 @@ export class StashedHost {
 			...rest,
 		});
 
-		return new StashedHost(request);
+		return new SlushHost(request);
 	}
 
 	getRequestData() {
 		return this.#request;
 	}
 
-	sendMessage(payload: StashedResponsePayload) {
+	sendMessage(payload: SlushResponsePayload) {
 		window.opener.postMessage(
 			{
 				id: this.#request.requestId,
-				source: 'stashed-channel',
+				source: 'slush-channel',
 				payload,
 				version: this.#request.version,
-			} satisfies StashedResponse,
+			} satisfies SlushResponse,
 			this.#request.appUrl,
 		);
 	}
 
-	close(payload?: StashedResponsePayload) {
+	close(payload?: SlushResponsePayload) {
 		if (payload) {
 			this.sendMessage(payload);
 		}
