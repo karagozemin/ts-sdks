@@ -1,1 +1,1 @@
-# `@mysten/zksend`
+# `@mysten/slush-wallet`
