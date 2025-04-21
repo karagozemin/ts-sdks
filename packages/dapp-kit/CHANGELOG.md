@@ -1,5 +1,11 @@
 # @mysten/dapp-kit
 
+## 0.16.0
+
+### Minor Changes
+
+- Deprecates stashedWallet in favor of slushWallet
+
 ## 0.15.6
 
 ### Patch Changes
