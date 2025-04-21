@@ -7,7 +7,7 @@ enviornments until further notice.
 This package provides support for the new **Slush** web wallet.
 
 If you're currently using `@mysten/zksend`'s `registerStashedWallet`, you should migrate to this
-package (no sooner than 0X/XX/2025) to ensure compatibility with the new Slush experience.
+package (no sooner than 04/24/2025) to ensure compatibility with the new Slush experience.
 
 ## 🚀 Installation
 
@@ -36,7 +36,3 @@ registerSlushWallet(...);
 ```
 
 That's it — you're now using Slush!
-
-```
-
-```
