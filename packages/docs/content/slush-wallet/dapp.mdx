@@ -27,16 +27,16 @@ your application's lifecycle.
 `registerSlushWallet` takes two arguments:
 
 - `name`: The name of your dApp. This will be shown to the user when they are asked to approve the
-  connection in Stashed.
+  connection in Slush.
 - `options`: An optional object with the following properties:
-  - `origin`: The origin of the Stashed website. Defaults to `https://getslush.com`.
-  - `network`: The network that you would like the Stashed wallet to use. Defaults to `mainnet`,
+  - `origin`: The origin of the Slush website. Defaults to `https://getslush.com`.
+  - `network`: The network that you would like the Slush wallet to use. Defaults to `mainnet`,
     supports `mainnet` and `testnet`.
 
 ```ts
-import { registerStashedWallet } from '@mysten/zksend';
+import { registerSlushWallet } from '@mysten/slush-wallet';
 
-registerStashedWallet('Your dApp Name');
+registerSlushWallet('Your dApp Name');
 ```
 
 ## Supported features
@@ -57,11 +57,11 @@ wallet, and check if it is the Slush wallet.
 
 ```ts
 import { useCurrentWallet } from '@mysten/dapp-kit';
-import { STASHED_WALLET_NAME } from '@mysten/zksend';
+import { SLUSH_WALLET_NAME } from '@mysten/slush-wallet';
 
-function StashedOnly() {
+function SlushOnly() {
 	const { currentWallet } = useCurrentWallet();
-	const walletIsStashedWallet = currentWallet?.name === SLUSH_WALLET_NAME;
+	const walletIsSlushWallet = currentWallet?.name === SLUSH_WALLET_NAME;
 
 	// rest of component logic...
 }
