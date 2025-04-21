@@ -15,37 +15,28 @@ export interface SlushWalletConfig {
 }
 
 export function useSlushWallet(config?: SlushWalletConfig) {
-	const status = useAutoConnectWallet();
-	const [address, setAddress] = useState<string | null>(null);
-	const [wallet, setWallet] = useState<SlushWallet | null>(null);
-	const { mutate: connect } = useConnectWallet();
-
-	useEffect(() => {
-		// This handles an edge case where the user has already connected a wallet, but is coming from
-		// a zkSend redirect, and we want to force the zkSend wallet to connect. We need to wait for the
-		// autoconnection to attempt to connect, then force the zkSend wallet to connect.
-		if (!address || !wallet || status !== 'attempted') return;
-
-		connect({ wallet, silent: true });
-		// Reset the address since we only want to do this once:
-		setAddress(null);
-	}, [address, status, connect, wallet]);
-
 	useLayoutEffect(() => {
 		if (!config?.name) {
 			return;
 		}
 
-		const { wallet, unregister, addressFromRedirect } = registerSlushWallet(config.name, {
-			origin: config.origin,
-			network: config.network,
-		});
+		let cleanup: (() => void) | undefined;
 
-		if (addressFromRedirect) {
-			setWallet(wallet);
-			setAddress(addressFromRedirect);
-		}
+		const setupWallet = async () => {
+			try {
+				const { unregister } = await registerSlushWallet(config.name, {
+					origin: config.origin,
+				});
+				cleanup = unregister;
+			} catch (error) {
+				console.error('Failed to register Slush wallet:', error);
+			}
+		};
 
-		return unregister;
+		setupWallet();
+
+		return () => {
+			if (cleanup) cleanup();
+		};
 	}, [config?.name, config?.origin, config?.network]);
 }
