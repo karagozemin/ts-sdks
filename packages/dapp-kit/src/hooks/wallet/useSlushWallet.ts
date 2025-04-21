@@ -1,12 +1,8 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { SlushWallet } from '@mysten/slush-wallet';
 import { registerSlushWallet } from '@mysten/slush-wallet';
-import { useEffect, useLayoutEffect, useState } from 'react';
-
-import { useAutoConnectWallet } from './useAutoConnectWallet.js';
-import { useConnectWallet } from './useConnectWallet.js';
+import { useLayoutEffect } from 'react';
 
 export interface SlushWalletConfig {
 	name: string;
