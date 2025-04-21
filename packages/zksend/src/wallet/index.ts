@@ -32,6 +32,10 @@ type WalletEventsMap = {
 
 const STASHED_RECENT_ADDRESS_KEY = 'stashed:recentAddress';
 
+/**
+ * @deprecated This name is deprecated and will be removed after 04/24/2025.
+ * Please migrate to '@mysten/slush-wallet' package for the new Slush experience.
+ */
 export const STASHED_WALLET_NAME = 'Stashed' as const;
 
 /**
