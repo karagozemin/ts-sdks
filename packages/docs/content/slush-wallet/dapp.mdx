@@ -1,0 +1,102 @@
+---
+title: dApp Integration
+---
+
+<Callout type="info">
+	If you are using `dapp-kit`, you do not need to install any additional packages to integrate with
+	the Slush wallet. [Read how to integrate with dapp-kit.](../dapp-kit/slush)
+</Callout>
+
+Using the Slush Wallet SDK, you can allow users to connect to the Slush wallet from your dApp. The
+wallet is provided through the [Wallet Standard](https://docs.sui.io/standards/wallet-standard), and
+should appear automatically in your existing wallet connection UI.
+
+## Considerations
+
+- Users will only be able to connect their zkLogin wallet from Slush.
+- The zkLogin account will be managed by Slush, you do not need to set up any OAuth providers.
+- You will not get access to the user's private key, you will only be able to connect to the wallet,
+  and suggest transactions and messages to sign, just like any other wallet in the ecosystem.
+
+## Setup
+
+To use the Slush wallet, you will need to register it in your application, using
+`registerSlushWallet`. This only needs to be done once, and should be done as early as possible in
+your application's lifecycle.
+
+`registerSlushWallet` takes two arguments:
+
+- `name`: The name of your dApp. This will be shown to the user when they are asked to approve the
+  connection in Stashed.
+- `options`: An optional object with the following properties:
+  - `origin`: The origin of the Stashed website. Defaults to `https://getslush.com`.
+  - `network`: The network that you would like the Stashed wallet to use. Defaults to `mainnet`,
+    supports `mainnet` and `testnet`.
+
+```ts
+import { registerStashedWallet } from '@mysten/zksend';
+
+registerStashedWallet('Your dApp Name');
+```
+
+## Supported features
+
+The Slush wallet currently supports the following features:
+
+- `signTransaction`
+- `signAndExecuteTransaction`
+- `signPersonalMessage`
+
+## Detecting the Slush wallet
+
+If you'd like to detect whether the user is connected to the Slush wallet, you can use the `id` or
+`name` property on the wallet
+
+For example, if you are using `dapp-kit`, you can use the `useCurrentWallet` hook to get the current
+wallet, and check if it is the Slush wallet.
+
+```ts
+import { useCurrentWallet } from '@mysten/dapp-kit';
+import { STASHED_WALLET_NAME } from '@mysten/zksend';
+
+function StashedOnly() {
+	const { currentWallet } = useCurrentWallet();
+	const walletIsStashedWallet = currentWallet?.name === SLUSH_WALLET_NAME;
+
+	// rest of component logic...
+}
+```
+
+## Migration from Stashed Wallet -> Slush Wallet
+
+If you're currently using `@mysten/zksend`'s `registerStashedWallet` directly, you should migrate to
+the `@mysten/slush-wallet` package to ensure compatibility with the new Slush experience.
+
+## 🚀 Installation
+
+```bash
+pnpm install @mysten/slush-wallet
+```
+
+## 🔁 Migration
+
+If you're using `registerStashedWallet`, switch to `registerSlushWallet`:
+
+**Before:**
+
+```ts
+import { registerStashedWallet } from '@mysten/zksend';
+
+registerStashedWallet(...);
+```
+
+**After:**
+
+```ts
+import { registerSlushWallet } from '@mysten/slush-wallet';
+
+registerSlushWallet(...);
+```
+
+If you're using dapp-kit, update to the latest dapp-kit version and change the
+'stashedWallet`prop on WalletProvider to`slushWallet`

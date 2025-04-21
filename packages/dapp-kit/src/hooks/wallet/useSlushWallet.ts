@@ -1,23 +1,23 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { StashedWallet } from '@mysten/zksend';
-import { registerStashedWallet } from '@mysten/zksend';
+import type { SlushWallet } from '@mysten/slush-wallet';
+import { registerSlushWallet } from '@mysten/slush-wallet';
 import { useEffect, useLayoutEffect, useState } from 'react';
 
 import { useAutoConnectWallet } from './useAutoConnectWallet.js';
 import { useConnectWallet } from './useConnectWallet.js';
 
-export interface StashedWalletConfig {
+export interface SlushWalletConfig {
 	name: string;
 	network?: 'mainnet' | 'testnet';
 	origin?: string;
 }
 
-export function useStashedWallet(config?: StashedWalletConfig) {
+export function useSlushWallet(config?: SlushWalletConfig) {
 	const status = useAutoConnectWallet();
 	const [address, setAddress] = useState<string | null>(null);
-	const [wallet, setWallet] = useState<StashedWallet | null>(null);
+	const [wallet, setWallet] = useState<SlushWallet | null>(null);
 	const { mutate: connect } = useConnectWallet();
 
 	useEffect(() => {
@@ -36,7 +36,7 @@ export function useStashedWallet(config?: StashedWalletConfig) {
 			return;
 		}
 
-		const { wallet, unregister, addressFromRedirect } = registerStashedWallet(config.name, {
+		const { wallet, unregister, addressFromRedirect } = registerSlushWallet(config.name, {
 			origin: config.origin,
 			network: config.network,
 		});
