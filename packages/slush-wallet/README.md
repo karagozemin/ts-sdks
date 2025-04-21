@@ -22,7 +22,7 @@ If you're using `registerStashedWallet`, switch to `registerSlushWallet`:
 **Before:**
 
 ```ts
-import { registerStashedWallet } from '@mysten/stashed-wallet';
+import { registerStashedWallet } from '@mysten/zksend';
 
 registerStashedWallet(...);
 ```
