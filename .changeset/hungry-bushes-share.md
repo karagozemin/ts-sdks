@@ -1,5 +1,5 @@
 ---
-'@mysten/slush-wallet': major
+'@mysten/slush-wallet': minor
 '@mysten/dapp-kit': minor
 ---
 
