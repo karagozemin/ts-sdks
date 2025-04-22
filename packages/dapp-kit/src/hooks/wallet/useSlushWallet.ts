@@ -6,7 +6,6 @@ import { useLayoutEffect } from 'react';
 
 export interface SlushWalletConfig {
 	name: string;
-	network?: 'mainnet' | 'testnet';
 	origin?: string;
 }
 
@@ -34,5 +33,5 @@ export function useSlushWallet(config?: SlushWalletConfig) {
 		return () => {
 			if (cleanup) cleanup();
 		};
-	}, [config?.name, config?.origin, config?.network]);
+	}, [config?.name, config?.origin]);
 }
