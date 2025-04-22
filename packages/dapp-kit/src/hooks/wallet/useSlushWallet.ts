@@ -20,10 +20,10 @@ export function useSlushWallet(config?: SlushWalletConfig) {
 
 		const setupWallet = async () => {
 			try {
-				const { unregister } = await registerSlushWallet(config.name, {
+				const result = await registerSlushWallet(config.name, {
 					origin: config.origin,
 				});
-				cleanup = unregister;
+				cleanup = result?.unregister;
 			} catch (error) {
 				console.error('Failed to register Slush wallet:', error);
 			}

@@ -42,9 +42,6 @@ export type WalletProviderProps = {
 	/** Enables the Slush wallet */
 	slushWallet?: SlushWalletConfig;
 
-	/** Deprecated: Enables the Slush wallet */
-	stashedWallet?: SlushWalletConfig;
-
 	/** Configures how the most recently connected to wallet account is stored. Set to `null` to disable persisting state entirely. Defaults to using localStorage if it is available. */
 	storage?: StateStorage | null;
 
@@ -67,7 +64,6 @@ export function WalletProvider({
 	enableUnsafeBurner = false,
 	autoConnect = false,
 	slushWallet,
-	stashedWallet,
 	theme = lightTheme,
 	children,
 }: WalletProviderProps) {
@@ -86,7 +82,7 @@ export function WalletProvider({
 				preferredWallets={preferredWallets}
 				walletFilter={walletFilter}
 				enableUnsafeBurner={enableUnsafeBurner}
-				slushWallet={slushWallet || stashedWallet}
+				slushWallet={slushWallet}
 			>
 				{/* TODO: We ideally don't want to inject styles if people aren't using the UI components */}
 				{theme ? <InjectedThemeStyles theme={theme} /> : null}
