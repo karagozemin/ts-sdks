@@ -78,8 +78,8 @@
 		"vitest": "^3.1.1"
 	},
 	"dependencies": {
-		"@mysten/sui": "workspace:*",
 		"@mysten/slush-wallet": "workspace:*",
+		"@mysten/sui": "workspace:*",
 		"@mysten/utils": "workspace:*",
 		"@mysten/wallet-standard": "workspace:*",
 		"@radix-ui/react-dialog": "^1.1.6",
