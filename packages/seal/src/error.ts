@@ -16,9 +16,10 @@ export class SealAPIError extends SealError {
 	}
 
 	static #generate(message: string, requestId: string, status?: number) {
+		if (message.includes('InvalidPTB')) {
+			return new InvalidPTBError(requestId, message);
+		}
 		switch (message) {
-			case 'InvalidPTB':
-				return new InvalidPTBError(requestId);
 			case 'InvalidPackage':
 				return new InvalidPackageError(requestId);
 			case 'NoAccess':
@@ -59,8 +60,8 @@ export class SealAPIError extends SealError {
 // Errors returned by the Seal server that indicate that the PTB is invalid
 
 export class InvalidPTBError extends SealAPIError {
-	constructor(requestId?: string) {
-		super('PTB does not conform to the expected format', requestId);
+	constructor(requestId?: string, message?: string) {
+		super('PTB does not conform to the expected format ' + message, requestId);
 	}
 }
 
