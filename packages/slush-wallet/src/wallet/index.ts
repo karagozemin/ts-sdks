@@ -30,7 +30,7 @@ import type { InferOutput } from 'valibot';
 import { boolean, object, parse, string } from 'valibot';
 import { DappPostMessageChannel, decodeJwtSession } from '@mysten/window-wallet-core';
 
-const DEFAULT_SLUSH_ORIGIN = 'https://getslush.com';
+const DEFAULT_SLUSH_ORIGIN = 'https://[TODO]';
 
 type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];

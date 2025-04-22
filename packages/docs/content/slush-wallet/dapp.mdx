@@ -28,7 +28,7 @@ your application's lifecycle.
 - `name`: The name of your dApp. This will be shown to the user when they are asked to approve the
   connection in Slush.
 - `options`: An optional object with the following properties:
-  - `origin`: The origin of the Slush website. Defaults to `https://getslush.com`.
+  - `origin`: The origin of the Slush website. Defaults to `https://[TODO]`.
   - `network`: The network that you would like the Slush wallet to use. Defaults to `mainnet`,
     supports `mainnet` and `testnet`.
 
@@ -66,7 +66,7 @@ function SlushOnly() {
 }
 ```
 
-## Migration from Stashed Wallet -> Slush Wallet
+# Migration from Stashed Wallet -> Slush Wallet
 
 If you're currently using `@mysten/zksend`'s `registerStashedWallet` directly, you should migrate to
 the `@mysten/slush-wallet` package to ensure compatibility with the new Slush experience.
@@ -97,5 +97,5 @@ import { registerSlushWallet } from '@mysten/slush-wallet';
 registerSlushWallet(...);
 ```
 
-If you're using dapp-kit, update to the latest dapp-kit version and change the
-'stashedWallet`prop on WalletProvider to`slushWallet`
+If you're using dapp-kit, update to the latest dapp-kit version and change the `stashedWallet` prop
+on WalletProvider to `slushWallet`
