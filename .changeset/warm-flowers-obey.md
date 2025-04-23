@@ -2,4 +2,4 @@
 '@mysten/seal': minor
 ---
 
-Add experimental clikent extension support
+Add experimental client extension support
