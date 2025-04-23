@@ -15,11 +15,10 @@ export class SealAPIError extends SealError {
 		super(message);
 	}
 
-	static #generate(message: string, requestId: string, status?: number) {
-		if (message.includes('InvalidPTB')) {
-			return new InvalidPTBError(requestId, message);
-		}
-		switch (message) {
+	static #generate(error: string, message: string, requestId: string, status?: number) {
+		switch (error) {
+			case 'InvalidPTB':
+				return new InvalidPTBError(requestId, message);
 			case 'InvalidPackage':
 				return new InvalidPackageError(requestId);
 			case 'NoAccess':
@@ -47,7 +46,8 @@ export class SealAPIError extends SealError {
 		try {
 			const text = await response.text();
 			const error = JSON.parse(text)['error'];
-			errorInstance = SealAPIError.#generate(error, requestId);
+			const message = JSON.parse(text)['message'];
+			errorInstance = SealAPIError.#generate(error, message, requestId);
 		} catch (e) {
 			// If we can't parse the response as JSON or if it doesn't have the expected format,
 			// fall back to using the status text
