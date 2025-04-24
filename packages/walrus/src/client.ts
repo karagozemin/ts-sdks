@@ -649,7 +649,7 @@ export class WalrusClient {
 	 *
 	 * @usage
 	 * ```ts
-	 * tx.transferObjects([await client.createStorage({ size: 1000, epochs: 3 })], owner);
+	 * tx.transferObjects([client.createStorage({ size: 1000, epochs: 3 })], owner);
 	 * ```
 	 */
 	createStorage({ size, epochs, walCoin, owner }: StorageWithSizeOptions) {
