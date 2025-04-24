@@ -2,4 +2,4 @@
 '@mysten/sui': minor
 ---
 
-Add tx.addAsync for asyncronously adding to transactions
+Add support for async thunks inn tx.add
