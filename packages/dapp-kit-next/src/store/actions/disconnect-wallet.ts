@@ -5,8 +5,8 @@ import type { StandardDisconnectFeature, StandardDisconnectMethod } from '@myste
 import { StandardDisconnect } from '@mysten/wallet-standard';
 import type { DAppKitState } from '../state.js';
 import { task } from 'nanostores';
-import { WalletNotConnectedError } from '../errors.js';
 import { getWalletFeature } from '@wallet-standard/ui';
+import { WalletNotConnectedError } from '../../utils/errors.js';
 
 export type DisconnectWalletArgs = Parameters<StandardDisconnectMethod>;
 

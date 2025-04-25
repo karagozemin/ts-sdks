@@ -1,10 +1,10 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { WalletNotConnectedError, WalletAccountNotFoundError } from '../errors.js';
 import type { DAppKitState } from '../state.js';
 import { uiWalletAccountBelongsToUiWallet } from '@wallet-standard/ui';
 import type { UiWalletAccount } from '@wallet-standard/ui';
+import { WalletNotConnectedError, WalletAccountNotFoundError } from '../../utils/errors.js';
 
 export type SwitchAccountArgs = {
 	/** The account to switch to. */

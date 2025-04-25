@@ -12,7 +12,7 @@ import {
 	getOrCreateUiWalletAccountForStandardWalletAccount_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getOrCreateUiWalletAccountForStandardWalletAccount,
 	getWalletForHandle_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getWalletForHandle,
 } from '@wallet-standard/ui-registry';
-import { WalletNoAccountsConnectedError } from '../errors.js';
+import { WalletNoAccountsConnectedError } from '../../utils/errors.js';
 
 export type ConnectWalletArgs = {
 	/** The wallet to connect to. */
