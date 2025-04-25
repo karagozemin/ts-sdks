@@ -57,7 +57,6 @@ export async function retrieveKeyServers({
 	objectIds: string[];
 	client: SealCompatibleClient;
 }): Promise<KeyServer[]> {
-	// todo: do not fetch the same object ID if this is fetched before.
 	return await Promise.all(
 		objectIds.map(async (objectId) => {
 			let res;

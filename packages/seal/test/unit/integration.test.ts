@@ -21,6 +21,8 @@ import {
 } from '../../src/error';
 import { KeyServerType } from '../../src/key-server';
 import { RequestFormat, SessionKey } from '../../src/session-key';
+import { createFullId } from '../../src/utils';
+import { DST } from '../../src/ibe';
 
 /**
  * Helper function
@@ -55,35 +57,35 @@ const MOCK_KEY_SERVERS = [
 	{
 		name: 'server1',
 		objectId: 'server1',
-		url: 'url1',
+		url: 'https://seal-key-server-ci-1.mystenlabs.com',
 		keyType: KeyServerType.BonehFranklinBLS12381,
 		pk,
 	},
 	{
 		name: 'server2',
 		objectId: 'server2',
-		url: 'url2',
+		url: 'https://seal-key-server-ci-1.mystenlabs.com',
 		keyType: KeyServerType.BonehFranklinBLS12381,
 		pk,
 	},
 	{
 		name: 'server3',
 		objectId: 'server3',
-		url: 'url3',
+		url: 'https://seal-key-server-ci-1.mystenlabs.com',
 		keyType: KeyServerType.BonehFranklinBLS12381,
 		pk,
 	},
 	{
 		name: 'server4',
 		objectId: 'server4',
-		url: 'url4',
+		url: 'https://seal-key-server-ci-2.mystenlabs.com',
 		keyType: KeyServerType.BonehFranklinBLS12381,
 		pk,
 	},
 	{
 		name: 'server5',
 		objectId: 'server5',
-		url: 'url5',
+		url: 'https://seal-key-server-ci-2.mystenlabs.com',
 		keyType: KeyServerType.BonehFranklinBLS12381,
 		pk,
 	},
@@ -94,6 +96,8 @@ describe('Integration test', () => {
 	let suiClient: SuiClient;
 	let TESTNET_PACKAGE_ID: string;
 	let objectIds: string[];
+	let txBytes: Uint8Array;
+	let whitelistId: string;
 	beforeAll(async () => {
 		keypair = Ed25519Keypair.fromSecretKey(
 			'suiprivkey1qqgzvw5zc2zmga0uyp4rzcgk42pzzw6387zqhahr82pp95yz0scscffh2d8',
@@ -106,6 +110,8 @@ describe('Integration test', () => {
 			'0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e',
 			'0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4',
 		];
+		whitelistId = '0xaae704d2280f2c3d24fc08972bb31f2ef1f1c968784935434c3296be5bfd9d5b';
+		txBytes = await constructTxBytes(TESTNET_PACKAGE_ID, 'whitelist', suiClient, [whitelistId]);
 	});
 
 	it('whitelist example encrypt and decrypt scenarios', { timeout: 12000 }, async () => {
@@ -439,6 +445,70 @@ describe('Integration test', () => {
 		expect(globalFetch).toHaveBeenCalledTimes(5);
 		vi.clearAllMocks();
 		globalFetch.mockReset();
+	});
+
+
+	it('test weighted 50 servers', async () => {
+		vi.resetAllMocks();
+		vi.restoreAllMocks();
+		vi.resetModules();
+
+    // Mock just for this test
+    vi.doMock('../../src/keys', () => ({
+        fetchKeysForAllIds: vi.fn().mockResolvedValue([{
+            fullId: createFullId(DST, TESTNET_PACKAGE_ID, whitelistId),
+            key: new Uint8Array([1, 2, 3])
+        }])
+    }));
+
+    const { fetchKeysForAllIds } = await import('../../src/keys');
+
+			
+		const SERVERS_RESPONSES = [
+			...Array(25).fill({
+				name: 'server2',
+				objectId: '0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e',
+				url: 'https://seal-key-server-ci-1.mystenlabs.com',
+				keyType: KeyServerType.BonehFranklinBLS12381,
+				pk: fromHex(
+					'84630587968dea7ec949f30478668285f2ac64482fd21e212f70016e0472c6d756fbcc81fd602073074a4deaddf0dde20ceeb0746712fd6ddc221f8b4dc0e7056a8834126b7c18865b712291425c9ff5173d8a1679dcd8501b2d08131a0cd201',
+				),
+			}),
+			...Array(25).fill({
+				name: 'server4',
+				objectId: '0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4',
+				url: 'https://seal-key-server-ci-2.mystenlabs.com',
+				keyType: KeyServerType.BonehFranklinBLS12381,
+				pk: fromHex(
+					'af022ea8355995b863a43b6634954a3af5ec9cc14084fabcfce79367c35d0b03d4fd15e912704e64175f3d2a58829ab013379982bda344f2b65fc04813ea9f0ae920a6ae165d0fc9cb3f7d20cde5a3883ee660a0c5e8221ff5a3aae6babe669a',
+				),
+			}),
+		];
+
+		const client = new SealClient({
+			suiClient,
+			serverObjectIds: [
+				...Array.from({ length: 25 }, () => '0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e'),
+				...Array.from({ length: 25 }, () => '0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4')
+			]
+		});
+		vi.spyOn(client as any, 'getKeyServers').mockResolvedValue(SERVERS_RESPONSES);
+
+		const sessionKey = new SessionKey({
+			address: suiAddress,
+			packageId: TESTNET_PACKAGE_ID,
+			ttlMin: 10,
+			signer: keypair,
+		});
+		client.fetchKeys({
+			ids: [whitelistId],
+			txBytes,
+			sessionKey,
+			threshold: 50,
+		});
+		// Verify fetch was only called twice (once for each unique server URL)
+    expect(fetchKeysForAllIds).toHaveBeenCalledTimes(2);
+    
 	});
 
 	it('request format consistency', async () => {
