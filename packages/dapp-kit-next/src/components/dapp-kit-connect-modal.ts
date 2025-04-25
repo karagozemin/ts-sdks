@@ -11,7 +11,7 @@ import { WalletList } from './internal/wallet-list.js';
 import { getDefaultStore } from '../store/index.js';
 import type { DAppKitStore } from '../store/index.js';
 
-@customElement('dapp-kit-connect-modal')
+@customElement('mysten-dapp-kit-connect-modal')
 export class DAppKitConnectModal extends ScopedRegistryHost(LitElement) {
 	static elementDefinitions = {
 		'wallet-list': WalletList,
@@ -34,6 +34,6 @@ export class DAppKitConnectModal extends ScopedRegistryHost(LitElement) {
 
 declare global {
 	interface HTMLElementTagNameMap {
-		'dapp-kit-connect-modal': DAppKitConnectModal;
+		'mysten-dapp-kit-connect-modal': DAppKitConnectModal;
 	}
 }
