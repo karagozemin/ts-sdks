@@ -11,7 +11,11 @@ query getCoins($owner: SuiAddress!, $first: Int, $cursor: String, $type: String 
 			}
 			nodes {
 				coinBalance
+				owner {
+					...OBJECT_OWNER_FIELDS
+				}
 				contents {
+					bcs
 					type {
 						repr
 					}
@@ -19,9 +23,6 @@ query getCoins($owner: SuiAddress!, $first: Int, $cursor: String, $type: String 
 				address
 				version
 				digest
-				previousTransactionBlock {
-					digest
-				}
 			}
 		}
 	}

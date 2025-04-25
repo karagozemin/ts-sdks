@@ -1,69 +1,62 @@
 # Copyright (c) Mysten Labs, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-query getTransactionBlock(
-	$digest: String!
-	$showBalanceChanges: Boolean = false
-	$showEffects: Boolean = false
-	$showRawEffects: Boolean = false
-	$showInput: Boolean = false
-	$showObjectChanges: Boolean = false
-	$showRawInput: Boolean = false
-) {
-	transactionBlock(digest: $digest) {
-		...RPC_TRANSACTION_FIELDS
+query dryRunTransactionBlock($txBytes: String!) {
+	dryRunTransactionBlock(txBytes: $txBytes) {
+		error
+		transaction {
+			...TRANSACTION_FIELDS
+		}
 	}
 }
 
-fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
-	digest
-	rawTransaction: bcs @include(if: $showInput)
-	rawTransaction: bcs @include(if: $showRawInput)
-	sender {
-		address
+mutation executeTransactionBlock($txBytes: String!, $signatures: [String!]!) {
+	executeTransactionBlock(txBytes: $txBytes, signatures: $signatures) {
+		errors
+		effects {
+			transactionBlock {
+				...TRANSACTION_FIELDS
+			}
+		}
 	}
+}
 
+query getTransactionBlock($digest: String!) {
+	transactionBlock(digest: $digest) {
+		...TRANSACTION_FIELDS
+	}
+}
+
+fragment TRANSACTION_FIELDS on TransactionBlock {
+	digest
+	bcs
 	signatures
-
 	effects {
-		bcs @include(if: $showEffects)
-		bcs @include(if: $showObjectChanges)
-		bcs @include(if: $showRawEffects)
-		checkpoint {
-			sequenceNumber
-		}
-		timestamp
-		balanceChanges @include(if: $showBalanceChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
+		bcs
+		unchangedSharedObjects {
 			nodes {
-				coinType {
-					repr
-				}
-				owner {
-					asObject {
-						address
+				__typename
+				... on SharedObjectRead {
+					object {
+						asMoveObject {
+							address
+							contents {
+								type {
+									repr
+								}
+							}
+						}
 					}
-					asAddress {
-						address
-					}
 				}
-				amount
 			}
 		}
-
-		objectChanges @include(if: $showObjectChanges) {
-			pageInfo {
-				hasNextPage
-				endCursor
-			}
+		objectChanges {
 			nodes {
 				address
 				inputState {
 					version
 					asMoveObject {
+						address
 						contents {
 							type {
 								repr
@@ -73,16 +66,10 @@ fragment RPC_TRANSACTION_FIELDS on TransactionBlock {
 				}
 				outputState {
 					asMoveObject {
+						address
 						contents {
 							type {
 								repr
-							}
-						}
-					}
-					asMovePackage {
-						modules(first: 10) {
-							nodes {
-								name
 							}
 						}
 					}

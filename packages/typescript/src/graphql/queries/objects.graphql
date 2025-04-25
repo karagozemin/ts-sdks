@@ -1,19 +1,7 @@
 # Copyright (c) Mysten Labs, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-query getOwnedObjects(
-	$owner: SuiAddress!
-	$limit: Int
-	$cursor: String
-	$showBcs: Boolean = false
-	$showContent: Boolean = false
-	$showDisplay: Boolean = false
-	$showType: Boolean = false
-	$showOwner: Boolean = false
-	$showPreviousTransaction: Boolean = false
-	$showStorageRebate: Boolean = false
-	$filter: ObjectFilter
-) {
+query getOwnedObjects($owner: SuiAddress!, $limit: Int, $cursor: String, $filter: ObjectFilter) {
 	address(address: $owner) {
 		objects(first: $limit, after: $cursor, filter: $filter) {
 			pageInfo {
@@ -21,58 +9,29 @@ query getOwnedObjects(
 				endCursor
 			}
 			nodes {
-				...RPC_MOVE_OBJECT_FIELDS
+				...MOVE_OBJECT_FIELDS
 			}
 		}
 	}
 }
 
-query multiGetObjects(
-	$ids: [SuiAddress!]!
-	$limit: Int
-	$cursor: String
-	$showBcs: Boolean = false
-	$showContent: Boolean = false
-	$showDisplay: Boolean = false
-	$showType: Boolean = false
-	$showOwner: Boolean = false
-	$showPreviousTransaction: Boolean = false
-	$showStorageRebate: Boolean = false
-) {
-	objects(first: $limit, after: $cursor, filter: { objectIds: $ids }) {
+query multiGetObjects($objectIds: [SuiAddress!]!, $limit: Int, $cursor: String) {
+	objects(first: $limit, after: $cursor, filter: { objectIds: $objectIds }) {
 		pageInfo {
 			hasNextPage
 			endCursor
 		}
 		nodes {
-			...RPC_OBJECT_FIELDS
+			...OBJECT_FIELDS
 		}
 	}
 }
 
-fragment RPC_OBJECT_FIELDS on Object {
-	objectId: address
+fragment OBJECT_FIELDS on Object {
+	address
+	digest
 	version
-	asMoveObject @include(if: $showType) {
-		contents {
-			type {
-				repr
-			}
-		}
-	}
-	asMoveObject @include(if: $showContent) {
-		hasPublicTransfer
-		contents {
-			data
-			type {
-				repr
-				layout
-				signature
-			}
-		}
-	}
-	asMoveObject @include(if: $showBcs) {
-		hasPublicTransfer
+	asMoveObject {
 		contents {
 			bcs
 			type {
@@ -80,67 +39,27 @@ fragment RPC_OBJECT_FIELDS on Object {
 			}
 		}
 	}
-	owner @include(if: $showOwner) {
-		...RPC_OBJECT_OWNER_FIELDS
-	}
-	previousTransactionBlock @include(if: $showPreviousTransaction) {
-		digest
-	}
-
-	storageRebate @include(if: $showStorageRebate)
-	digest
-	version
-	display @include(if: $showDisplay) {
-		key
-		value
-		error
+	owner {
+		...OBJECT_OWNER_FIELDS
 	}
 }
 
-fragment RPC_MOVE_OBJECT_FIELDS on MoveObject {
-	objectId: address
-	bcs @include(if: $showBcs)
-	contents @include(if: $showType) {
-		type {
-			repr
-		}
-	}
-	hasPublicTransfer @include(if: $showContent)
-	contents @include(if: $showContent) {
-		data
-		type {
-			repr
-			layout
-			signature
-		}
-	}
-
-	hasPublicTransfer @include(if: $showBcs)
-	contents @include(if: $showBcs) {
+fragment MOVE_OBJECT_FIELDS on MoveObject {
+	address
+	digest
+	version
+	contents {
 		bcs
 		type {
 			repr
 		}
 	}
-
-	owner @include(if: $showOwner) {
-		...RPC_OBJECT_OWNER_FIELDS
-	}
-	previousTransactionBlock @include(if: $showPreviousTransaction) {
-		digest
-	}
-
-	storageRebate @include(if: $showStorageRebate)
-	digest
-	version
-	display @include(if: $showDisplay) {
-		key
-		value
-		error
+	owner {
+		...OBJECT_OWNER_FIELDS
 	}
 }
 
-fragment RPC_OBJECT_OWNER_FIELDS on ObjectOwner {
+fragment OBJECT_OWNER_FIELDS on ObjectOwner {
 	__typename
 	... on AddressOwner {
 		owner {
@@ -159,5 +78,12 @@ fragment RPC_OBJECT_OWNER_FIELDS on ObjectOwner {
 	}
 	... on Shared {
 		initialSharedVersion
+	}
+	... on ConsensusV2 {
+		authenticator {
+			... on Address {
+				address
+			}
+		}
 	}
 }

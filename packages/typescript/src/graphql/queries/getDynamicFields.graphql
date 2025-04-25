@@ -11,16 +11,13 @@ query getDynamicFields($parentId: SuiAddress!, $first: Int, $cursor: String) {
 			nodes {
 				name {
 					bcs
-					json
 					type {
-						layout
 						repr
 					}
 				}
 				value {
 					__typename
 					... on MoveValue {
-						json
 						type {
 							repr
 						}
@@ -30,11 +27,7 @@ query getDynamicFields($parentId: SuiAddress!, $first: Int, $cursor: String) {
 							type {
 								repr
 							}
-							json
 						}
-						address
-						digest
-						version
 					}
 				}
 			}
