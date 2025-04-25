@@ -26,6 +26,8 @@ export enum KeyServerType {
 	BonehFranklinBLS12381 = 0,
 }
 
+export const SERVER_VERSION_REQUIREMENT = '0.2.0';
+
 /**
  * Returns a static list of Seal key server object ids that the dapp can choose to use.
  * @param network - The network to use.
