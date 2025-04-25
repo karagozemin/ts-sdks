@@ -3,6 +3,7 @@
 
 import type { Preview } from '@storybook/web-components';
 
+console.log('ABC');
 const preview: Preview = {
 	parameters: {
 		controls: {

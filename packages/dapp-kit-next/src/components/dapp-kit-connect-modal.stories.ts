@@ -8,8 +8,8 @@ import { html } from 'lit';
 
 const meta = {
 	title: 'Connect Modal',
-	component: 'dapp-kit-connect-modal',
-	render: () => html`<dapp-kit-connect-modal></dapp-kit-connect-modal>`,
+	component: 'mysten-dapp-kit-connect-modal',
+	render: () => html`<mysten-dapp-kit-connect-modal></mysten-dapp-kit-connect-modal>`,
 	tags: ['autodocs'],
 } satisfies Meta<any>;
 
