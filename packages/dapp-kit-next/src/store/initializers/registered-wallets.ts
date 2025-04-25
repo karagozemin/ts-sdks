@@ -33,11 +33,12 @@ export function syncRegisteredWallets({ $state }: DAppKitState) {
 
 				const resolvedAccount = resolveWalletAccount(currentAccount, wallets);
 				if (resolvedAccount) {
-					// Update the current account since the properties might have changed:
+					// Update the current account since the properties might have changed or
+					// the account was marked as incompatible and we can't fallback to another
+					// account in the wallet:
 					$state.setKey('currentAccount', resolvedAccount);
 				} else {
-					// Reset the connection if the connected account was marked as incompatible. This can happen
-					// if properties changed on the wallet making it un-usable or properties changed on the account
+					// Reset the connection if the connected account was marked as incompatible
 					// and there are no other accounts in the wallet to fallback to:
 					$state.set({
 						...$state.get(),
