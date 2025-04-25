@@ -4,6 +4,7 @@
 import { computed, readonlyType } from 'nanostores';
 import { createState } from './state.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
+import { createActions } from './actions/index.js';
 
 export type DAppKitStore = ReturnType<typeof createDAppKitStore>;
 
