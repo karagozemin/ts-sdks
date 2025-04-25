@@ -4,7 +4,7 @@
 import { fromBase64, toBase64, toHex } from '@mysten/bcs';
 
 import { elgamalDecrypt, toPublicKey, toVerificationKey } from './elgamal.js';
-import { SealAPIError } from './error.js';
+import { InvalidKeyServerError, SealAPIError } from './error.js';
 import type { Certificate } from './session-key.js';
 import { PACKAGE_VERSION } from './version.js';
 import { SemVer } from 'semver';
@@ -65,7 +65,7 @@ export async function fetchKeysForAllIds(
 		keyServerVersion == null ||
 		new SemVer(keyServerVersion).compare(SERVER_VERSION_REQUIREMENT) < 0
 	) {
-		throw new Error('Key server version not supported', { cause: keyServerVersion });
+		throw new InvalidKeyServerError(`Key server version ${keyServerVersion} not supported`);
 	}
 
 	return resp.decryption_keys.map((dk: { id: Uint8Array; encrypted_key: [string, string] }) => ({
