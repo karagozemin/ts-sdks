@@ -17,10 +17,15 @@ export function syncRegisteredWallets({ $state }: DAppKitState) {
 		const walletsApi = getWallets();
 		const unsubscribeCallbacksByWallet = new Map<Wallet, () => void>();
 
+		const onWalletsChanged = (wallets: Wallet[]) => {
+			const suiWallets = wallets.map(getOrCreateUiWalletForStandardWallet);
+			$state.setKey('wallets', suiWallets);
+		};
+
 		const subscribeToWalletEvents = (wallet: WalletWithRequiredFeatures) => {
 			const unsubscribeFromChange = wallet.features[StandardEvents].on('change', () => {
-				const suiWallets = getSuiWallets().map(getOrCreateUiWalletForStandardWallet);
-				$state.setKey('wallets', suiWallets);
+				const suiWallets = getSuiWallets();
+				onWalletsChanged(suiWallets);
 			});
 
 			unsubscribeCallbacksByWallet.set(wallet, unsubscribeFromChange);
@@ -29,8 +34,8 @@ export function syncRegisteredWallets({ $state }: DAppKitState) {
 		const unsubscribeFromRegister = walletsApi.on('register', (...addedWallets) => {
 			addedWallets.filter(isSuiWallet).forEach(subscribeToWalletEvents);
 
-			const suiWallets = getSuiWallets().map(getOrCreateUiWalletForStandardWallet);
-			$state.setKey('wallets', suiWallets);
+			const suiWallets = getSuiWallets();
+			onWalletsChanged(suiWallets);
 		});
 
 		const unsubscribeFromUnregister = walletsApi.on('unregister', (...removedWallets) => {
@@ -42,13 +47,13 @@ export function syncRegisteredWallets({ $state }: DAppKitState) {
 				}
 			});
 
-			const suiWallets = getSuiWallets().map(getOrCreateUiWalletForStandardWallet);
-			$state.setKey('wallets', suiWallets);
+			const suiWallets = getSuiWallets();
+			onWalletsChanged(suiWallets);
 		});
 
 		const suiWallets = getSuiWallets();
 		suiWallets.forEach(subscribeToWalletEvents);
-		$state.setKey('wallets', suiWallets.map(getOrCreateUiWalletForStandardWallet));
+		onWalletsChanged(suiWallets);
 
 		return () => {
 			unsubscribeFromRegister();
