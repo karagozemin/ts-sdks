@@ -3,27 +3,37 @@
 
 import type { DAppKitState } from '../state.js';
 import { task } from 'nanostores';
-import type { UiWallet } from '@wallet-standard/ui';
+import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
 import type { StandardConnectInput } from '@mysten/wallet-standard';
 import type { StandardConnectFeature } from '@mysten/wallet-standard';
 import { isSuiChain, StandardConnect } from '@mysten/wallet-standard';
-import { getWalletFeature } from '@wallet-standard/ui';
+import { getWalletFeature, uiWalletAccountBelongsToUiWallet } from '@wallet-standard/ui';
 import {
 	getOrCreateUiWalletAccountForStandardWalletAccount_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getOrCreateUiWalletAccountForStandardWalletAccount,
 	getWalletForHandle_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getWalletForHandle,
 } from '@wallet-standard/ui-registry';
-import { WalletNoAccountsConnectedError } from '../../utils/errors.js';
+import { WalletAccountNotFoundError, WalletNoAccountsConnectedError } from '../../utils/errors.js';
 
 export type ConnectWalletArgs = {
 	/** The wallet to connect to. */
 	wallet: UiWallet;
+
+	/**
+	 * An optional account to set as the selected account.
+	 * @defaultValue The first authorized account.
+	 */
+	account?: UiWalletAccount;
 } & Omit<StandardConnectInput, 'silent'>;
 
 export function connectWalletCreator({ $state }: DAppKitState) {
 	/**
 	 * Prompts the specified wallet to connect and authorize new accounts for the current domain.
 	 */
-	return async function connectWallet({ wallet, ...standardConnectArgs }: ConnectWalletArgs) {
+	return async function connectWallet({
+		wallet,
+		account,
+		...standardConnectArgs
+	}: ConnectWalletArgs) {
 		return await task(async () => {
 			try {
 				$state.setKey('connectionStatus', 'connecting');
@@ -44,11 +54,17 @@ export function connectWalletCreator({ $state }: DAppKitState) {
 					throw new WalletNoAccountsConnectedError('No accounts were authorized.');
 				}
 
+				if (account && !uiWalletAccountBelongsToUiWallet(account, wallet)) {
+					throw new WalletAccountNotFoundError(
+						`No account with address ${account.address} is authorized for ${wallet.name}.`,
+					);
+				}
+
 				$state.set({
 					...$state.get(),
 					connectionStatus: 'connected',
 					supportedIntents: result.supportedIntents ?? [],
-					currentAccount: suiAccounts[0],
+					currentAccount: account ?? suiAccounts[0],
 				});
 
 				return { accounts: suiAccounts };
