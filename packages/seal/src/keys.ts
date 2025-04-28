@@ -4,11 +4,10 @@
 import { fromBase64, toBase64, toHex } from '@mysten/bcs';
 
 import { elgamalDecrypt, toPublicKey, toVerificationKey } from './elgamal.js';
-import { InvalidKeyServerError, SealAPIError } from './error.js';
+import { SealAPIError } from './error.js';
 import type { Certificate } from './session-key.js';
 import { PACKAGE_VERSION } from './version.js';
-import { SemVer } from 'semver';
-import { SERVER_VERSION_REQUIREMENT } from './key-server.js';
+import { verifyKeyServerVersion } from './key-server.js';
 
 /**
  * Helper function to request all keys from URL with requestSig, txBytes, ephemeral pubkey.
@@ -58,15 +57,7 @@ export async function fetchKeysForAllIds(
 	});
 	await SealAPIError.assertResponse(response, requestId);
 	const resp = await response.json();
-
-	// Check the key server version
-	const keyServerVersion = response.headers.get('X-KeyServer-Version');
-	if (
-		keyServerVersion == null ||
-		new SemVer(keyServerVersion).compare(SERVER_VERSION_REQUIREMENT) < 0
-	) {
-		throw new InvalidKeyServerError(`Key server version ${keyServerVersion} not supported`);
-	}
+	verifyKeyServerVersion(response);
 
 	return resp.decryption_keys.map((dk: { id: Uint8Array; encrypted_key: [string, string] }) => ({
 		fullId: toHex(new Uint8Array(dk.id)),

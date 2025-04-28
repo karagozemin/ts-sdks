@@ -76,10 +76,13 @@ describe('key-server tests', () => {
 			client: new SuiClient({ url: getFullnodeUrl('testnet') }),
 		});
 		vi.clearAllMocks();
+		const headers = new Headers();
+		headers.append('x-keyserver-version', '0.2.0');
 		global.fetch = vi.fn().mockImplementation(() => {
 			return Promise.resolve({
 				ok: true,
 				status: 200,
+				headers,
 				json: () =>
 					Promise.resolve({
 						service_id: id, // Note: the actual response uses the hex string format
