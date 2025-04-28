@@ -7,6 +7,7 @@ import { KeyServerMove } from './bcs.js';
 import {
 	InvalidGetObjectError,
 	InvalidKeyServerError,
+	InvalidKeyServerVersionError,
 	SealAPIError,
 	UnsupportedFeatureError,
 	UnsupportedNetworkError,
@@ -132,6 +133,8 @@ export function verifyKeyServerVersion(response: Response) {
 		throw new InvalidKeyServerError('Key server version not found');
 	}
 	if (new Version(keyServerVersion).older_than(SERVER_VERSION_REQUIREMENT)) {
-		throw new InvalidKeyServerError(`Key server version ${keyServerVersion} is not supported`);
+		throw new InvalidKeyServerVersionError(
+			`Key server version ${keyServerVersion} is not supported`,
+		);
 	}
 }
