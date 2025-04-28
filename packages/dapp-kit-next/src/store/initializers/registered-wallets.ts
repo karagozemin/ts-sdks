@@ -17,25 +17,25 @@ export function syncRegisteredWallets({ $state }: DAppKitState) {
 		const walletsApi = getWallets();
 		const unsubscribeCallbacksByWallet = new Map<Wallet, () => void>();
 
-		const onWalletsChanged = (wallets: Wallet[]) => {
-			const suiWallets = wallets.map(getOrCreateUiWalletForStandardWallet);
+		const onWalletsChanged = () => {
+			const suiWallets = getSuiWallets().map(getOrCreateUiWalletForStandardWallet);
 			$state.setKey('wallets', suiWallets);
 		};
 
 		const subscribeToWalletEvents = (wallet: WalletWithRequiredFeatures) => {
 			const unsubscribeFromChange = wallet.features[StandardEvents].on('change', () => {
-				const suiWallets = getSuiWallets();
-				onWalletsChanged(suiWallets);
+				onWalletsChanged();
 			});
 
+			// NOTE: The underlying wallet entities returned from the Wallet Standard are
+			// referentially equal even when the properties of a wallet change. Thus, it is
+			// safe to use the wallet object itself as the key for the unsubscribe mapping.
 			unsubscribeCallbacksByWallet.set(wallet, unsubscribeFromChange);
 		};
 
 		const unsubscribeFromRegister = walletsApi.on('register', (...addedWallets) => {
 			addedWallets.filter(isSuiWallet).forEach(subscribeToWalletEvents);
-
-			const suiWallets = getSuiWallets();
-			onWalletsChanged(suiWallets);
+			onWalletsChanged();
 		});
 
 		const unsubscribeFromUnregister = walletsApi.on('unregister', (...removedWallets) => {
@@ -47,13 +47,12 @@ export function syncRegisteredWallets({ $state }: DAppKitState) {
 				}
 			});
 
-			const suiWallets = getSuiWallets();
-			onWalletsChanged(suiWallets);
+			onWalletsChanged();
 		});
 
 		const suiWallets = getSuiWallets();
 		suiWallets.forEach(subscribeToWalletEvents);
-		onWalletsChanged(suiWallets);
+		onWalletsChanged();
 
 		return () => {
 			unsubscribeFromRegister();
