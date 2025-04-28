@@ -128,10 +128,10 @@ export async function verifyKeyServer(server: KeyServer, timeout: number): Promi
  */
 export function verifyKeyServerVersion(response: Response) {
 	const keyServerVersion = response.headers.get('X-KeyServer-Version');
-	if (
-		keyServerVersion == null ||
-		new Version(keyServerVersion).older_than(SERVER_VERSION_REQUIREMENT)
-	) {
+	if (keyServerVersion == null) {
 		throw new InvalidKeyServerError('Key server version not found');
+	}
+	if (new Version(keyServerVersion).older_than(SERVER_VERSION_REQUIREMENT)) {
+		throw new InvalidKeyServerError(`Key server version ${keyServerVersion} is not supported`);
 	}
 }
