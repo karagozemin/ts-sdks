@@ -119,20 +119,21 @@ describe('key-server tests', () => {
 	it('test comparing key server versions', () => {
 		const version0 = new Version('0.1.1');
 		const version1 = new Version('0.2.0');
-		const version2 = new Version('0.3.0');
-		const version3 = new Version('0.2.1');
+		const version2 = new Version('0.2.1');
+		const version3 = new Version('0.3.0');
 		const version4 = new Version('1.1.0');
 		expect(version0.older_than(version1)).toBe(true);
 		expect(version1.older_than(version2)).toBe(true);
+		expect(version2.older_than(version3)).toBe(true);
+		expect(version3.older_than(version4)).toBe(true);
+		expect(version1.older_than(version0)).toBe(false);
 		expect(version2.older_than(version1)).toBe(false);
-		expect(version1.older_than(version1)).toBe(false);
-		expect(version1.older_than(version3)).toBe(true);
-		expect(version3.older_than(version1)).toBe(false);
-		expect(version1.older_than(version4)).toBe(true);
-		expect(version4.older_than(version1)).toBe(false);
+		expect(version3.older_than(version2)).toBe(false);
+		expect(version4.older_than(version3)).toBe(false);
 
 		// Update when SERVER_VERSION_REQUIREMENT changes
 		expect(version0.older_than(SERVER_VERSION_REQUIREMENT)).toBe(true);
 		expect(version1.older_than(SERVER_VERSION_REQUIREMENT)).toBe(false);
+		expect(SERVER_VERSION_REQUIREMENT.older_than(version0)).toBe(false);
 	});
 });
