@@ -6,7 +6,6 @@ import { bls12_381 } from '@noble/curves/bls12-381';
 import { KeyServerMove } from './bcs.js';
 import {
 	InvalidGetObjectError,
-	InvalidKeyServerError,
 	InvalidKeyServerVersionError,
 	SealAPIError,
 	UnsupportedFeatureError,
@@ -130,7 +129,7 @@ export async function verifyKeyServer(server: KeyServer, timeout: number): Promi
 export function verifyKeyServerVersion(response: Response) {
 	const keyServerVersion = response.headers.get('X-KeyServer-Version');
 	if (keyServerVersion == null) {
-		throw new InvalidKeyServerError('Key server version not found');
+		throw new InvalidKeyServerVersionError('Key server version not found');
 	}
 	if (new Version(keyServerVersion).older_than(SERVER_VERSION_REQUIREMENT)) {
 		throw new InvalidKeyServerVersionError(
