@@ -14,7 +14,7 @@ import {
 import { DST_POP } from './ibe.js';
 import { PACKAGE_VERSION } from './version.js';
 import type { SealCompatibleClient } from './types.js';
-import { version_at_least } from './utils.js';
+import { Version } from './utils.js';
 
 export type KeyServer = {
 	objectId: string;
@@ -28,7 +28,7 @@ export enum KeyServerType {
 	BonehFranklinBLS12381 = 0,
 }
 
-export const SERVER_VERSION_REQUIREMENT = '0.2.0';
+export const SERVER_VERSION_REQUIREMENT = new Version('0.2.0');
 
 /**
  * Returns a static list of Seal key server object ids that the dapp can choose to use.
@@ -128,7 +128,10 @@ export async function verifyKeyServer(server: KeyServer, timeout: number): Promi
  */
 export function verifyKeyServerVersion(response: Response) {
 	const keyServerVersion = response.headers.get('X-KeyServer-Version');
-	if (keyServerVersion == null || !version_at_least(keyServerVersion, SERVER_VERSION_REQUIREMENT)) {
+	if (
+		keyServerVersion == null ||
+		new Version(keyServerVersion).older_than(SERVER_VERSION_REQUIREMENT)
+	) {
 		throw new InvalidKeyServerError('Key server version not found');
 	}
 }

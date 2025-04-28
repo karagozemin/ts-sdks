@@ -38,13 +38,10 @@ export function createFullId(dst: Uint8Array, packageId: string, innerId: string
 	return toHex(fullId);
 }
 
-export function version_at_least(versionA: string, versionB: string): boolean {
-	const vA = new Version(versionA);
-	const vB = new Version(versionB);
-	return vA.greater_than_or_equal(vB);
-}
-
-class Version {
+/**
+ * A simple class to represent a version number of the form x.y.z.
+ */
+export class Version {
 	major: number;
 	minor: number;
 	patch: number;
@@ -60,12 +57,13 @@ class Version {
 		this.patch = parts[2];
 	}
 
-	greater_than_or_equal(other: Version): boolean {
+	// Compare this version with another version. True if this version is older than the other version.
+	older_than(other: Version): boolean {
 		if (this.major !== other.major) {
-			return this.major > other.major;
+			return this.major < other.major;
 		} else if (this.minor !== other.minor) {
-			return this.minor > other.minor;
+			return this.minor < other.minor;
 		}
-		return this.patch >= other.patch;
+		return this.patch < other.patch;
 	}
 }
