@@ -95,7 +95,7 @@ export class InvalidSessionKeySignatureError extends SealAPIError {
 	}
 }
 
-// Errors returned by the Seal server that indicate that the SDK version is invalid or deprecated
+// Errors returned by the Seal server that indicate that the SDK version is invalid (implying that HTTP headers used by the SDK are being removed) or deprecated (implying that the SDK should be upgraded).
 
 export class InvalidSDKVersionError extends SealAPIError {
 	constructor(requestId?: string) {
