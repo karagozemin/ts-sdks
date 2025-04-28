@@ -61,10 +61,10 @@ class Version {
 	}
 
 	greater_than_or_equal(other: Version): boolean {
-		if (this.major < other.major) {
-			return false;
-		} else if (this.minor < other.minor) {
-			return false;
+		if (this.major !== other.major) {
+			return this.major > other.major;
+		} else if (this.minor !== other.minor) {
+			return this.minor > other.minor;
 		}
 		return this.patch >= other.patch;
 	}
