@@ -887,9 +887,6 @@ importers:
       '@noble/hashes':
         specifier: ^1.7.1
         version: 1.7.1
-      semver:
-        specifier: ^7.7.0
-        version: 7.7.1
       shamir-secret-sharing:
         specifier: 0.0.3
         version: 0.0.3
@@ -903,9 +900,6 @@ importers:
       '@types/node':
         specifier: ^22.13.17
         version: 22.13.17
-      '@types/semver':
-        specifier: ^7.7.0
-        version: 7.7.0
       typescript:
         specifier: ^5.8.2
         version: 5.8.2
@@ -4682,9 +4676,6 @@ packages:
 
   '@types/semver@7.5.8':
     resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
-
-  '@types/semver@7.7.0':
-    resolution: {integrity: sha512-k107IF4+Xr7UHjwDc7Cfd6PRQfbdkiRabXGRjo07b4WyPahFBZCZ1sE+BNxYIJPPg73UkfOsVOLwqVc/6ETrIA==}
 
   '@types/ssh2-streams@0.1.12':
     resolution: {integrity: sha512-Sy8tpEmCce4Tq0oSOYdfqaBpA3hDM8SoxoFh5vzFsu2oL+znzGz8oVWW7xb4K920yYMUY+PIG31qZnFMfPWNCg==}
@@ -13263,8 +13254,6 @@ snapshots:
       form-data: 2.5.3
 
   '@types/semver@7.5.8': {}
-
-  '@types/semver@7.7.0': {}
 
   '@types/ssh2-streams@0.1.12':
     dependencies:

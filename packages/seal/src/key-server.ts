@@ -14,7 +14,7 @@ import {
 import { DST_POP } from './ibe.js';
 import { PACKAGE_VERSION } from './version.js';
 import type { SealCompatibleClient } from './types.js';
-import { SemVer } from 'semver';
+import { version_at_least } from './utils.js';
 
 export type KeyServer = {
 	objectId: string;
@@ -128,10 +128,7 @@ export async function verifyKeyServer(server: KeyServer, timeout: number): Promi
  */
 export function verifyKeyServerVersion(response: Response) {
 	const keyServerVersion = response.headers.get('X-KeyServer-Version');
-	if (
-		keyServerVersion == null ||
-		new SemVer(keyServerVersion).compare(SERVER_VERSION_REQUIREMENT) < 0
-	) {
-		throw new InvalidKeyServerError(`Key server version ${keyServerVersion} not supported`);
+	if (keyServerVersion == null || !version_at_least(keyServerVersion, SERVER_VERSION_REQUIREMENT)) {
+		throw new InvalidKeyServerError('Key server version not found');
 	}
 }

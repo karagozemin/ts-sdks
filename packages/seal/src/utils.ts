@@ -37,3 +37,35 @@ export function createFullId(dst: Uint8Array, packageId: string, innerId: string
 	fullId.set(innerIdBytes, 1 + dst.length + packageIdBytes.length);
 	return toHex(fullId);
 }
+
+export function version_at_least(versionA: string, versionB: string): boolean {
+	const vA = new Version(versionA);
+	const vB = new Version(versionB);
+	return vA.greater_than_or_equal(vB);
+}
+
+class Version {
+	major: number;
+	minor: number;
+	patch: number;
+
+	constructor(version: string) {
+		// Very basic version parsing. Assumes version is in the format x.y.z where x, y, and z are non-negative integers.
+		const parts = version.split('.').map(Number);
+		if (parts.length !== 3 || parts.some((part) => isNaN(part) || part < 0)) {
+			throw new UserError(`Invalid version format: ${version}`);
+		}
+		this.major = parts[0];
+		this.minor = parts[1];
+		this.patch = parts[2];
+	}
+
+	greater_than_or_equal(other: Version): boolean {
+		if (this.major < other.major) {
+			return false;
+		} else if (this.minor < other.minor) {
+			return false;
+		}
+		return this.patch >= other.patch;
+	}
+}
