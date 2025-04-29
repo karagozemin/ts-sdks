@@ -1,3 +1,6 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import { useStore } from '@nanostores/react';
 import { getDefaultStore } from '@mysten/dapp-kit-next';
 
