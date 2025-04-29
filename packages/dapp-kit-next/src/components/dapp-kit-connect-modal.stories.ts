@@ -11,7 +11,7 @@ const meta = {
 	component: 'mysten-dapp-kit-connect-modal',
 	render: () => html`<mysten-dapp-kit-connect-modal></mysten-dapp-kit-connect-modal>`,
 	tags: ['autodocs'],
-} satisfies Meta<any>;
+} satisfies Meta;
 
 export default meta;
 
