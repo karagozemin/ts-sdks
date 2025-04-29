@@ -297,6 +297,9 @@ importers:
 
   packages/dapp-kit:
     dependencies:
+      '@mysten/slush-wallet':
+        specifier: workspace:*
+        version: link:../slush-wallet
       '@mysten/sui':
         specifier: workspace:*
         version: link:../typescript
@@ -306,9 +309,6 @@ importers:
       '@mysten/wallet-standard':
         specifier: workspace:*
         version: link:../wallet-standard
-      '@mysten/zksend':
-        specifier: workspace:*
-        version: link:../zksend
       '@radix-ui/react-dialog':
         specifier: ^1.1.6
         version: 1.1.6(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -538,6 +538,9 @@ importers:
       '@mysten/signers':
         specifier: workspace:*
         version: link:../signers
+      '@mysten/slush-wallet':
+        specifier: workspace:*
+        version: link:../slush-wallet
       '@mysten/sui':
         specifier: workspace:*
         version: link:../typescript
@@ -690,6 +693,34 @@ importers:
       vite:
         specifier: ^6.2.5
         version: 6.2.5(@types/node@22.13.17)(jiti@2.4.2)(lightningcss@1.29.2)(tsx@4.19.3)(yaml@2.7.1)
+
+  packages/enoki-connect:
+    dependencies:
+      '@mysten/sui':
+        specifier: workspace:*
+        version: link:../typescript
+      '@mysten/wallet-standard':
+        specifier: workspace:*
+        version: link:../wallet-standard
+      '@mysten/window-wallet-core':
+        specifier: workspace:^
+        version: link:../window-wallet-core
+      mitt:
+        specifier: ^3.0.1
+        version: 3.0.1
+    devDependencies:
+      '@mysten/build-scripts':
+        specifier: workspace:*
+        version: link:../build-scripts
+      '@types/node':
+        specifier: ^22.13.17
+        version: 22.13.17
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
+      vitest:
+        specifier: ^3.1.1
+        version: 3.1.1(@types/debug@4.1.12)(@types/node@22.13.17)(happy-dom@16.3.0)(jiti@2.4.2)(jsdom@25.0.1)(lightningcss@1.29.2)(msw@2.7.3(@types/node@22.13.17)(typescript@5.8.2))(tsx@4.19.3)(yaml@2.7.1)
 
   packages/graphql-transport:
     dependencies:
@@ -1047,6 +1078,9 @@ importers:
       '@graphql-codegen/typescript':
         specifier: 4.1.6
         version: 4.1.6(graphql@16.10.0)
+      '@graphql-codegen/typescript-document-nodes':
+        specifier: 4.0.16
+        version: 4.0.16(graphql@16.10.0)
       '@graphql-codegen/typescript-operations':
         specifier: ^4.6.0
         version: 4.6.0(graphql@16.10.0)
@@ -1056,6 +1090,9 @@ importers:
       '@mysten/build-scripts':
         specifier: workspace:^
         version: link:../build-scripts
+      '@parcel/watcher':
+        specifier: ^2.5.1
+        version: 2.5.1
       '@types/node':
         specifier: ^22.13.17
         version: 22.13.17
