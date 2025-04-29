@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { getDefaultStore, getWalletUniqueIdentifier } from '@mysten/dapp-kit-next';
+import { getDefaultStore } from '@mysten/dapp-kit-next';
 
 const dAppKitStore = getDefaultStore();
 
@@ -12,7 +12,7 @@ function App() {
 			{wallets.length > 0 ? (
 				<ul>
 					{wallets.map((wallet) => (
-						<li key={getWalletUniqueIdentifier(wallet)}>{wallet.name}</li>
+						<li key={wallet.name}>{wallet.name}</li>
 					))}
 				</ul>
 			) : (
