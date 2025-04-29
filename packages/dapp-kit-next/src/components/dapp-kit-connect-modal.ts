@@ -25,10 +25,9 @@ export class DAppKitConnectModal extends ScopedRegistryHost(LitElement) {
 	}
 
 	override render() {
-		console.log(this.store?.$state.get());
 		return html`<div class="dapp-kit-connect-modal">
 			<wallet-list></wallet-list>
-			<div>abc</div>
+			<div>${JSON.stringify(this.store?.$state.get(), null, 2) ?? 'No store'}</div>
 		</div>`;
 	}
 }

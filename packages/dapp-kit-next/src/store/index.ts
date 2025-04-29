@@ -10,13 +10,13 @@ export type DAppKitStore = ReturnType<typeof createDAppKitStore>;
 type CreateDAppKitStoreOptions = void;
 
 export function createDAppKitStore(_: CreateDAppKitStoreOptions) {
-	const $state = createState();
+	const state = createState();
 
-	syncRegisteredWallets($state);
+	syncRegisteredWallets(state);
 
 	return {
-		$state: readonlyType($state),
-		$wallets: computed($state, (state) => state.wallets),
+		$state: readonlyType(state.$state),
+		$wallets: computed(state.$state, (state) => state.wallets),
 	};
 }
 

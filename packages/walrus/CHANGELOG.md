@@ -1,5 +1,30 @@
 # @mysten/walrus
 
+## 0.0.20
+
+### Patch Changes
+
+- 90033a0: Add tx digest to error messages
+- 7d66a32: Use async thunks to improve transaction construction
+- Updated dependencies [7d66a32]
+- Updated dependencies [eb91fba]
+- Updated dependencies [19a8045]
+  - @mysten/sui@1.29.0
+
+## 0.0.19
+
+### Patch Changes
+
+- Updated dependencies [9a94aea]
+  - @mysten/sui@1.28.2
+
+## 0.0.18
+
+### Patch Changes
+
+- Updated dependencies [3cd4e53]
+  - @mysten/sui@1.28.1
+
 ## 0.0.17
 
 ### Patch Changes

@@ -5,61 +5,61 @@ import { getWallets, StandardEvents } from '@mysten/wallet-standard';
 import { onMount } from 'nanostores';
 import type { DAppKitState } from '../state.js';
 
-import type { WalletWithRequiredFeatures } from '@mysten/wallet-standard';
-import { getWalletUniqueIdentifier, isSuiWallet } from '../../utils/wallets.js';
+import type { Wallet, WalletWithRequiredFeatures } from '@mysten/wallet-standard';
+import { getSuiWallets, isSuiWallet } from '../../utils/wallets.js';
+import { getOrCreateUiWalletForStandardWallet_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getOrCreateUiWalletForStandardWallet } from '@wallet-standard/ui-registry';
 
-export function syncRegisteredWallets($state: DAppKitState) {
+/**
+ * Handles updating the store in response to wallets being added, removed, and their properties changing.
+ */
+export function syncRegisteredWallets({ $state }: DAppKitState) {
 	onMount($state, () => {
-		const { get, on } = getWallets();
-		const unsubscribeCallbacksByWalletId = new Map<string, () => void>();
+		const walletsApi = getWallets();
+		const unsubscribeCallbacksByWallet = new Map<Wallet, () => void>();
 
-		const updateRegisteredWallets = () => {
-			const suiWallets = get().filter(isSuiWallet);
+		const onWalletsChanged = () => {
+			const suiWallets = getSuiWallets().map(getOrCreateUiWalletForStandardWallet);
 			$state.setKey('wallets', suiWallets);
 		};
 
 		const subscribeToWalletEvents = (wallet: WalletWithRequiredFeatures) => {
-			const unsubscribeFromChange = wallet.features[StandardEvents].on('change', (properties) => {
-				if (!isSuiWallet({ ...wallet, ...properties })) {
-					// TODO: If the features, chains, or accounts change in a way that make the connected wallet
-					// invalid we'll need to manually reset / invalidate the connection state. This will be done
-					// in a follow-up PR!
-				}
-				updateRegisteredWallets();
+			const unsubscribeFromChange = wallet.features[StandardEvents].on('change', () => {
+				onWalletsChanged();
 			});
 
-			const walletId = getWalletUniqueIdentifier(wallet);
-			unsubscribeCallbacksByWalletId.set(walletId, unsubscribeFromChange);
+			// NOTE: The underlying wallet entities returned from the Wallet Standard are
+			// referentially equal even when the properties of a wallet change. Thus, it is
+			// safe to use the wallet object itself as the key for the unsubscribe mapping.
+			unsubscribeCallbacksByWallet.set(wallet, unsubscribeFromChange);
 		};
 
-		const unsubscribeFromRegister = on('register', (...addedWallets) => {
+		const unsubscribeFromRegister = walletsApi.on('register', (...addedWallets) => {
 			addedWallets.filter(isSuiWallet).forEach(subscribeToWalletEvents);
-			updateRegisteredWallets();
+			onWalletsChanged();
 		});
 
-		const unsubscribeFromUnregister = on('unregister', (...removedWallets) => {
+		const unsubscribeFromUnregister = walletsApi.on('unregister', (...removedWallets) => {
 			removedWallets.filter(isSuiWallet).forEach((wallet) => {
-				const walletId = getWalletUniqueIdentifier(wallet);
-				const unsubscribeFromChange = unsubscribeCallbacksByWalletId.get(walletId);
-
+				const unsubscribeFromChange = unsubscribeCallbacksByWallet.get(wallet);
 				if (unsubscribeFromChange) {
-					unsubscribeCallbacksByWalletId.delete(walletId);
+					unsubscribeCallbacksByWallet.delete(wallet);
 					unsubscribeFromChange();
 				}
 			});
 
-			updateRegisteredWallets();
+			onWalletsChanged();
 		});
 
-		updateRegisteredWallets();
-		$state.get().wallets.forEach(subscribeToWalletEvents);
+		const suiWallets = getSuiWallets();
+		suiWallets.forEach(subscribeToWalletEvents);
+		onWalletsChanged();
 
 		return () => {
 			unsubscribeFromRegister();
 			unsubscribeFromUnregister();
 
-			unsubscribeCallbacksByWalletId.forEach((unsubscribe) => unsubscribe());
-			unsubscribeCallbacksByWalletId.clear();
+			unsubscribeCallbacksByWallet.forEach((unsubscribe) => unsubscribe());
+			unsubscribeCallbacksByWallet.clear();
 		};
 	});
 }
