@@ -95,7 +95,7 @@ export class LedgerSigner extends Signer {
 	override async signPersonalMessage(bytes: Uint8Array): Promise<SignatureWithBytes> {
 		const intentMessage = messageWithIntent(
 			'PersonalMessage',
-			bcs.vector(bcs.u8()).serialize(bytes).toBytes(),
+			bcs.byteVector().serialize(bytes).toBytes(),
 		);
 		const { signature } = await this.#ledgerClient.signTransaction(
 			this.#derivationPath,
