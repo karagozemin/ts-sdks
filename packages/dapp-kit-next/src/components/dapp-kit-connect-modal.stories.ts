@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { Meta, StoryObj } from '@storybook/web-components';
+import { html } from 'lit';
 
 import '../components/dapp-kit-connect-modal.js';
-import { html } from 'lit';
 
 const meta = {
 	title: 'Connect Modal',
