@@ -1,5 +1,57 @@
 # @mysten/kiosk
 
+## 0.12.4
+
+### Patch Changes
+
+- Updated dependencies [7d66a32]
+- Updated dependencies [eb91fba]
+- Updated dependencies [19a8045]
+  - @mysten/sui@1.29.0
+
+## 0.12.3
+
+### Patch Changes
+
+- Updated dependencies [9a94aea]
+  - @mysten/sui@1.28.2
+
+## 0.12.2
+
+### Patch Changes
+
+- Updated dependencies [3cd4e53]
+  - @mysten/sui@1.28.1
+
+## 0.12.1
+
+### Patch Changes
+
+- Updated dependencies [2705dc8]
+  - @mysten/sui@1.28.0
+
+## 0.12.0
+
+### Minor Changes
+
+- d81b9a7: Use default pagination limit when loading kiosks
+
+## 0.11.6
+
+### Patch Changes
+
+- 986c4e3: Fix transasction construction for royalty_rule::fee_amount
+- Updated dependencies [5cea435]
+  - @mysten/sui@1.27.1
+
+## 0.11.5
+
+### Patch Changes
+
+- Updated dependencies [4d13ef8]
+- Updated dependencies [4d13ef8]
+  - @mysten/sui@1.27.0
+
 ## 0.11.4
 
 ### Patch Changes

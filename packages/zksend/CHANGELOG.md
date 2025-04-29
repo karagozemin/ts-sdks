@@ -1,5 +1,72 @@
 # @mysten/zksend
 
+## 0.13.0
+
+### Minor Changes
+
+- 1236043: Update all Stashed references to Slush in link builder.
+- 90033a0: Add options to getSentTransactionsWithLinks query
+- 1236043: Removes deprecated redirect parameters in link construction
+
+### Patch Changes
+
+- Updated dependencies [7d66a32]
+- Updated dependencies [eb91fba]
+- Updated dependencies [19a8045]
+  - @mysten/sui@1.29.0
+  - @mysten/wallet-standard@0.14.8
+
+## 0.12.28
+
+### Patch Changes
+
+- Updated dependencies [9a94aea]
+  - @mysten/sui@1.28.2
+  - @mysten/wallet-standard@0.14.7
+
+## 0.12.27
+
+### Patch Changes
+
+- Updated dependencies [3cd4e53]
+  - @mysten/sui@1.28.1
+  - @mysten/wallet-standard@0.14.6
+
+## 0.12.26
+
+### Patch Changes
+
+- 3eb8990: use window-wallet-core for experimental unified-adapter
+- Updated dependencies [2705dc8]
+- Updated dependencies [3eb8990]
+  - @mysten/sui@1.28.0
+  - @mysten/window-wallet-core@0.0.2
+  - @mysten/wallet-standard@0.14.5
+
+## 0.12.25
+
+### Patch Changes
+
+- d914fd3: revert zksend channel name change
+
+## 0.12.24
+
+### Patch Changes
+
+- 9cacba9: Add experimental adapter package
+- Updated dependencies [5cea435]
+  - @mysten/sui@1.27.1
+  - @mysten/wallet-standard@0.14.4
+
+## 0.12.23
+
+### Patch Changes
+
+- Updated dependencies [4d13ef8]
+- Updated dependencies [4d13ef8]
+  - @mysten/sui@1.27.0
+  - @mysten/wallet-standard@0.14.3
+
 ## 0.12.22
 
 ### Patch Changes

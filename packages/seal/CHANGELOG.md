@@ -1,5 +1,57 @@
 # @mysten/seal
 
+## 0.4.1
+
+### Patch Changes
+
+- 81f406a: Add more details to InvalidPTB error
+- 7f108cb: feat(seal): add import export to session key
+- Updated dependencies [7d66a32]
+- Updated dependencies [eb91fba]
+- Updated dependencies [19a8045]
+  - @mysten/sui@1.29.0
+
+## 0.4.0
+
+### Minor Changes
+
+- 9a94aea: Add experimental client extension support
+
+### Patch Changes
+
+- Updated dependencies [9a94aea]
+  - @mysten/sui@1.28.2
+
+## 0.3.9
+
+### Patch Changes
+
+- Updated dependencies [3cd4e53]
+  - @mysten/sui@1.28.1
+
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [2705dc8]
+  - @mysten/sui@1.28.0
+
+## 0.3.7
+
+### Patch Changes
+
+- Updated dependencies [5cea435]
+  - @mysten/sui@1.27.1
+
+## 0.3.6
+
+### Patch Changes
+
+- ad8b845: Increase max session key TTL to 30 min
+- Updated dependencies [4d13ef8]
+- Updated dependencies [4d13ef8]
+  - @mysten/sui@1.27.0
+
 ## 0.3.5
 
 ### Patch Changes

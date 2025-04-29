@@ -1,5 +1,62 @@
 # @mysten/walrus
 
+## 0.0.20
+
+### Patch Changes
+
+- 90033a0: Add tx digest to error messages
+- 7d66a32: Use async thunks to improve transaction construction
+- Updated dependencies [7d66a32]
+- Updated dependencies [eb91fba]
+- Updated dependencies [19a8045]
+  - @mysten/sui@1.29.0
+
+## 0.0.19
+
+### Patch Changes
+
+- Updated dependencies [9a94aea]
+  - @mysten/sui@1.28.2
+
+## 0.0.18
+
+### Patch Changes
+
+- Updated dependencies [3cd4e53]
+  - @mysten/sui@1.28.1
+
+## 0.0.17
+
+### Patch Changes
+
+- Updated dependencies [2705dc8]
+  - @mysten/sui@1.28.0
+
+## 0.0.16
+
+### Patch Changes
+
+- 981a39d: Add separate esm entrypoint
+- Updated dependencies [981a39d]
+  - @mysten/walrus-wasm@0.0.6
+
+## 0.0.15
+
+### Patch Changes
+
+- 986c4e3: Add onError to storageNodeClientOptions
+- Updated dependencies [5cea435]
+  - @mysten/sui@1.27.1
+
+## 0.0.14
+
+### Patch Changes
+
+- 4d13ef8: Implement experimental client extension support
+- Updated dependencies [4d13ef8]
+- Updated dependencies [4d13ef8]
+  - @mysten/sui@1.27.0
+
 ## 0.0.13
 
 ### Patch Changes

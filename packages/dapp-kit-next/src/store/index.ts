@@ -1,9 +1,9 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { readonlyType } from 'nanostores';
-import { syncRegisteredWallets } from './initializers/registered-wallets.js';
+import { computed, readonlyType } from 'nanostores';
 import { createState } from './state.js';
+import { syncRegisteredWallets } from './initializers/registered-wallets.js';
 
 export type DAppKitStore = ReturnType<typeof createDAppKitStore>;
 
@@ -15,7 +15,8 @@ export function createDAppKitStore(_: CreateDAppKitStoreOptions) {
 	syncRegisteredWallets(state);
 
 	return {
-		$wallets: readonlyType(state.$wallets),
+		$state: readonlyType(state.$state),
+		$wallets: computed(state.$state, (state) => state.wallets),
 	};
 }
 

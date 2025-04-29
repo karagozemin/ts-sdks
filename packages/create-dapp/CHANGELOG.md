@@ -1,5 +1,68 @@
 # @mysten/create-dapp
 
+## 0.4.3
+
+### Patch Changes
+
+- Updated dependencies [7d66a32]
+- Updated dependencies [eb91fba]
+- Updated dependencies [19a8045]
+  - @mysten/sui@1.29.0
+  - @mysten/dapp-kit@0.16.1
+
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [9a94aea]
+- Updated dependencies [c5adcb8]
+  - @mysten/sui@1.28.2
+  - @mysten/dapp-kit@0.16.0
+
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [3cd4e53]
+  - @mysten/sui@1.28.1
+  - @mysten/dapp-kit@0.15.7
+
+## 0.4.0
+
+### Minor Changes
+
+- 2705dc8: Added a requestSuiFromFaucetV2 and added a deprecation comment on the previous
+  requestSuiFromFaucetV0, V1, and status.
+
+### Patch Changes
+
+- Updated dependencies [2705dc8]
+  - @mysten/sui@1.28.0
+  - @mysten/dapp-kit@0.15.6
+
+## 0.3.60
+
+### Patch Changes
+
+- @mysten/dapp-kit@0.15.5
+
+## 0.3.59
+
+### Patch Changes
+
+- Updated dependencies [5cea435]
+  - @mysten/sui@1.27.1
+  - @mysten/dapp-kit@0.15.4
+
+## 0.3.58
+
+### Patch Changes
+
+- Updated dependencies [4d13ef8]
+- Updated dependencies [4d13ef8]
+  - @mysten/sui@1.27.0
+  - @mysten/dapp-kit@0.15.3
+
 ## 0.3.57
 
 ### Patch Changes

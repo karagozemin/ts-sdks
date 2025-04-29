@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { Wallet, WalletWithRequiredFeatures } from '@mysten/wallet-standard';
-import { isSuiChain, isWalletWithRequiredFeatureSet } from '@mysten/wallet-standard';
+import { getWallets, isSuiChain, isWalletWithRequiredFeatureSet } from '@mysten/wallet-standard';
+
+export function getSuiWallets() {
+	const { get } = getWallets();
+	return get().filter(isSuiWallet);
+}
 
 export function isSuiWallet(wallet: Wallet): wallet is WalletWithRequiredFeatures {
 	return wallet.chains.some(isSuiChain) && isWalletWithRequiredFeatureSet(wallet);
-}
-
-export function getWalletUniqueIdentifier(wallet: Wallet) {
-	return wallet.id ?? wallet.name;
 }
