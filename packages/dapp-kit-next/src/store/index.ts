@@ -10,6 +10,7 @@ import { createInMemoryStorage, DEFAULT_STORAGE_KEY, getDefaultStorage } from '.
 import type { StateStorage } from '../utils/storage.js';
 import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
 import { getWalletFromAccount } from '../utils/wallets.js';
+import { manageWalletConnection } from './initializers/manage-connection.js';
 
 export type DAppKitStore = ReturnType<typeof createDAppKitStore>;
 
@@ -38,13 +39,15 @@ export function createDAppKitStore({
 	storage = getDefaultStorage(),
 	storageKey = DEFAULT_STORAGE_KEY,
 }: CreateDAppKitStoreOptions = {}) {
-	storage ||= createInMemoryStorage();
-
 	const $state = createState();
 	const actions = createActions($state);
 
-	syncRegisteredWallets($state);
+	storage ||= createInMemoryStorage();
 	syncStateToStorage({ $state, storageKey, storage });
+
+	syncRegisteredWallets($state);
+	manageWalletConnection($state);
+
 	if (autoConnect) {
 		autoConnectWallet({ $state, storageKey, storage });
 	}
@@ -57,8 +60,8 @@ export function createDAppKitStore({
 			switch (connection.status) {
 				case 'connected':
 					return {
+						wallet: getWalletFromAccount(connection.currentAccount, wallets)!,
 						account: connection.currentAccount,
-						wallet: getWalletFromAccount(connection.currentAccount, wallets),
 						supportedIntents: connection.supportedIntents,
 						status: connection.status,
 						isConnected: true,
@@ -67,8 +70,8 @@ export function createDAppKitStore({
 					} as const;
 				case 'connecting':
 					return {
-						account: connection.currentAccount,
 						wallet: null,
+						account: connection.currentAccount,
 						supportedIntents: connection.supportedIntents,
 						status: connection.status,
 						isConnected: false,
@@ -77,8 +80,8 @@ export function createDAppKitStore({
 					} as const;
 				case 'disconnected':
 					return {
-						account: connection.currentAccount,
 						wallet: null,
+						account: connection.currentAccount,
 						supportedIntents: connection.supportedIntents,
 						status: connection.status,
 						isConnected: false,

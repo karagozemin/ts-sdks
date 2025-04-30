@@ -6,10 +6,8 @@ import { onMount } from 'nanostores';
 import type { DAppKitState } from '../state.js';
 
 import type { Wallet, WalletWithRequiredFeatures } from '@mysten/wallet-standard';
-import { getSuiWallets, getWalletFromAccount, isSuiWallet } from '../../utils/wallets.js';
+import { getSuiWallets, isSuiWallet } from '../../utils/wallets.js';
 import { getOrCreateUiWalletForStandardWallet_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getOrCreateUiWalletForStandardWallet } from '@wallet-standard/ui-registry';
-import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
-import { uiWalletAccountBelongsToUiWallet, uiWalletAccountsAreSame } from '@wallet-standard/ui';
 
 /**
  * Handles updating the store in response to wallets being added, removed, and their properties changing.
@@ -27,25 +25,6 @@ export function syncRegisteredWallets($state: DAppKitState) {
 		const subscribeToWalletEvents = (wallet: WalletWithRequiredFeatures) => {
 			const unsubscribeFromChange = wallet.features[StandardEvents].on('change', () => {
 				onWalletsChanged();
-
-				const { connection, wallets } = $state.get();
-				if (!connection.currentAccount) return;
-
-				const resolvedAccount = resolveWalletAccount(connection.currentAccount, wallets);
-				if (resolvedAccount) {
-					// Update the current account since the properties might have changed or
-					// the account was marked as incompatible and we can't fallback to another
-					// account in the wallet:
-					$state.setKey('connection.currentAccount', resolvedAccount);
-				} else {
-					// Reset the connection if the connected account was marked as incompatible
-					// and there are no other accounts in the wallet to fallback to:
-					$state.setKey('connection', {
-						status: 'disconnected',
-						supportedIntents: null,
-						currentAccount: null,
-					});
-				}
 			});
 
 			// NOTE: The underlying wallet entities returned from the Wallet Standard are
@@ -69,17 +48,6 @@ export function syncRegisteredWallets($state: DAppKitState) {
 			});
 
 			onWalletsChanged();
-
-			// Reset the connection if the connected wallet was unregistered:
-			const { connection, wallets } = $state.get();
-			const currentAccount = connection.currentAccount;
-			if (currentAccount && !getWalletFromAccount(currentAccount, wallets)) {
-				$state.setKey('connection', {
-					status: 'disconnected',
-					supportedIntents: null,
-					currentAccount: null,
-				});
-			}
 		});
 
 		const suiWallets = getSuiWallets();
@@ -94,20 +62,4 @@ export function syncRegisteredWallets($state: DAppKitState) {
 			unsubscribeCallbacksByWallet.clear();
 		};
 	});
-}
-
-function resolveWalletAccount(currentAccount: UiWalletAccount, wallets: UiWallet[]) {
-	for (const wallet of wallets) {
-		for (const walletAccount of wallet.accounts) {
-			if (uiWalletAccountsAreSame(currentAccount, walletAccount)) {
-				return walletAccount;
-			}
-		}
-
-		if (uiWalletAccountBelongsToUiWallet(currentAccount, wallet) && wallet.accounts[0]) {
-			return wallet.accounts[0];
-		}
-	}
-
-	return null;
 }

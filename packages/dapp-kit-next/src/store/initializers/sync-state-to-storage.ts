@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { listenKeys, onMount } from 'nanostores';
-import type { DAppKitState, DAppKitStateValues } from '../state.js';
+import type { DAppKitState } from '../state.js';
 import type { StateStorage } from '../../utils/storage.js';
 import { getUiWalletAccountStorageKey } from '@wallet-standard/ui';
 
@@ -19,31 +19,12 @@ export function syncStateToStorage({
 	storageKey: string;
 }) {
 	onMount($state, () => {
-		console.log('Listening');
-		const a = listenKeys(
-			$state,
-			['connection.currentAccount', 'connection'],
-			(value, oldValue: DAppKitStateValues | undefined) => {
-				console.log('VA', value, oldValue);
-
-				if (value.connection.currentAccount) {
-					console.log('Setting!');
-					storage.setItem(
-						storageKey,
-						getUiWalletAccountStorageKey(value.connection.currentAccount),
-					);
-				} else if (oldValue?.connection.currentAccount && !value.connection.currentAccount) {
-					// eslint-disable-next-line no-debugger
-					debugger;
-					console.log('removing');
-					storage.removeItem(storageKey);
-				}
-			},
-		);
-
-		return () => {
-			console.log('cleaning up');
-			a();
-		};
+		return listenKeys($state, ['connection', 'connection.currentAccount'], ({ connection }) => {
+			if (connection.currentAccount) {
+				storage.setItem(storageKey, getUiWalletAccountStorageKey(connection.currentAccount));
+			} else {
+				storage.removeItem(storageKey);
+			}
+		});
 	});
 }

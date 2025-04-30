@@ -19,15 +19,15 @@ export function autoConnectWallet({
 	storageKey: string;
 }) {
 	onMount($state, () => {
-		return listenKeys($state, ['wallets'], async (value, oldValue) => {
-			console.log('RUNNING', oldValue, value);
-			if (value.connection.status !== 'disconnected') return;
+		return listenKeys($state, ['wallets'], async ({ connection, wallets }, oldValue) => {
+			if (oldValue.wallets.length > wallets.length) return;
+			if (connection.status !== 'disconnected') return;
 
 			const savedWalletAccount = await task(() => {
 				return getSavedWalletAccount({
 					storage,
 					storageKey,
-					wallets: value.wallets,
+					wallets: wallets,
 				});
 			});
 
@@ -38,9 +38,10 @@ export function autoConnectWallet({
 					// FIXME: Since `silent` is deprecated... we really need to be able to know what the
 					// supported intents are on initialization. Do we have a use case for accounts only
 					// have specific supported intents?
-					// 1.  wallet.features[SuiGetWalletMetadata]();
+					// 1. wallet.features[SuiGetWalletMetadata].getMetadata();
 					//     { type: 'default' | 'zk-only', supportedIntents: [] }
-					// 2.
+					// 2. this is a property on the wallet
+					// 3. wallet.features[SuiGetWalletAccountMetadata].getMetadata(account);
 					supportedIntents: [],
 				});
 			}
