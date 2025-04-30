@@ -36,7 +36,7 @@ export function disconnectWalletCreator($state: DAppKitState) {
 
 				await disconnect(...standardDisconnectArgs);
 			} catch (error) {
-				console.warn('Failed to disconnect the current wallet.', error);
+				console.warn('Failed to disconnect the current wallet from the application.', error);
 			} finally {
 				$state.setKey('connection', {
 					status: 'disconnected',
