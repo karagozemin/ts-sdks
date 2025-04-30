@@ -35,13 +35,6 @@ export function autoConnectWallet({
 				$state.setKey('connection', {
 					status: 'connected',
 					currentAccount: savedWalletAccount,
-					// FIXME: Since `silent` is deprecated... we really need to be able to know what the
-					// supported intents are on initialization. Do we have a use case for accounts only
-					// have specific supported intents?
-					// 1. wallet.features[SuiGetWalletMetadata].getMetadata();
-					//     { type: 'default' | 'zk-only', supportedIntents: [] }
-					// 2. this is a property on the wallet
-					// 3. wallet.features[SuiGetWalletAccountMetadata].getMetadata(account);
 					supportedIntents: [],
 				});
 			}
