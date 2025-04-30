@@ -2,38 +2,34 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
-import { computed, map } from 'nanostores';
-import { getWalletFromAccount } from '../utils/wallets.js';
+import { deepMap } from 'nanostores';
 
-export type DAppKitStateValues = {
-	wallets: UiWallet[];
-} & (
+type WalletConnection =
 	| {
-			connectionStatus: 'disconnected' | 'connecting';
+			status: 'disconnected' | 'connecting';
 			supportedIntents: null;
 			currentAccount: null;
 	  }
 	| {
-			connectionStatus: 'connected';
+			status: 'connected';
 			supportedIntents: string[];
 			currentAccount: UiWalletAccount;
-	  }
-);
+	  };
+
+export type DAppKitStateValues = {
+	wallets: UiWallet[];
+	connection: WalletConnection;
+};
 
 export type DAppKitState = ReturnType<typeof createState>;
 
 export function createState() {
-	const $state = map<DAppKitStateValues>({
+	return deepMap<DAppKitStateValues>({
 		wallets: [],
-		connectionStatus: 'disconnected',
-		currentAccount: null,
-		supportedIntents: null,
+		connection: {
+			status: 'disconnected',
+			currentAccount: null,
+			supportedIntents: null,
+		},
 	});
-
-	const $currentWallet = computed($state, (state) => {
-		if (!state.currentAccount) return null;
-		return getWalletFromAccount(state.currentAccount, state.wallets);
-	});
-
-	return { $state, $currentWallet };
 }

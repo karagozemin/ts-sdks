@@ -14,7 +14,7 @@ import { uiWalletAccountBelongsToUiWallet, uiWalletAccountsAreSame } from '@wall
 /**
  * Handles updating the store in response to wallets being added, removed, and their properties changing.
  */
-export function syncRegisteredWallets({ $state }: DAppKitState) {
+export function syncRegisteredWallets($state: DAppKitState) {
 	onMount($state, () => {
 		const walletsApi = getWallets();
 		const unsubscribeCallbacksByWallet = new Map<Wallet, () => void>();
@@ -28,21 +28,20 @@ export function syncRegisteredWallets({ $state }: DAppKitState) {
 			const unsubscribeFromChange = wallet.features[StandardEvents].on('change', () => {
 				onWalletsChanged();
 
-				const { currentAccount, wallets } = $state.get();
-				if (!currentAccount) return;
+				const { connection, wallets } = $state.get();
+				if (!connection.currentAccount) return;
 
-				const resolvedAccount = resolveWalletAccount(currentAccount, wallets);
+				const resolvedAccount = resolveWalletAccount(connection.currentAccount, wallets);
 				if (resolvedAccount) {
 					// Update the current account since the properties might have changed or
 					// the account was marked as incompatible and we can't fallback to another
 					// account in the wallet:
-					$state.setKey('currentAccount', resolvedAccount);
+					$state.setKey('connection.currentAccount', resolvedAccount);
 				} else {
 					// Reset the connection if the connected account was marked as incompatible
 					// and there are no other accounts in the wallet to fallback to:
-					$state.set({
-						...$state.get(),
-						connectionStatus: 'disconnected',
+					$state.setKey('connection', {
+						status: 'disconnected',
 						supportedIntents: null,
 						currentAccount: null,
 					});
@@ -72,11 +71,11 @@ export function syncRegisteredWallets({ $state }: DAppKitState) {
 			onWalletsChanged();
 
 			// Reset the connection if the connected wallet was unregistered:
-			const { currentAccount, wallets } = $state.get();
+			const { connection, wallets } = $state.get();
+			const currentAccount = connection.currentAccount;
 			if (currentAccount && !getWalletFromAccount(currentAccount, wallets)) {
-				$state.set({
-					...$state.get(),
-					connectionStatus: 'disconnected',
+				$state.setKey('connection', {
+					status: 'disconnected',
 					supportedIntents: null,
 					currentAccount: null,
 				});

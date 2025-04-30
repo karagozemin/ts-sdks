@@ -10,7 +10,7 @@ import { WalletNotConnectedError } from '../../utils/errors.js';
 
 export type DisconnectWalletArgs = Parameters<StandardDisconnectMethod>;
 
-export function disconnectWalletCreator({ $state }: DAppKitState) {
+export function disconnectWalletCreator($state: DAppKitState) {
 	/**
 	 * Disconnects the current wallet from the application and prompts the current wallet
 	 * to deauthorize accounts from the current domain depending on the wallet's implemetation
@@ -18,22 +18,23 @@ export function disconnectWalletCreator({ $state }: DAppKitState) {
 	 */
 	return async function disconnectWallet(...standardDisconnectArgs: DisconnectWalletArgs) {
 		return await task(async () => {
-			const { currentAccount } = $state.get();
-			if (!currentAccount) {
+			const { connection } = $state.get();
+			if (!connection.currentAccount) {
 				throw new WalletNotConnectedError('No wallet is connected.');
 			}
 
 			try {
 				const { disconnect } = getWalletFeature(
-					currentAccount,
+					connection.currentAccount,
 					StandardDisconnect,
 				) as StandardDisconnectFeature[typeof StandardDisconnect];
 
 				await disconnect(...standardDisconnectArgs);
+			} catch (error) {
+				console.warn('Failed to disconnect the application from the current wallet.', error);
 			} finally {
-				$state.set({
-					...$state.get(),
-					connectionStatus: 'disconnected',
+				$state.setKey('connection', {
+					status: 'disconnected',
 					supportedIntents: null,
 					currentAccount: null,
 				});
