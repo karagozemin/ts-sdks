@@ -8,7 +8,7 @@ import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
 import { uiWalletAccountBelongsToUiWallet, uiWalletAccountsAreSame } from '@wallet-standard/ui';
 
 /**
- * Handles updating the store in response to wallets being added, removed, and their properties changing.
+ * Handles updating the connection state in response to wallets and their properties changing.
  */
 export function manageWalletConnection($state: DAppKitState) {
 	onMount($state, () => {

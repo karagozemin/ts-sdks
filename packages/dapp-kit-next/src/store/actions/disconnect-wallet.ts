@@ -7,6 +7,7 @@ import type { DAppKitState } from '../state.js';
 import { task } from 'nanostores';
 import { getWalletFeature } from '@wallet-standard/ui';
 import { WalletNotConnectedError } from '../../utils/errors.js';
+import { getWalletFromAccount } from '../../utils/wallets.js';
 
 export type DisconnectWalletArgs = Parameters<StandardDisconnectMethod>;
 
@@ -18,22 +19,25 @@ export function disconnectWalletCreator($state: DAppKitState) {
 	 */
 	return async function disconnectWallet(...standardDisconnectArgs: DisconnectWalletArgs) {
 		return await task(async () => {
-			const { connection } = $state.get();
-			if (!connection.currentAccount) {
+			const { connection, wallets } = $state.get();
+			const currentWallet = connection.currentAccount
+				? getWalletFromAccount(connection.currentAccount, wallets)
+				: null;
+
+			if (!currentWallet) {
 				throw new WalletNotConnectedError('No wallet is connected.');
 			}
 
 			try {
 				const { disconnect } = getWalletFeature(
-					connection.currentAccount,
+					currentWallet,
 					StandardDisconnect,
 				) as StandardDisconnectFeature[typeof StandardDisconnect];
 
 				await disconnect(...standardDisconnectArgs);
 			} catch (error) {
-				console.warn('Failed to disconnect the application from the current wallet.', error);
+				console.warn('Failed to disconnect the current wallet.', error);
 			} finally {
-				console.log('DISCONNECTING');
 				$state.setKey('connection', {
 					status: 'disconnected',
 					supportedIntents: null,

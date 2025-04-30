@@ -18,11 +18,14 @@ export function switchAccountCreator($state: DAppKitState) {
 	 */
 	return function switchAccount({ account }: SwitchAccountArgs) {
 		const { connection, wallets } = $state.get();
-		if (!connection.currentAccount) {
+		const currentWallet = connection.currentAccount
+			? getWalletFromAccount(connection.currentAccount, wallets)
+			: null;
+
+		if (!currentWallet) {
 			throw new WalletNotConnectedError('No wallet is connected.');
 		}
 
-		const currentWallet = getWalletFromAccount(connection.currentAccount, wallets)!;
 		if (!uiWalletAccountBelongsToUiWallet(account, currentWallet)) {
 			throw new WalletAccountNotFoundError(
 				`No account with address ${account.address} is connected to ${currentWallet.name}.`,

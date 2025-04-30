@@ -7,7 +7,7 @@ import type { StateStorage } from '../../utils/storage.js';
 import type { UiWallet } from '@wallet-standard/ui';
 
 /**
- * Attempts to automatically connect to a wallet account if it was previously authorized.
+ * Attempts to connect to a previously authorized wallet account on mount and when new wallets are registered.
  */
 export function autoConnectWallet({
 	$state,
@@ -27,7 +27,7 @@ export function autoConnectWallet({
 				return getSavedWalletAccount({
 					storage,
 					storageKey,
-					wallets: wallets,
+					wallets,
 				});
 			});
 
