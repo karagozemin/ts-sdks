@@ -171,6 +171,10 @@ describe('Integration test', () => {
 			threshold: encryptedObject2.threshold,
 		});
 
+		// the keys should now be in the cache
+		expect(client.getKey(sessionKey.getPackageId(), whitelistId, objectIds[0])).toBeDefined();
+		expect(client.getKey(sessionKey.getPackageId(), whitelistId2, objectIds[1])).toBeDefined();
+
 		// decrypt should hit the cached key and no need to fetch again
 		const decryptedBytes2 = await client.decrypt({
 			data: encryptedBytes2,

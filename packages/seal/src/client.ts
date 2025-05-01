@@ -345,4 +345,17 @@ export class SealClient {
 			throw toMajorityError(errors);
 		}
 	}
+
+	/**
+	 * Return the derived key for a given id and key server if it is in the cache.
+	 *
+	 * @param packageId The id of the package.
+	 * @param id The id of the derived key.
+	 * @param serverObjectId The object id for the key server.
+	 * @returns The derived key for the given id and server if it in the cache (see fetchKey) and `undefined` otherwise.
+	 */
+	getKey(packageId: string, id: string, serverObjectId: string): G1Element | undefined {
+		const fullId = createFullId(DST, packageId, id);
+		return this.#cachedKeys.get(`${fullId}:${serverObjectId}`);
+	}
 }
