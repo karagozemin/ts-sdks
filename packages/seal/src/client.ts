@@ -140,19 +140,7 @@ export class SealClient {
 		txBytes: Uint8Array;
 	}) {
 		const encryptedObject = EncryptedObject.parse(data);
-
-		this.#validateEncryptionServices(
-			encryptedObject.services.map((s) => s[0]),
-			encryptedObject.threshold,
-		);
-
-		await this.fetchKeys({
-			ids: [encryptedObject.id],
-			txBytes,
-			sessionKey,
-			threshold: encryptedObject.threshold,
-		});
-
+		await this.fetchKeysForEncryption({ encryptedObject, sessionKey, txBytes });
 		return decrypt({ encryptedObject, keys: this.#cachedKeys });
 	}
 
@@ -346,16 +334,45 @@ export class SealClient {
 		}
 	}
 
-	/**
-	 * Return the derived key for a given id and key server if it is in the cache.
-	 *
-	 * @param packageId The id of the package.
-	 * @param id The id of the derived key.
-	 * @param serverObjectId The object id for the key server.
-	 * @returns The derived key for the given id and server if it in the cache (see fetchKey) and `undefined` otherwise.
-	 */
-	getKey(packageId: string, id: string, serverObjectId: string): G1Element | undefined {
-		const fullId = createFullId(DST, packageId, id);
-		return this.#cachedKeys.get(`${fullId}:${serverObjectId}`);
+	async fetchKeysForEncryption({
+		encryptedObject,
+		sessionKey,
+		txBytes,
+	}: {
+		encryptedObject: typeof EncryptedObject.$inferType;
+		sessionKey: SessionKey;
+		txBytes: Uint8Array;
+	}): Promise<typeof EncryptedObject.$inferType> {
+		this.#validateEncryptionServices(
+			encryptedObject.services.map((s) => s[0]),
+			encryptedObject.threshold,
+		);
+
+		await this.fetchKeys({
+			ids: [encryptedObject.id],
+			txBytes,
+			sessionKey,
+			threshold: encryptedObject.threshold,
+		});
+
+		return encryptedObject;
+	}
+
+	async getKemKeys({
+		data,
+		sessionKey,
+		txBytes,
+	}: {
+		data: Uint8Array;
+		sessionKey: SessionKey;
+		txBytes: Uint8Array;
+	}): Promise<G1Element[]> {
+		const encryptedObject = EncryptedObject.parse(data);
+		await this.fetchKeysForEncryption({ encryptedObject, sessionKey, txBytes });
+
+		const fullId = createFullId(DST, sessionKey.getPackageId(), encryptedObject.id);
+		return encryptedObject.services
+			.map(([service, _]) => this.#cachedKeys.get(`${fullId}:${service}`))
+			.filter((key) => key !== undefined);
 	}
 }

@@ -138,6 +138,16 @@ describe('Integration test', () => {
 			ttlMin: 10,
 			signer: keypair,
 		});
+
+		// After calling getKemKeys, both keys should now be in the cache and returned to the user
+		expect(
+			await client.getKemKeys({
+				data: encryptedBytes,
+				sessionKey,
+				txBytes,
+			}),
+		).toHaveLength(2);
+
 		// decrypt the object encrypted to whitelist 1.
 		const decryptedBytes = await client.decrypt({
 			data: encryptedBytes,
@@ -170,10 +180,6 @@ describe('Integration test', () => {
 			sessionKey,
 			threshold: encryptedObject2.threshold,
 		});
-
-		// the keys should now be in the cache
-		expect(client.getKey(sessionKey.getPackageId(), whitelistId, objectIds[0])).toBeDefined();
-		expect(client.getKey(sessionKey.getPackageId(), whitelistId2, objectIds[1])).toBeDefined();
 
 		// decrypt should hit the cached key and no need to fetch again
 		const decryptedBytes2 = await client.decrypt({
