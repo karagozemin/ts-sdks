@@ -140,7 +140,7 @@ export class SealClient {
 		txBytes: Uint8Array;
 	}) {
 		const encryptedObject = EncryptedObject.parse(data);
-		await this.fetchKeysForEncryption({ encryptedObject, sessionKey, txBytes });
+		await this.#fetchKeysForEncryption({ encryptedObject, sessionKey, txBytes });
 		return decrypt({ encryptedObject, keys: this.#cachedKeys });
 	}
 
@@ -334,7 +334,7 @@ export class SealClient {
 		}
 	}
 
-	async fetchKeysForEncryption({
+	async #fetchKeysForEncryption({
 		encryptedObject,
 		sessionKey,
 		txBytes,
@@ -381,7 +381,7 @@ export class SealClient {
 		txBytes: Uint8Array;
 	}): Promise<G1Element[]> {
 		const encryptedObject = EncryptedObject.parse(data);
-		await this.fetchKeysForEncryption({ encryptedObject, sessionKey, txBytes });
+		await this.#fetchKeysForEncryption({ encryptedObject, sessionKey, txBytes });
 
 		const fullId = createFullId(DST, sessionKey.getPackageId(), encryptedObject.id);
 		return encryptedObject.services
