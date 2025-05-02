@@ -358,7 +358,20 @@ export class SealClient {
 		return encryptedObject;
 	}
 
-	async getKemKeys({
+	/**
+	 * Get the derived keys needed to decrypt the encrypted object.
+	 *
+	 * Calls fetchKeys in case one or more of the required keys is not cached yet.
+	 * The function throws an error if the client's key servers are not a subset of
+	 * the encrypted object's key servers (including the same weights) or if the
+	 * threshold cannot be met.
+	 *
+	 * @param data - The encrypted bytes to decrypt.
+	 * @param sessionKey - The session key to use.
+	 * @param txBytes - The transaction bytes to use (that calls seal_approve* functions).
+	 * @returns - At least threshold derived keys to decrypt the encrypted object.
+	 */
+	async getDerivedKeys({
 		data,
 		sessionKey,
 		txBytes,

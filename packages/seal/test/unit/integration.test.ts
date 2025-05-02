@@ -139,9 +139,9 @@ describe('Integration test', () => {
 			signer: keypair,
 		});
 
-		// After calling getKemKeys, both keys should now be in the cache and returned to the user
+		// After calling getDerivedKeys, both keys should now be in the cache and returned to the user
 		expect(
-			await client.getKemKeys({
+			await client.getDerivedKeys({
 				data: encryptedBytes,
 				sessionKey,
 				txBytes,
