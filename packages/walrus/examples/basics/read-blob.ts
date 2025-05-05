@@ -22,7 +22,16 @@ export async function retrieveBlob(blobId: string) {
 
 	console.time();
 	const blob = await client.walrus.computeBlobMetadata({ bytes, numShards: 1000 });
+
 	console.timeEnd();
+
+	console.time('blob2');
+	const blob2 = await client.walrus.computeBlobMetadata({ bytes, numShards: 1000 });
+	console.timeEnd('blob2');
+
+	console.time('blob3');
+	const blob3 = await client.walrus.computeBlobMetadata({ bytes, numShards: 1000 });
+	console.timeEnd('blob3');
 
 	console.log(blob.blobId);
 })();
