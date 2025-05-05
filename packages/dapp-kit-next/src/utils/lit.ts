@@ -7,9 +7,9 @@ import type { DAppKit } from '../core/index.js';
 import type { DAppKitStateValues } from '../core/state.js';
 
 /**
- * Property decorator that creates a property that can be assigned different stores.
- * When the property changes, it will automatically disconnect the old store's controller
- * and create a new one for the new store.
+ * Property decorator that creates a property that can be assigned different dApp Kit instances.
+ * When a property in the internal store changes, it will automatically disconnect the old store's
+ * controller and create a new one for the new store.
  *
  * Inspired by https://github.com/nanostores/lit/issues/10#issuecomment-2781516844 :)
  */
@@ -49,7 +49,7 @@ export function storeProperty() {
 				this[controllerKey] = newController;
 
 				if (existingController && !newController) {
-					// If the store is removed, request an update. Otherwise the controller should handle it.
+					// If the dApp Kit instance is removed, request an update. Otherwise the controller should handle it.
 					this.requestUpdate(propertyKey, oldInstance);
 				}
 			},
