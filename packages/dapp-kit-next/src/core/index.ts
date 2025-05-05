@@ -13,7 +13,7 @@ type CreateDAppKitOptions = void;
 let defaultInstance: DAppKit | undefined;
 
 export function createDAppKit(options: CreateDAppKitOptions) {
-	const dAppKit = createDAppKitStore(options);
+	const dAppKit = createDAppKitInstance(options);
 
 	if (!defaultInstance) {
 		defaultInstance = dAppKit;
@@ -27,7 +27,7 @@ export function createDAppKit(options: CreateDAppKitOptions) {
 	return dAppKit;
 }
 
-function createDAppKitStore(_: CreateDAppKitOptions) {
+function createDAppKitInstance(_: CreateDAppKitOptions) {
 	const state = createState();
 	const actions = createActions(state);
 
