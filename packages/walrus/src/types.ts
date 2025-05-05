@@ -139,6 +139,10 @@ export type GetSliversOptions = ReadBlobOptions;
 
 export type GetVerifiedBlobStatusOptions = ReadBlobOptions;
 
+export type ComputeBlobMetadataOptions = {
+	bytes: Uint8Array;
+};
+
 export interface SliversForNode {
 	primary: {
 		sliverIndex: number;
