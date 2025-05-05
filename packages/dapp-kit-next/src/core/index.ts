@@ -5,6 +5,7 @@ import { computed, readonlyType } from 'nanostores';
 import { createState } from './state.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
 import { createActions } from './actions/index.js';
+import { DAppKitError } from '../utils/errors.js';
 
 export type DAppKit = ReturnType<typeof createDAppKit>;
 
@@ -25,6 +26,13 @@ export function createDAppKit(options: CreateDAppKitOptions) {
 	}
 
 	return dAppKit;
+}
+
+export function getDefaultInstance() {
+	if (!defaultInstance) {
+		throw new DAppKitError('dApp-kit has not been initialized yet.');
+	}
+	return defaultInstance;
 }
 
 function createDAppKitInstance(_: CreateDAppKitOptions) {
