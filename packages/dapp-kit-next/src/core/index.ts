@@ -6,10 +6,28 @@ import { createState } from './state.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
 import { createActions } from './actions/index.js';
 
-export type DAppKitStore = ReturnType<typeof createDAppKitStore>;
+export type DAppKit = ReturnType<typeof createDAppKit>;
 
-type CreateDAppKitStoreOptions = void;
-export function createDAppKitStore(_: CreateDAppKitStoreOptions) {
+type CreateDAppKitOptions = void;
+
+let defaultInstance: DAppKit | undefined;
+
+export function createDAppKit(options: CreateDAppKitOptions) {
+	const dAppKit = createDAppKitStore(options);
+
+	if (!defaultInstance) {
+		defaultInstance = dAppKit;
+
+		globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ ||= defaultInstance;
+		if (globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ !== defaultInstance) {
+			console.warn('Detected multiple dApp-kit instances. This may cause un-expected behavior.');
+		}
+	}
+
+	return dAppKit;
+}
+
+function createDAppKitStore(_: CreateDAppKitOptions) {
 	const state = createState();
 	const actions = createActions(state);
 
@@ -54,21 +72,4 @@ export function createDAppKitStore(_: CreateDAppKitStoreOptions) {
 			}
 		}),
 	};
-}
-
-let defaultStore: DAppKitStore | undefined;
-
-export function getDefaultStore() {
-	if (!defaultStore) {
-		defaultStore = createDAppKitStore();
-
-		(globalThis as any).__DAPP_KIT_DEFAULT_STORE__ ||= defaultStore;
-		if ((globalThis as any).__DAPP_KIT_DEFAULT_STORE__ !== defaultStore) {
-			console.warn(
-				'Detected multiple dApp-kit store instances. This may cause un-expected behavior.',
-			);
-		}
-	}
-
-	return defaultStore;
 }
