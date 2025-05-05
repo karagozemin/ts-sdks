@@ -6,8 +6,8 @@ import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 import { WalrusClient } from '../../src/client.js';
 
 const client = new SuiClient({
-	url: getFullnodeUrl('testnet'),
-	network: 'testnet',
+	url: getFullnodeUrl('mainnet'),
+	network: 'mainnet',
 }).$extend(WalrusClient.experimental_asClientExtension());
 
 export async function retrieveBlob(blobId: string) {
@@ -16,10 +16,13 @@ export async function retrieveBlob(blobId: string) {
 }
 
 (async function main() {
-	const blob = await retrieveBlob('OFrKO0ofGc4inX8roHHaAB-pDHuUiIA08PW4N2B2gFk');
+	const bytes = new TextEncoder().encode(`hello world`.repeat(400_000));
 
-	const textDecoder = new TextDecoder('utf-8');
-	const resultString = textDecoder.decode(await blob.arrayBuffer());
+	console.log(bytes.length);
 
-	console.log(resultString);
+	console.time();
+	const blob = await client.walrus.computeBlobMetadata({ bytes, numShards: 1000 });
+	console.timeEnd();
+
+	console.log(blob.blobId);
 })();

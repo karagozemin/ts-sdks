@@ -311,9 +311,22 @@ export class WalrusClient {
 		return blobBytes;
 	}
 
-	async computeBlobMetadata({ bytes }: ComputeBlobMetadataOptions) {
-		const [bindings, systemState] = await Promise.all([this.#wasmBindings(), this.systemState()]);
-		const { blob_id, metadata } = bindings.computeMetadata(systemState.committee.n_shards, bytes);
+	async computeBlobMetadata({ bytes, numShards }: ComputeBlobMetadataOptions) {
+		let shardCount: number | undefined;
+		if (typeof numShards === 'number') {
+			shardCount = numShards;
+		} else {
+			const systemState = await this.systemState();
+			shardCount = systemState.committee.n_shards;
+		}
+
+		console.time('w');
+		const bindings = await this.#wasmBindings();
+		console.timeEnd('w');
+
+		console.time('m');
+		const { blob_id, metadata } = bindings.computeMetadata(shardCount, bytes);
+		console.timeEnd('m');
 
 		return {
 			blobId: blob_id,
