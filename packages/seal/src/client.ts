@@ -140,7 +140,17 @@ export class SealClient {
 		txBytes: Uint8Array;
 	}) {
 		const encryptedObject = EncryptedObject.parse(data);
-		await this.#fetchKeysForEncryption({ encryptedObject, sessionKey, txBytes });
+		this.#validateEncryptionServices(
+			encryptedObject.services.map((s) => s[0]),
+			encryptedObject.threshold,
+		);
+
+		await this.fetchKeys({
+			ids: [encryptedObject.id],
+			txBytes,
+			sessionKey,
+			threshold: encryptedObject.threshold,
+		});
 		return decrypt({ encryptedObject, keys: this.#cachedKeys });
 	}
 
@@ -334,58 +344,28 @@ export class SealClient {
 		}
 	}
 
-	async #fetchKeysForEncryption({
-		encryptedObject,
-		sessionKey,
-		txBytes,
-	}: {
-		encryptedObject: typeof EncryptedObject.$inferType;
-		sessionKey: SessionKey;
-		txBytes: Uint8Array;
-	}): Promise<typeof EncryptedObject.$inferType> {
-		this.#validateEncryptionServices(
-			encryptedObject.services.map((s) => s[0]),
-			encryptedObject.threshold,
-		);
-
-		await this.fetchKeys({
-			ids: [encryptedObject.id],
-			txBytes,
-			sessionKey,
-			threshold: encryptedObject.threshold,
-		});
-
-		return encryptedObject;
-	}
-
 	/**
-	 * Get the derived keys needed to decrypt the encrypted object.
+	 * Get the derived keys for the given services. Returns only the keys that are already cached.
 	 *
-	 * Calls fetchKeys in case one or more of the required keys is not cached yet.
-	 * The function throws an error if the client's key servers are not a subset of
-	 * the encrypted object's key servers (including the same weights) or if the
-	 * threshold cannot be met.
+	 * To fetch the keys, use the fetchKeys function.
 	 *
-	 * @param data - The encrypted bytes to decrypt.
-	 * @param sessionKey - The session key to use.
-	 * @param txBytes - The transaction bytes to use (that calls seal_approve* functions).
-	 * @returns - At least threshold derived keys to decrypt the encrypted object.
+	 * @param packageId - The packageId namespace.
+	 * @param id - The key id to use (inner id).
+	 * @param services - The object ids of the key servers to use.
+	 * @returns - Derived keys for the given services that are in the cache.
 	 */
 	async getDerivedKeys({
-		data,
-		sessionKey,
-		txBytes,
+		packageId,
+		id,
+		services,
 	}: {
-		data: Uint8Array;
-		sessionKey: SessionKey;
-		txBytes: Uint8Array;
+		packageId: string;
+		id: string;
+		services: string[];
 	}): Promise<G1Element[]> {
-		const encryptedObject = EncryptedObject.parse(data);
-		await this.#fetchKeysForEncryption({ encryptedObject, sessionKey, txBytes });
-
-		const fullId = createFullId(DST, sessionKey.getPackageId(), encryptedObject.id);
-		return encryptedObject.services
-			.map(([service, _]) => this.#cachedKeys.get(`${fullId}:${service}`))
+		const fullId = createFullId(DST, packageId, id);
+		return services
+			.map((service) => this.#cachedKeys.get(`${fullId}:${service}`))
 			.filter((key) => key !== undefined);
 	}
 }

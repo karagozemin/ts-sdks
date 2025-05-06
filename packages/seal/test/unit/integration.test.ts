@@ -139,15 +139,6 @@ describe('Integration test', () => {
 			signer: keypair,
 		});
 
-		// After calling getDerivedKeys, both keys should now be in the cache and returned to the user
-		expect(
-			await client.getDerivedKeys({
-				data: encryptedBytes,
-				sessionKey,
-				txBytes,
-			}),
-		).toHaveLength(2);
-
 		// decrypt the object encrypted to whitelist 1.
 		const decryptedBytes = await client.decrypt({
 			data: encryptedBytes,
@@ -156,6 +147,24 @@ describe('Integration test', () => {
 		});
 
 		expect(decryptedBytes).toEqual(data);
+
+		// After calling decrypt, both keys should now be in the cache and can be retrieved with the getDerivedKeys method.
+		expect(
+			await client.getDerivedKeys({
+				packageId: TESTNET_PACKAGE_ID,
+				id: whitelistId,
+				services: objectIds,
+			}),
+		).toHaveLength(2);
+
+		// But the keys for whitelist 2 should not be in the cache yet.
+		expect(
+			await client.getDerivedKeys({
+				packageId: TESTNET_PACKAGE_ID,
+				id: whitelistId2,
+				services: objectIds,
+			}),
+		).toHaveLength(0);
 
 		// encrypt a different object to whitelist 2.
 		const { encryptedObject: encryptedBytes2 } = await client.encrypt({
@@ -180,6 +189,15 @@ describe('Integration test', () => {
 			sessionKey,
 			threshold: encryptedObject2.threshold,
 		});
+
+		// After calling fetch keys, both keys for whitelistId2 should now be in the cache and can be retrieved with the getDerivedKeys method.
+		expect(
+			await client.getDerivedKeys({
+				packageId: TESTNET_PACKAGE_ID,
+				id: whitelistId2,
+				services: objectIds,
+			}),
+		).toHaveLength(2);
 
 		// decrypt should hit the cached key and no need to fetch again
 		const decryptedBytes2 = await client.decrypt({
