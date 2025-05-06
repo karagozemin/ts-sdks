@@ -35,7 +35,6 @@ export function autoConnectWallet({
 				$state.setKey('connection', {
 					status: 'connected',
 					currentAccount: savedWalletAccount,
-					supportedIntents: [],
 				});
 			}
 		});

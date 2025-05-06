@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import '@webcomponents/scoped-custom-element-registry';
+// import '@webcomponents/scoped-custom-element-registry';
 
 import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 import { html, LitElement } from 'lit';

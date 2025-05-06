@@ -6,13 +6,15 @@ import { deepMap } from 'nanostores';
 
 type WalletConnection =
 	| {
-			status: 'disconnected' | 'connecting';
-			supportedIntents: null;
+			status: 'disconnected';
 			currentAccount: null;
 	  }
 	| {
+			status: 'connecting';
+			currentAccount: UiWalletAccount | null;
+	  }
+	| {
 			status: 'connected';
-			supportedIntents: string[];
 			currentAccount: UiWalletAccount;
 	  };
 
@@ -29,7 +31,6 @@ export function createState() {
 		connection: {
 			status: 'disconnected',
 			currentAccount: null,
-			supportedIntents: null,
 		},
 	});
 }

@@ -56,13 +56,12 @@ export function createDAppKitStore({
 		...actions,
 		$state: readonlyType($state),
 		$wallets: computed($state, (state) => state.wallets),
-		$currentAccount: computed([$state], ({ connection, wallets }) => {
+		$connection: computed([$state], ({ connection, wallets }) => {
 			switch (connection.status) {
 				case 'connected':
 					return {
 						wallet: getWalletFromAccount(connection.currentAccount, wallets)!,
 						account: connection.currentAccount,
-						supportedIntents: connection.supportedIntents,
 						status: connection.status,
 						isConnected: true,
 						isConnecting: false,
@@ -72,7 +71,6 @@ export function createDAppKitStore({
 					return {
 						wallet: null,
 						account: connection.currentAccount,
-						supportedIntents: connection.supportedIntents,
 						status: connection.status,
 						isConnected: false,
 						isConnecting: true,
@@ -82,7 +80,6 @@ export function createDAppKitStore({
 					return {
 						wallet: null,
 						account: connection.currentAccount,
-						supportedIntents: connection.supportedIntents,
 						status: connection.status,
 						isConnected: false,
 						isConnecting: false,

@@ -25,7 +25,6 @@ export function manageWalletConnection($state: DAppKitState) {
 				// Reset the connection if the underlying wallet was un-registered or deemed incompatible:
 				$state.setKey('connection', {
 					status: 'disconnected',
-					supportedIntents: null,
 					currentAccount: null,
 				});
 			}

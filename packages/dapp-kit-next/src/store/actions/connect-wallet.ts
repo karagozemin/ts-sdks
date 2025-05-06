@@ -35,6 +35,9 @@ export function connectWalletCreator($state: DAppKitState) {
 		...standardConnectArgs
 	}: ConnectWalletArgs) {
 		return await task(async () => {
+			const { connection } = $state.get();
+			const isAlreadyConnected = connection.status === 'connected';
+
 			try {
 				$state.setKey('connection.status', 'connecting');
 
@@ -50,7 +53,7 @@ export function connectWalletCreator($state: DAppKitState) {
 					.filter((account) => account.chains.some(isSuiChain))
 					.map(getOrCreateUiWalletAccountForStandardWalletAccount.bind(null, underlyingWallet));
 
-				if (suiAccounts.length === 0) {
+				if (!isAlreadyConnected && suiAccounts.length === 0) {
 					throw new WalletNoAccountsConnectedError('No accounts were authorized.');
 				}
 
@@ -62,13 +65,14 @@ export function connectWalletCreator($state: DAppKitState) {
 
 				$state.setKey('connection', {
 					status: 'connected',
-					supportedIntents: result.supportedIntents ?? [],
 					currentAccount: account ?? suiAccounts[0],
 				});
 
 				return { accounts: suiAccounts };
 			} catch (error) {
-				$state.setKey('connection.status', 'disconnected');
+				if (!isAlreadyConnected) {
+					$state.setKey('connection.status', 'disconnected');
+				}
 				throw error;
 			}
 		});

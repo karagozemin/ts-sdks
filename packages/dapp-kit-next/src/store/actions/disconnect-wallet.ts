@@ -40,7 +40,6 @@ export function disconnectWalletCreator($state: DAppKitState) {
 			} finally {
 				$state.setKey('connection', {
 					status: 'disconnected',
-					supportedIntents: null,
 					currentAccount: null,
 				});
 			}
