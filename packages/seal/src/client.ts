@@ -140,6 +140,7 @@ export class SealClient {
 		txBytes: Uint8Array;
 	}) {
 		const encryptedObject = EncryptedObject.parse(data);
+
 		this.#validateEncryptionServices(
 			encryptedObject.services.map((s) => s[0]),
 			encryptedObject.threshold,
@@ -151,6 +152,7 @@ export class SealClient {
 			sessionKey,
 			threshold: encryptedObject.threshold,
 		});
+
 		return decrypt({ encryptedObject, keys: this.#cachedKeys });
 	}
 
