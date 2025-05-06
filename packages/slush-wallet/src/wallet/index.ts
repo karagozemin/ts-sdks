@@ -314,6 +314,12 @@ export class SlushWallet implements Wallet {
 			hostOrigin: this.#origin,
 		});
 	}
+
+	updateMetadata(metadata: WalletMetadata) {
+		this.#id = metadata.id;
+		this.#walletName = metadata.walletName;
+		this.#icon = metadata.icon as WalletIcon;
+	}
 }
 
 async function fetchMetadata(metadataApiUrl: string): Promise<WalletMetadata> {
@@ -342,25 +348,25 @@ export async function registerSlushWallet(
 		return;
 	}
 
-	let metadata: WalletMetadata | undefined;
-	try {
-		metadata = await fetchMetadata(metadataApiUrl);
-	} catch (error) {
-		console.error('Error fetching metadata', error);
-		metadata = FALLBACK_METADATA;
-	}
-
-	if (!metadata?.enabled) {
-		console.log('Slush wallet is not currently enabled.');
-		return;
-	}
 	const slushWalletInstance = new SlushWallet({
 		name,
 		origin,
-		metadata,
+		metadata: FALLBACK_METADATA,
 	});
-
 	const unregister = wallets.register(slushWalletInstance);
+
+	fetchMetadata(metadataApiUrl)
+		.then((metadata) => {
+			if (!metadata.enabled) {
+				console.log('Slush wallet is not currently enabled.');
+				unregister();
+				return;
+			}
+			slushWalletInstance.updateMetadata(metadata);
+		})
+		.catch((error) => {
+			console.error('Error fetching metadata', error);
+		});
 
 	// listen for wallet registration
 	wallets.on('register', (wallet) => {
