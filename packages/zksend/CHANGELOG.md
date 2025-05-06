@@ -1,5 +1,18 @@
 # @mysten/zksend
 
+## 0.13.2
+
+### Patch Changes
+
+- 1d5f685: Do not fetch object changes and balance changes for link lists
+
+## 0.13.1
+
+### Patch Changes
+
+- @mysten/sui@1.29.1
+- @mysten/wallet-standard@0.14.9
+
 ## 0.13.0
 
 ### Minor Changes
