@@ -52,7 +52,9 @@ export abstract class IBEServers {
 }
 
 /**
- * Identity-based encryption based on the Boneh-Franklin IBE scheme.
+ * Identity-based encryption based on the Boneh-Franklin IBE scheme. Note that this uses the "BasicIdent" protocol which on its own is not CCA secure,
+ * so this IBE implementation should not be used on its own.
+ *
  * This object represents a set of key servers that can be used to encrypt messages for a given identity.
  */
 export class BonehFranklinBLS12381Services extends IBEServers {

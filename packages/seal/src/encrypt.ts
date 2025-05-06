@@ -61,8 +61,6 @@ export async function encrypt({
 
 	// Generate a random symmetric key and encrypt the encryption input using this key.
 	const key = await encryptionInput.generateKey();
-	const demKey = deriveKey(KeyPurpose.DEM, key);
-	const ciphertext = await encryptionInput.encrypt(demKey);
 
 	// Split the symmetric key into shares and encrypt each share with the public keys of the key servers.
 	const shares = await split(key, keyServers.length, threshold);
@@ -79,6 +77,9 @@ export async function encrypt({
 		})),
 		deriveKey(KeyPurpose.EncryptedRandomness, key),
 	);
+
+	const demKey = deriveKey(KeyPurpose.DEM, key);
+	const ciphertext = await encryptionInput.encrypt(demKey);
 
 	// Services and indices of their shares are stored as a tuple
 	const services: [string, number][] = keyServers.map((server, i) => [
@@ -138,7 +139,7 @@ async function split(
 	} else if (threshold === 1) {
 		// If the threshold is 1, the secret is not split.
 		const result = [];
-		for (let i = 0; i < n; i++) {
+		for (let i = 1; i <= n; i++) {
 			// The shared polynomial is a constant in this case, so the index doesn't matter.
 			// To make sure they are unique, we use a counter.
 			result.push({ share: secret, index: i });
@@ -149,7 +150,7 @@ async function split(
 	return externalSplit(secret, n, threshold).then((share) =>
 		share.map((s) => ({
 			share: s.subarray(0, s.length - 1),
-			// split() returns the share index in the last byte
+			// split() returns the share index in the last byte. See https://github.com/privy-io/shamir-secret-sharing/blob/b59534d03e66d44ae36fc074aaf0684aa39c7505/src/index.ts#L247.
 			index: s[s.length - 1],
 		})),
 	);

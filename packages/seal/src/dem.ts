@@ -10,7 +10,7 @@ import type { Ciphertext } from './bcs.js';
 import { InvalidCiphertextError } from './error.js';
 import { xorUnchecked } from './utils.js';
 
-// Use a fixed IV for AES.
+// Use a fixed IV for AES. This is okay because the key is unique for each message.
 export const iv = Uint8Array.from([
 	138, 55, 153, 253, 198, 46, 121, 219, 160, 128, 89, 7, 214, 156, 148, 220,
 ]);
