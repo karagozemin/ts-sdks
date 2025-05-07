@@ -3,7 +3,10 @@
 
 import type { WalletAccount } from '@wallet-standard/core';
 
-/** Name of the feature. */
+/**
+ * Name of the feature.
+ * @deprecated Wallets can still implement this method for compatibility, but this has been replaced by the `sui:signPersonalMessage` feature
+ **/
 export const SuiSignMessage = 'sui:signMessage';
 
 /**
