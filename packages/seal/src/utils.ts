@@ -28,13 +28,24 @@ export function createFullId(dst: Uint8Array, packageId: string, innerId: string
 	if (!isValidSuiObjectId(packageId)) {
 		throw new UserError(`Invalid package ID ${packageId}`);
 	}
-	const fullId = new Uint8Array([
-		...[dst.length],
-		...dst,
-		...fromHex(packageId),
-		...fromHex(innerId),
-	]);
+	const fullId = flatten([new Uint8Array([dst.length]), dst, fromHex(packageId), fromHex(innerId)]);
 	return toHex(fullId);
+}
+
+/**
+ * Flatten an array of Uint8Arrays into a single Uint8Array.
+ *
+ * @param arrays - An array of Uint8Arrays to flatten.
+ * @returns A single Uint8Array containing all the elements of the input arrays in the given order.
+ */
+export function flatten(arrays: Uint8Array[]): Uint8Array {
+	const length = arrays.reduce((sum, arr) => sum + arr.length, 0);
+	const result = new Uint8Array(length);
+	arrays.reduce((offset, array) => {
+		result.set(array, offset);
+		return offset + array.length;
+	}, 0);
+	return result;
 }
 
 /**

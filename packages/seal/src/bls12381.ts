@@ -5,9 +5,12 @@ import { toHex } from '@mysten/bcs';
 import type { Fp2, Fp12 } from '@noble/curves/abstract/tower';
 import type { ProjPointType } from '@noble/curves/abstract/weierstrass';
 import { bls12_381 } from '@noble/curves/bls12-381';
+import { flatten } from './utils.js';
 
 export class G1Element {
 	point: ProjPointType<bigint>;
+
+	public static readonly SIZE = 48;
 
 	constructor(point: ProjPointType<bigint>) {
 		this.point = point;
@@ -51,6 +54,8 @@ export class G1Element {
 export class G2Element {
 	point: ProjPointType<Fp2>;
 
+	public static readonly SIZE = 96;
+
 	constructor(point: ProjPointType<Fp2>) {
 		this.point = point;
 	}
@@ -85,6 +90,8 @@ export class G2Element {
 export class GTElement {
 	element: Fp12;
 
+	public static readonly SIZE = 576;
+
 	constructor(element: Fp12) {
 		this.element = element;
 	}
@@ -103,11 +110,7 @@ export class GTElement {
 		const PAIR_SIZE = GT_ELEMENT_BYTE_LENGTH / P.length;
 
 		const bytes = bls12_381.fields.Fp12.toBytes(this.element);
-		const permutedBytes = new Uint8Array(GT_ELEMENT_BYTE_LENGTH);
-		P.forEach((p, i) =>
-			permutedBytes.set(bytes.subarray(p * PAIR_SIZE, (p + 1) * PAIR_SIZE), i * PAIR_SIZE),
-		);
-		return permutedBytes;
+		return flatten(P.map((p) => bytes.subarray(p * PAIR_SIZE, (p + 1) * PAIR_SIZE)));
 	}
 
 	equals(other: GTElement): boolean {
@@ -117,6 +120,8 @@ export class GTElement {
 
 export class Scalar {
 	scalar: bigint;
+
+	public static readonly SIZE = 32;
 
 	constructor(scalar: bigint) {
 		this.scalar = scalar;

@@ -8,6 +8,7 @@ import { sha3_256 } from '@noble/hashes/sha3';
 
 import { G1Element } from './bls12381.js';
 import type { G2Element, GTElement } from './bls12381.js';
+import { flatten } from './utils.js';
 
 /**
  * The default key derivation function.
@@ -23,12 +24,14 @@ export function kdf(
 	objectId: string,
 	index: number,
 ): Uint8Array {
-	const inputBytes = new Uint8Array([
-		...element.toBytes(),
-		...nonce.toBytes(),
-		...G1Element.hashToCurve(id).toBytes(),
+	const inputBytes = flatten([
+		element.toBytes(),
+		nonce.toBytes(),
+		G1Element.hashToCurve(id).toBytes(),
 	]);
-	const info = new Uint8Array([...fromHex(objectId), index]);
+
+	const info = flatten([fromHex(objectId), new Uint8Array([index])]);
+
 	return hkdf(sha3_256, inputBytes, '', info, 32);
 }
 
