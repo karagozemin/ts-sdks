@@ -5,7 +5,7 @@ import { listenKeys, onMount } from 'nanostores';
 import type { DAppKitState } from '../state.js';
 import type { StateStorage } from '../../utils/storage.js';
 import type { UiWalletAccount } from '@wallet-standard/ui';
-import { getWalletForHandle_DO_NOT_USE_OR_YOU_WILL_BE_FIRED } from '@wallet-standard/ui-registry';
+import { getWalletForHandle_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getWalletForHandle } from '@wallet-standard/ui-registry';
 import { getWalletUniqueIdentifier } from '../../utils/wallets.js';
 
 /**
@@ -32,7 +32,7 @@ export function syncStateToStorage({
 }
 
 export function getSavedAccountStorageKey(account: UiWalletAccount) {
-	const underlyingWallet = getWalletForHandle_DO_NOT_USE_OR_YOU_WILL_BE_FIRED(account);
+	const underlyingWallet = getWalletForHandle(account);
 	const walletIdentifier = getWalletUniqueIdentifier(underlyingWallet);
 	return `${walletIdentifier.replace(':', '_')}:${account.address}`;
 }
