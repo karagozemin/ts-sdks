@@ -22,6 +22,10 @@ import {
 import { KeyServerType } from '../../src/key-server';
 import { RequestFormat, SessionKey } from '../../src/session-key';
 import { decrypt } from '../../src/decrypt';
+import { KeyCacheKey } from '../../src/types';
+import { G1Element } from '../../src/bls12381';
+import { createFullId } from '../../src/utils';
+import { DST } from '../../src/ibe';
 
 /**
  * Helper function
@@ -205,7 +209,7 @@ describe('Integration test', () => {
 			signer: keypair,
 		});
 
-		const keys = await client.getDerivedKeys({
+		const derivedKeys = await client.getDerivedKeys({
 			id: whitelistId,
 			services: objectIds,
 			txBytes,
@@ -213,7 +217,7 @@ describe('Integration test', () => {
 			threshold: 2,
 		});
 
-		expect(keys).toHaveLength(2);
+		expect(derivedKeys).toHaveLength(2);
 
 		const { encryptedObject: encryptedBytes } = await client.encrypt({
 			threshold: 2,
@@ -223,6 +227,12 @@ describe('Integration test', () => {
 		});
 		const encryptedObject = EncryptedObject.parse(encryptedBytes);
 
+		// Map to the format used for the key cache
+		const fullId = createFullId(DST, TESTNET_PACKAGE_ID, whitelistId);
+		const keys = new Map<KeyCacheKey, G1Element>();
+		derivedKeys.forEach((value, s) => {
+			keys.set(`${fullId}:${s}`, value);
+		});
 		const decryptedData = await decrypt({
 			encryptedObject,
 			keys,

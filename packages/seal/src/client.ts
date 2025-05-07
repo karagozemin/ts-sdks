@@ -354,7 +354,7 @@ export class SealClient {
 	 * @param txBytes - The transaction bytes to use (that calls seal_approve* functions).
 	 * @param sessionKey - The session key to use.
 	 * @param threshold - The threshold.
-	 * @returns - Derived keys for the given services that are in the cache. If the call is succesful, at least threshold keys will be returned.
+	 * @returns - Derived keys for the given services that are in the cache as a Service -> Key map. If the call is succesful, at least threshold keys will be returned.
 	 */
 	async getDerivedKeys({
 		id,
@@ -368,7 +368,7 @@ export class SealClient {
 		txBytes: Uint8Array;
 		sessionKey: SessionKey;
 		threshold: number;
-	}): Promise<Map<KeyCacheKey, G1Element>> {
+	}): Promise<Map<string, G1Element>> {
 		this.#validateEncryptionServices(services, threshold);
 		await this.fetchKeys({
 			ids: [id],
@@ -378,11 +378,11 @@ export class SealClient {
 		});
 
 		const fullId = createFullId(DST, sessionKey.getPackageId(), id);
-		const keys = new Map<KeyCacheKey, G1Element>();
+		const keys = new Map<string, G1Element>();
 		for (const service of services) {
 			const key = this.#cachedKeys.get(`${fullId}:${service}`);
 			if (key) {
-				keys.set(`${fullId}:${service}`, key);
+				keys.set(service, key);
 			}
 		}
 		return keys;
