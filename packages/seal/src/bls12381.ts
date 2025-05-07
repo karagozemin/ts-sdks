@@ -90,25 +90,27 @@ export class GTElement {
 	}
 
 	toBytes(): Uint8Array {
-		// This permutation flips the order of 6 pairs of coefficients of the GT element.
-		// The permutation may be computed as:
+		// This permutation flips the order of 6 pairs of coefficients of the GT element for compatability with the Rust and Move implementations.
+		//
+		// The permutation P may be computed as the inverse of Q defined as:
 		// for i in 0..3 {
 		//   for j in 0..2 {
-		//     PERMUTATION[i + j * 3] = i * 2 + j;
+		//     Q[i + j * 3] = i * 2 + j;
 		//   }
 		// }
 		const GT_ELEMENT_BYTE_LENGTH = 576;
-		const PERMUTATION = [0, 2, 4, 1, 3, 5];
-		const COEFFICIENT_SIZE = GT_ELEMENT_BYTE_LENGTH / PERMUTATION.length;
+		const P = [0, 3, 1, 4, 2, 5];
+		const PAIR_SIZE = GT_ELEMENT_BYTE_LENGTH / P.length;
 
 		const bytes = bls12_381.fields.Fp12.toBytes(this.element);
-		const permutedBytes = new Uint8Array(GT_ELEMENT_BYTE_LENGTH);
-		PERMUTATION.forEach((pi, i) => {
-			permutedBytes.set(
-				bytes.subarray(i * COEFFICIENT_SIZE, (i + 1) * COEFFICIENT_SIZE),
-				pi * COEFFICIENT_SIZE,
-			);
-		});
+		const permutedBytes = new Uint8Array([
+			...bytes.subarray(P[0] * PAIR_SIZE, (P[0] + 1) * PAIR_SIZE),
+			...bytes.subarray(P[1] * PAIR_SIZE, (P[1] + 1) * PAIR_SIZE),
+			...bytes.subarray(P[2] * PAIR_SIZE, (P[2] + 1) * PAIR_SIZE),
+			...bytes.subarray(P[3] * PAIR_SIZE, (P[3] + 1) * PAIR_SIZE),
+			...bytes.subarray(P[4] * PAIR_SIZE, (P[4] + 1) * PAIR_SIZE),
+			...bytes.subarray(P[5] * PAIR_SIZE, (P[5] + 1) * PAIR_SIZE),
+		]);
 		return permutedBytes;
 	}
 
