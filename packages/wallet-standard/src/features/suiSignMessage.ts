@@ -20,7 +20,7 @@ export type SuiSignMessageVersion = '1.0.0';
  */
 export type SuiSignMessageFeature = {
 	/** Namespace for the feature. */
-	'sui:signMessage': {
+	[SuiSignMessage]: {
 		/** Version of the feature API. */
 		version: SuiSignMessageVersion;
 		signMessage: SuiSignMessageMethod;
