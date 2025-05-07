@@ -8,7 +8,7 @@ import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { storeProperty } from '../utils/lit.js';
 import { WalletList } from './internal/wallet-list.js';
-import { createDAppKit } from '../core/index.js';
+import { getDefaultInstance } from '../core/index.js';
 import type { DAppKit } from '../core/index.js';
 
 @customElement('mysten-dapp-kit-connect-modal')
@@ -21,7 +21,7 @@ export class DAppKitConnectModal extends ScopedRegistryHost(LitElement) {
 	store?: DAppKit;
 
 	override connectedCallback() {
-		this.store ||= createDAppKit();
+		this.store ||= getDefaultInstance();
 	}
 
 	override render() {
