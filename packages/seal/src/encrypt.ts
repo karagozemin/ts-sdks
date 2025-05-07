@@ -59,14 +59,15 @@ export async function encrypt({
 		);
 	}
 
-	// Generate a random symmetric key and encrypt the encryption input using this key.
-	const key = await encryptionInput.generateKey();
+	// Generate a random base key.
+	const baseKey = await encryptionInput.generateKey();
 
-	// Split the symmetric key into shares and encrypt each share with the public keys of the key servers.
-	const shares = await split(key, keyServers.length, threshold);
+	// Split the key into shares and encrypt each share with the public keys of the key servers.
+	const shares = await split(baseKey, keyServers.length, threshold);
 
 	// Encrypt the shares with the public keys of the key servers.
 	const fullId = createFullId(DST, packageId, id);
+	const randomnessKey = deriveKey(KeyPurpose.EncryptedRandomness, baseKey);
 	const encryptedShares = encryptBatched(
 		keyServers,
 		kemType,
@@ -75,15 +76,16 @@ export async function encrypt({
 			msg: share,
 			index,
 		})),
-		deriveKey(KeyPurpose.EncryptedRandomness, key),
+		randomnessKey,
 	);
 
-	const demKey = deriveKey(KeyPurpose.DEM, key);
+	// Encrypt the object with the derived DEM key.
+	const demKey = deriveKey(KeyPurpose.DEM, baseKey);
 	const ciphertext = await encryptionInput.encrypt(demKey);
 
 	// Services and indices of their shares are stored as a tuple
-	const services: [string, number][] = keyServers.map((server, i) => [
-		server.objectId,
+	const services: [string, number][] = keyServers.map(({ objectId }, i) => [
+		objectId,
 		shares[i].index,
 	]);
 
@@ -114,16 +116,12 @@ function encryptBatched(
 	keyServers: KeyServer[],
 	kemType: KemType,
 	id: Uint8Array,
-	shares: { msg: Uint8Array; index: number }[],
+	msgs: { msg: Uint8Array; index: number }[],
 	randomnessKey: Uint8Array,
 ): typeof IBEEncryptions.$inferType {
 	switch (kemType) {
 		case KemType.BonehFranklinBLS12381DemCCA:
-			return new BonehFranklinBLS12381Services(keyServers).encryptBatched(
-				id,
-				shares,
-				randomnessKey,
-			);
+			return new BonehFranklinBLS12381Services(keyServers).encryptBatched(id, msgs, randomnessKey);
 	}
 }
 
