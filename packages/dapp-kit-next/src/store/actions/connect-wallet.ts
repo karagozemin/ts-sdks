@@ -39,7 +39,7 @@ export function connectWalletCreator($state: DAppKitState) {
 			const isAlreadyConnected = connection.status === 'connected';
 
 			try {
-				$state.setKey('connection.status', 'connecting');
+				$state.setKey('connection.status', isAlreadyConnected ? 'reconnecting' : 'connecting');
 
 				const { connect } = getWalletFeature(
 					wallet,
@@ -70,9 +70,7 @@ export function connectWalletCreator($state: DAppKitState) {
 
 				return { accounts: suiAccounts };
 			} catch (error) {
-				if (!isAlreadyConnected) {
-					$state.setKey('connection.status', 'disconnected');
-				}
+				$state.setKey('connection.status', isAlreadyConnected ? 'connected' : 'disconnected');
 				throw error;
 			}
 		});

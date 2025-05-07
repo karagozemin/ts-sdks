@@ -4,7 +4,9 @@
 import { listenKeys, onMount } from 'nanostores';
 import type { DAppKitState } from '../state.js';
 import type { StateStorage } from '../../utils/storage.js';
-import { getUiWalletAccountStorageKey } from '@wallet-standard/ui';
+import type { UiWalletAccount } from '@wallet-standard/ui';
+import { getWalletForHandle_DO_NOT_USE_OR_YOU_WILL_BE_FIRED } from '@wallet-standard/ui-registry';
+import { getWalletUniqueIdentifier } from '../../utils/wallets.js';
 
 /**
  * Syncs the most recently connected wallet name and address to storage.
@@ -21,10 +23,16 @@ export function syncStateToStorage({
 	onMount($state, () => {
 		return listenKeys($state, ['connection', 'connection.currentAccount'], ({ connection }) => {
 			if (connection.currentAccount) {
-				storage.setItem(storageKey, getUiWalletAccountStorageKey(connection.currentAccount));
+				storage.setItem(storageKey, getSavedAccountStorageKey(connection.currentAccount));
 			} else {
 				storage.removeItem(storageKey);
 			}
 		});
 	});
+}
+
+export function getSavedAccountStorageKey(account: UiWalletAccount) {
+	const underlyingWallet = getWalletForHandle_DO_NOT_USE_OR_YOU_WILL_BE_FIRED(account);
+	const walletIdentifier = getWalletUniqueIdentifier(underlyingWallet);
+	return `${walletIdentifier.replace(':', '_')}:${account.address}`;
 }

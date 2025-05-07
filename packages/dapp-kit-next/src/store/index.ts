@@ -9,7 +9,7 @@ import { autoConnectWallet } from './initializers/autoconnect-wallet.js';
 import { createInMemoryStorage, DEFAULT_STORAGE_KEY, getDefaultStorage } from '../utils/storage.js';
 import type { StateStorage } from '../utils/storage.js';
 import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
-import { getWalletFromAccount } from '../utils/wallets.js';
+import { getAssociatedWalletOrThrow } from '../utils/wallets.js';
 import { manageWalletConnection } from './initializers/manage-connection.js';
 
 export type DAppKitStore = ReturnType<typeof createDAppKitStore>;
@@ -60,11 +60,12 @@ export function createDAppKitStore({
 			switch (connection.status) {
 				case 'connected':
 					return {
-						wallet: getWalletFromAccount(connection.currentAccount, wallets)!,
+						wallet: getAssociatedWalletOrThrow(connection.currentAccount, wallets),
 						account: connection.currentAccount,
 						status: connection.status,
 						isConnected: true,
 						isConnecting: false,
+						isReconnecting: false,
 						isDisconnected: false,
 					} as const;
 				case 'connecting':
@@ -74,6 +75,17 @@ export function createDAppKitStore({
 						status: connection.status,
 						isConnected: false,
 						isConnecting: true,
+						isReconnecting: false,
+						isDisconnected: false,
+					} as const;
+				case 'reconnecting':
+					return {
+						wallet: getAssociatedWalletOrThrow(connection.currentAccount, wallets),
+						account: connection.currentAccount,
+						status: connection.status,
+						isConnected: false,
+						isConnecting: false,
+						isReconnecting: true,
 						isDisconnected: false,
 					} as const;
 				case 'disconnected':
@@ -83,6 +95,7 @@ export function createDAppKitStore({
 						status: connection.status,
 						isConnected: false,
 						isConnecting: false,
+						isReconnecting: false,
 						isDisconnected: true,
 					} as const;
 				default:
