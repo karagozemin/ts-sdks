@@ -5,6 +5,7 @@ import { listenKeys, onMount, task } from 'nanostores';
 import type { DAppKitState } from '../state.js';
 import type { StateStorage } from '../../utils/storage.js';
 import type { UiWallet } from '@wallet-standard/ui';
+import { getWalletUniqueIdentifier } from '../../utils/wallets.js';
 
 /**
  * Attempts to connect to a previously authorized wallet account on mount and when new wallets are registered.
@@ -50,18 +51,18 @@ async function getSavedWalletAccount({
 	storageKey: string;
 	wallets: UiWallet[];
 }) {
-	const savedWalletNameAndAddress = await storage.getItem(storageKey);
-	if (!savedWalletNameAndAddress) {
+	const savedWalletIdAndAddress = await storage.getItem(storageKey);
+	if (!savedWalletIdAndAddress) {
 		return null;
 	}
 
-	const [savedWalletName, savedAccountAddress] = savedWalletNameAndAddress.split(':');
-	if (!savedWalletName || !savedAccountAddress) {
+	const [savedWalletId, savedAccountAddress] = savedWalletIdAndAddress.split(':');
+	if (!savedWalletId || !savedAccountAddress) {
 		return null;
 	}
 
 	for (const wallet of wallets) {
-		if (wallet.name === savedWalletName) {
+		if (getWalletUniqueIdentifier(wallet) === savedWalletId) {
 			for (const account of wallet.accounts) {
 				if (account.address === savedAccountAddress) {
 					return account;
