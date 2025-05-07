@@ -218,7 +218,7 @@ export class SealClient {
 	/**
 	 * Fetch keys from the key servers and update the cache.
 	 *
-	 * It is recommended to call this function once for all ids of all encrypted obejcts if
+	 * It is recommended to call this function once for all ids of all encrypted objects if
 	 * there are multiple, then call decrypt for each object. This avoids calling fetchKey
 	 * individually for each decrypt.
 	 *
@@ -347,27 +347,44 @@ export class SealClient {
 	}
 
 	/**
-	 * Get the derived keys for the given services. Returns only the keys that are already cached.
+	 * Get derived keys from the given services.
 	 *
-	 * To fetch the keys, use the fetchKeys function.
-	 *
-	 * @param packageId - The packageId namespace.
-	 * @param id - The key id to use (inner id).
+	 * @param id - The id of the encrypted object.
 	 * @param services - The object ids of the key servers to use.
-	 * @returns - Derived keys for the given services that are in the cache.
+	 * @param txBytes - The transaction bytes to use (that calls seal_approve* functions).
+	 * @param sessionKey - The session key to use.
+	 * @param threshold - The threshold.
+	 * @returns - Derived keys for the given services that are in the cache. If the call is succesful, at least threshold keys will be returned.
 	 */
 	async getDerivedKeys({
-		packageId,
 		id,
 		services,
+		txBytes,
+		sessionKey,
+		threshold,
 	}: {
-		packageId: string;
 		id: string;
 		services: string[];
-	}): Promise<G1Element[]> {
-		const fullId = createFullId(DST, packageId, id);
-		return services
-			.map((service) => this.#cachedKeys.get(`${fullId}:${service}`))
-			.filter((key) => key !== undefined);
+		txBytes: Uint8Array;
+		sessionKey: SessionKey;
+		threshold: number;
+	}): Promise<Map<KeyCacheKey, G1Element>> {
+		this.#validateEncryptionServices(services, threshold);
+		await this.fetchKeys({
+			ids: [id],
+			txBytes,
+			sessionKey,
+			threshold,
+		});
+
+		const fullId = createFullId(DST, sessionKey.getPackageId(), id);
+		const keys = new Map<KeyCacheKey, G1Element>();
+		for (const service of services) {
+			const key = this.#cachedKeys.get(`${fullId}:${service}`);
+			if (key) {
+				keys.set(`${fullId}:${service}`, key);
+			}
+		}
+		return keys;
 	}
 }

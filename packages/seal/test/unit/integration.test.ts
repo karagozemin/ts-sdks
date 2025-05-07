@@ -21,6 +21,7 @@ import {
 } from '../../src/error';
 import { KeyServerType } from '../../src/key-server';
 import { RequestFormat, SessionKey } from '../../src/session-key';
+import { decrypt } from '../../src/decrypt';
 
 /**
  * Helper function
@@ -148,24 +149,6 @@ describe('Integration test', () => {
 
 		expect(decryptedBytes).toEqual(data);
 
-		// After calling decrypt, both keys should now be in the cache and can be retrieved with the getDerivedKeys method.
-		expect(
-			await client.getDerivedKeys({
-				packageId: TESTNET_PACKAGE_ID,
-				id: whitelistId,
-				services: objectIds,
-			}),
-		).toHaveLength(2);
-
-		// But the keys for whitelist 2 should not be in the cache yet.
-		expect(
-			await client.getDerivedKeys({
-				packageId: TESTNET_PACKAGE_ID,
-				id: whitelistId2,
-				services: objectIds,
-			}),
-		).toHaveLength(0);
-
 		// encrypt a different object to whitelist 2.
 		const { encryptedObject: encryptedBytes2 } = await client.encrypt({
 			threshold: objectIds.length,
@@ -190,15 +173,6 @@ describe('Integration test', () => {
 			threshold: encryptedObject2.threshold,
 		});
 
-		// After calling fetch keys, both keys for whitelistId2 should now be in the cache and can be retrieved with the getDerivedKeys method.
-		expect(
-			await client.getDerivedKeys({
-				packageId: TESTNET_PACKAGE_ID,
-				id: whitelistId2,
-				services: objectIds,
-			}),
-		).toHaveLength(2);
-
 		// decrypt should hit the cached key and no need to fetch again
 		const decryptedBytes2 = await client.decrypt({
 			data: encryptedBytes2,
@@ -207,6 +181,53 @@ describe('Integration test', () => {
 		});
 
 		expect(decryptedBytes2).toEqual(data2);
+	});
+
+	it('test getDerivedKeys', { timeout: 12000 }, async () => {
+		// Both whitelists contain address 0xb743cafeb5da4914cef0cf0a32400c9adfedc5cdb64209f9e740e56d23065100
+		const whitelistId = '0xaae704d2280f2c3d24fc08972bb31f2ef1f1c968784935434c3296be5bfd9d5b';
+		const data = new Uint8Array([1, 2, 3]);
+
+		const client = new SealClient({
+			suiClient,
+			serverObjectIds: objectIds,
+			verifyKeyServers: false,
+		});
+
+		const txBytes = await constructTxBytes(TESTNET_PACKAGE_ID, 'whitelist', suiClient, [
+			whitelistId,
+		]);
+
+		const sessionKey = new SessionKey({
+			address: suiAddress,
+			packageId: TESTNET_PACKAGE_ID,
+			ttlMin: 10,
+			signer: keypair,
+		});
+
+		const keys = await client.getDerivedKeys({
+			id: whitelistId,
+			services: objectIds,
+			txBytes,
+			sessionKey,
+			threshold: 2,
+		});
+
+		expect(keys).toHaveLength(2);
+
+		const { encryptedObject: encryptedBytes } = await client.encrypt({
+			threshold: 2,
+			packageId: TESTNET_PACKAGE_ID,
+			id: whitelistId,
+			data,
+		});
+		const encryptedObject = EncryptedObject.parse(encryptedBytes);
+
+		const decryptedData = await decrypt({
+			encryptedObject,
+			keys,
+		});
+		expect(decryptedData).toEqual(data);
 	});
 
 	it('client extension', { timeout: 12000 }, async () => {
