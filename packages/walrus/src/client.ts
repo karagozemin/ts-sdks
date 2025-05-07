@@ -320,13 +320,8 @@ export class WalrusClient {
 			shardCount = systemState.committee.n_shards;
 		}
 
-		console.time('w');
 		const bindings = await this.#wasmBindings();
-		console.timeEnd('w');
-
-		console.time('m');
 		const { blob_id, metadata } = bindings.computeMetadata(shardCount, bytes);
-		console.timeEnd('m');
 
 		return {
 			blobId: blob_id,

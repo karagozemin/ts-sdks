@@ -6,8 +6,8 @@ import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 import { WalrusClient } from '../../src/client.js';
 
 const client = new SuiClient({
-	url: getFullnodeUrl('mainnet'),
-	network: 'mainnet',
+	url: getFullnodeUrl('testnet'),
+	network: 'testnet',
 }).$extend(WalrusClient.experimental_asClientExtension());
 
 export async function retrieveBlob(blobId: string) {
@@ -16,22 +16,10 @@ export async function retrieveBlob(blobId: string) {
 }
 
 (async function main() {
-	const bytes = new TextEncoder().encode(`hello world`.repeat(400_000));
+	const blob = await retrieveBlob('OFrKO0ofGc4inX8roHHaAB-pDHuUiIA08PW4N2B2gFk');
 
-	console.log(bytes.length);
+	const textDecoder = new TextDecoder('utf-8');
+	const resultString = textDecoder.decode(await blob.arrayBuffer());
 
-	console.time();
-	const blob = await client.walrus.computeBlobMetadata({ bytes, numShards: 1000 });
-
-	console.timeEnd();
-
-	console.time('blob2');
-	const blob2 = await client.walrus.computeBlobMetadata({ bytes, numShards: 1000 });
-	console.timeEnd('blob2');
-
-	console.time('blob3');
-	const blob3 = await client.walrus.computeBlobMetadata({ bytes, numShards: 1000 });
-	console.timeEnd('blob3');
-
-	console.log(blob.blobId);
+	console.log(resultString);
 })();
