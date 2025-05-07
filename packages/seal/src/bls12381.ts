@@ -97,7 +97,7 @@ export class GTElement {
 	}
 
 	toBytes(): Uint8Array {
-		// This permutation flips the order of 6 pairs of coefficients of the GT element for compatability with the Rust and Move implementations.
+		// This permutation reorders the 6 pairs of coefficients of the GT element for compatability with the Rust and Move implementations.
 		//
 		// The permutation P may be computed as:
 		// for i in 0..3 {
