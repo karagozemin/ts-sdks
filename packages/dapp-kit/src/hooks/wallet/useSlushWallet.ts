@@ -20,7 +20,7 @@ export function useSlushWallet(config?: SlushWalletConfig) {
 
 		const setupWallet = async () => {
 			try {
-				const result = await registerSlushWallet(config.name, {
+				const result = registerSlushWallet(config.name, {
 					origin: config.origin,
 				});
 

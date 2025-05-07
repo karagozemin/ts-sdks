@@ -331,7 +331,7 @@ async function fetchMetadata(metadataApiUrl: string): Promise<WalletMetadata> {
 	return parse(WalletMetadataSchema, data);
 }
 
-export async function registerSlushWallet(
+export function registerSlushWallet(
 	name: string,
 	{
 		origin,
