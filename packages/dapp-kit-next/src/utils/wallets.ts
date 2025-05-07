@@ -24,7 +24,7 @@ export function getAssociatedWallet(account: UiWalletAccount, wallets: UiWallet[
 export function getAssociatedWalletOrThrow(account: UiWalletAccount, wallets: UiWallet[]) {
 	const wallet = getAssociatedWallet(account, wallets);
 	if (!wallet) {
-		throw new DAppKitError('abc');
+		throw new DAppKitError(`Wallet not found for account ${account.address}.`);
 	}
 	return wallet;
 }
