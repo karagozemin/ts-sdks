@@ -343,6 +343,15 @@ export function registerSlushWallet(
 ) {
 	const wallets = getWallets();
 
+	let unregister: (() => void) | null = null;
+
+	// listen for wallet registration
+	wallets.on('register', (wallet) => {
+		if (wallet.id === SUI_WALLET_EXTENSION_ID) {
+			unregister?.();
+		}
+	});
+
 	const extension = wallets.get().find((wallet) => wallet.id === SUI_WALLET_EXTENSION_ID);
 	if (extension) {
 		return;
@@ -353,13 +362,13 @@ export function registerSlushWallet(
 		origin,
 		metadata: FALLBACK_METADATA,
 	});
-	const unregister = wallets.register(slushWalletInstance);
+	unregister = wallets.register(slushWalletInstance);
 
 	fetchMetadata(metadataApiUrl)
 		.then((metadata) => {
 			if (!metadata.enabled) {
 				console.log('Slush wallet is not currently enabled.');
-				unregister();
+				unregister?.();
 				return;
 			}
 			slushWalletInstance.updateMetadata(metadata);
@@ -367,13 +376,6 @@ export function registerSlushWallet(
 		.catch((error) => {
 			console.error('Error fetching metadata', error);
 		});
-
-	// listen for wallet registration
-	wallets.on('register', (wallet) => {
-		if (wallet.id === SUI_WALLET_EXTENSION_ID) {
-			unregister();
-		}
-	});
 
 	return {
 		wallet: slushWalletInstance,
