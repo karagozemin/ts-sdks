@@ -105,9 +105,8 @@ export class GTElement {
 		//     P[2 * i + j] = i + 3 * j;
 		//   }
 		// }
-		const GT_ELEMENT_BYTE_LENGTH = 576;
 		const P = [0, 3, 1, 4, 2, 5];
-		const PAIR_SIZE = GT_ELEMENT_BYTE_LENGTH / P.length;
+		const PAIR_SIZE = GTElement.SIZE / P.length;
 
 		const bytes = bls12_381.fields.Fp12.toBytes(this.element);
 		return flatten(P.map((p) => bytes.subarray(p * PAIR_SIZE, (p + 1) * PAIR_SIZE)));
