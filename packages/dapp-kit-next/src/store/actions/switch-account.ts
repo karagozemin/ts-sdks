@@ -5,7 +5,7 @@ import type { DAppKitState } from '../state.js';
 import { uiWalletAccountBelongsToUiWallet } from '@wallet-standard/ui';
 import type { UiWalletAccount } from '@wallet-standard/ui';
 import { WalletNotConnectedError, WalletAccountNotFoundError } from '../../utils/errors.js';
-import { getWalletFromAccount } from '../../utils/wallets.js';
+import { getAssociatedWallet } from '../../utils/wallets.js';
 
 export type SwitchAccountArgs = {
 	/** The account to switch to. */
@@ -19,7 +19,7 @@ export function switchAccountCreator($state: DAppKitState) {
 	return function switchAccount({ account }: SwitchAccountArgs) {
 		const { connection, wallets } = $state.get();
 		const currentWallet = connection.currentAccount
-			? getWalletFromAccount(connection.currentAccount, wallets)
+			? getAssociatedWallet(connection.currentAccount, wallets)
 			: null;
 
 		if (!currentWallet) {

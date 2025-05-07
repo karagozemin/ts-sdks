@@ -29,7 +29,7 @@ type CreateDAppKitStoreOptions = {
 
 	/**
 	 * The key to use to store the most recently connected wallet account.
-	 * @defaultValue `sui-dapp-kit:wallet-connection-info`
+	 * @defaultValue `mysten-dapp-kit:selected-wallet-and-address`
 	 */
 	storageKey?: string;
 };
