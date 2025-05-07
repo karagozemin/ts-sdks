@@ -28,13 +28,12 @@ export function createFullId(dst: Uint8Array, packageId: string, innerId: string
 	if (!isValidSuiObjectId(packageId)) {
 		throw new UserError(`Invalid package ID ${packageId}`);
 	}
-	const packageIdBytes = fromHex(packageId);
-	const innerIdBytes = fromHex(innerId);
-	const fullId = new Uint8Array(1 + dst.length + packageIdBytes.length + innerIdBytes.length);
-	fullId.set([dst.length], 0);
-	fullId.set(dst, 1);
-	fullId.set(packageIdBytes, 1 + dst.length);
-	fullId.set(innerIdBytes, 1 + dst.length + packageIdBytes.length);
+	const fullId = new Uint8Array([
+		...[dst.length],
+		...dst,
+		...fromHex(packageId),
+		...fromHex(innerId),
+	]);
 	return toHex(fullId);
 }
 
@@ -49,7 +48,10 @@ export class Version {
 	constructor(version: string) {
 		// Very basic version parsing. Assumes version is in the format x.y.z where x, y, and z are non-negative integers.
 		const parts = version.split('.').map(Number);
-		if (parts.length !== 3 || parts.some((part) => isNaN(part) || part < 0)) {
+		if (
+			parts.length !== 3 ||
+			parts.some((part) => isNaN(part) || !Number.isInteger(part) || part < 0)
+		) {
 			throw new UserError(`Invalid version format: ${version}`);
 		}
 		this.major = parts[0];

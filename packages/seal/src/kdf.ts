@@ -38,7 +38,7 @@ export function kdf(
 	const permutedBytes = new Uint8Array(GT_ELEMENT_BYTE_LENGTH);
 	PERMUTATION.forEach((pi, i) => {
 		permutedBytes.set(
-			bytes.slice(i * COEFFICIENT_SIZE, (i + 1) * COEFFICIENT_SIZE),
+			bytes.subarray(i * COEFFICIENT_SIZE, (i + 1) * COEFFICIENT_SIZE),
 			pi * COEFFICIENT_SIZE,
 		);
 	});

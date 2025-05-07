@@ -74,8 +74,8 @@ export class BonehFranklinBLS12381Services extends IBEServers {
 			throw new Error('Invalid public keys');
 		}
 		const [r, nonce, keys] = encapBatched(this.publicKeys, id);
-		const encryptedShares = msgAndIndices.map((msgAndIndex, i) =>
-			xor(msgAndIndex.msg, kdf(keys[i], nonce, id, this.objectIds[i], msgAndIndex.index)),
+		const encryptedShares = msgAndIndices.map(({ msg, index }, i) =>
+			xor(msg, kdf(keys[i], nonce, id, this.objectIds[i], index)),
 		);
 		const encryptedRandomness = xor(randomnessKey, r.toBytes());
 
