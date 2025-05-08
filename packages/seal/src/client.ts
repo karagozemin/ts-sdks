@@ -361,21 +361,30 @@ export class SealClient {
 	 * @returns - Derived keys for the given services that are in the cache as a "service object ID" -> derived key map. If the call is succesful, exactly threshold keys will be returned.
 	 */
 	async getDerivedKeys({
+		kemType = KemType.BonehFranklinBLS12381DemCCA,
 		id,
 		txBytes,
 		sessionKey,
 		threshold,
 	}: {
+		kemType?: KemType;
 		id: string;
 		txBytes: Uint8Array;
 		sessionKey: SessionKey;
 		threshold: number;
 	}): Promise<Map<string, DerivedKey>> {
+		if (kemType !== KemType.BonehFranklinBLS12381DemCCA) {
+			throw new InvalidKeyServerError(
+				`Key server type ${kemType} is not supported for derived keys`,
+			);
+		}
+
 		const keyServers = await this.getKeyServers();
-		this.#validateEncryptionServices(
-			keyServers.map(({ objectId }) => objectId),
-			threshold,
-		);
+		if (threshold > this.#serverObjectIds.length) {
+			throw new InvalidThresholdError(
+				`Invalid threshold ${threshold} for ${this.#serverObjectIds.length} servers`,
+			);
+		}
 		await this.fetchKeys({
 			ids: [id],
 			txBytes,

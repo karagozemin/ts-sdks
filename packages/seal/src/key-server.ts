@@ -1,6 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
-import { fromBase64, fromHex } from '@mysten/bcs';
+import { fromBase64, fromHex, toHex } from '@mysten/bcs';
 import { bls12_381 } from '@noble/curves/bls12-381';
 
 import { KeyServerMove } from './bcs.js';
@@ -139,29 +139,22 @@ export function verifyKeyServerVersion(response: Response) {
 	}
 }
 
-/**
- * Type of a generic derived key. The underlying type depends on the KEM type.
- * For now, the type is a trivial union of the G1Element type used in the Boneh-Franklin BLS12381 scheme.
- */
-export type DerivedKey = GenericDerivedKey<G1Element>;
-
-abstract class GenericDerivedKey<T> {
-	abstract readonly value: T;
-	abstract bytes(): Uint8Array;
+export interface DerivedKey {
+	toString(): string;
 }
 
 /**
  * A user secret key for the Boneh-Franklin BLS12381 scheme.
  * This is a wrapper around the G1Element type.
  */
-export class BonehFranklinBLS12381DerivedKey implements GenericDerivedKey<G1Element> {
-	readonly value: G1Element;
+export class BonehFranklinBLS12381DerivedKey implements DerivedKey {
+	representation: string;
 
-	constructor(value: G1Element) {
-		this.value = value;
+	constructor(public key: G1Element) {
+		this.representation = toHex(key.toBytes());
 	}
 
-	bytes(): Uint8Array {
-		return this.value.toBytes();
+	toString(): string {
+		return this.representation;
 	}
 }

@@ -230,7 +230,7 @@ describe('Integration test', () => {
 		const fullId = createFullId(DST, TESTNET_PACKAGE_ID, whitelistId);
 		const keys = new Map<KeyCacheKey, G1Element>();
 		derivedKeys.forEach((value, s) => {
-			keys.set(`${fullId}:${s}`, value.value);
+			keys.set(`${fullId}:${s}`, G1Element.fromBytes(fromHex(value.toString())));
 		});
 		const decryptedData = await decrypt({
 			encryptedObject,
