@@ -11,8 +11,9 @@ import { AesGcm256, Hmac256Ctr } from './dem.js';
 import { InvalidCiphertextError, UnsupportedFeatureError } from './error.js';
 import { BonehFranklinBLS12381Services, DST } from './ibe.js';
 import { deriveKey, KeyPurpose } from './kdf.js';
+import { keyCacheKey } from './types.js';
 import type { KeyCacheKey } from './types.js';
-import { createFullId, keyCacheKey } from './utils.js';
+import { createFullId } from './utils.js';
 
 export interface DecryptOptions {
 	encryptedObject: typeof EncryptedObject.$inferType;

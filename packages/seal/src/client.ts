@@ -24,7 +24,8 @@ import type { DerivedKey, KeyServer } from './key-server.js';
 import { fetchKeysForAllIds } from './keys.js';
 import type { SessionKey } from './session-key.js';
 import type { KeyCacheKey, SealCompatibleClient } from './types.js';
-import { createFullId, keyCacheKey } from './utils.js';
+import { keyCacheKey } from './types.js';
+import { createFullId } from './utils.js';
 
 /**
  * Configuration options for initializing a SealClient
@@ -325,6 +326,7 @@ export class SealClient {
 				const hasAllKeys =
 					receivedIds.size === expectedIds.size &&
 					[...receivedIds].every((id) => expectedIds.has(id));
+
 				// Return early if the completed servers is more than threshold.
 				if (hasAllKeys) {
 					completedServerCount++;
