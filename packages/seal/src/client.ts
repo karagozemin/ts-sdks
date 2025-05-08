@@ -387,12 +387,27 @@ export class SealClient {
 		// It is also checked there that the KeyServerType is BonehFranklinBLS12381 for all services.
 
 		const fullId = createFullId(DST, sessionKey.getPackageId(), id);
-		return keyServers
-			.values()
-			.map(({ objectId }) => [objectId, this.#cachedKeys.get(`${fullId}:${objectId}`)])
-			.filter((v): v is [string, G1Element] => !!v[1])
-			.take(threshold)
-			.map(([objectId, key]) => [objectId, new BonehFranklinBLS12381DerivedKey(key!)] as const)
-			.reduce((acc, [objectId, key]) => acc.set(objectId, key), new Map<string, DerivedKey>());
+
+		const derivedKeys = new Map<string, DerivedKey>();
+		let servicesAdded = 0;
+		for (const keyServer of keyServers) {
+			// The code below assumes that the KeyServerType is BonehFranklinBLS12381. This is also checked in fetchKeys.
+			if (keyServer.keyType !== KeyServerType.BonehFranklinBLS12381) {
+				throw new InvalidKeyServerError(
+					`Server ${keyServer.objectId} has invalid key type: ${keyServer.keyType}`,
+				);
+			}
+
+			const cachedKey = this.#cachedKeys.get(`${fullId}:${keyServer.objectId}`);
+			if (cachedKey) {
+				derivedKeys.set(keyServer.objectId, new BonehFranklinBLS12381DerivedKey(cachedKey));
+				servicesAdded++;
+				if (servicesAdded === threshold) {
+					// We have enough keys, so we can stop.
+					break;
+				}
+			}
+		}
+		return derivedKeys;
 	}
 }
