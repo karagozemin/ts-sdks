@@ -323,8 +323,8 @@ export class SealClient {
 				// If so, consider the key server got all keys and mark as completed.
 				const expectedIds = new Set(fullIds);
 				const hasAllKeys =
-					receivedIds.size === expectedIds.size && [...receivedIds].every(expectedIds.has);
-
+					receivedIds.size === expectedIds.size &&
+					[...receivedIds].every((id) => expectedIds.has(id));
 				// Return early if the completed servers is more than threshold.
 				if (hasAllKeys) {
 					completedServerCount++;
