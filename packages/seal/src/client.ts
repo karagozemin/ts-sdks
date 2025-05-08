@@ -24,7 +24,7 @@ import type { DerivedKey, KeyServer } from './key-server.js';
 import { fetchKeysForAllIds } from './keys.js';
 import type { SessionKey } from './session-key.js';
 import type { KeyCacheKey, SealCompatibleClient } from './types.js';
-import { createFullId } from './utils.js';
+import { createFullId, keyCacheKey } from './utils.js';
 
 /**
  * Configuration options for initializing a SealClient
@@ -259,7 +259,7 @@ export class SealClient {
 		for (const server of keyServers) {
 			let hasAllKeys = true;
 			for (const fullId of fullIds) {
-				if (!this.#cachedKeys.has(`${fullId}:${server.objectId}`)) {
+				if (!this.#cachedKeys.has(keyCacheKey(fullId, server.objectId))) {
 					hasAllKeys = false;
 					remainingKeyServers.add(server);
 					break;
@@ -315,7 +315,7 @@ export class SealClient {
 						console.warn('Received invalid key from key server ' + server.objectId);
 						continue;
 					}
-					this.#cachedKeys.set(`${fullId}:${server.objectId}`, keyElement);
+					this.#cachedKeys.set(keyCacheKey(fullId, server.objectId), keyElement);
 					receivedIds.add(fullId);
 				}
 
@@ -323,8 +323,7 @@ export class SealClient {
 				// If so, consider the key server got all keys and mark as completed.
 				const expectedIds = new Set(fullIds);
 				const hasAllKeys =
-					receivedIds.size === expectedIds.size &&
-					[...receivedIds].every((id) => expectedIds.has(id));
+					receivedIds.size === expectedIds.size && [...receivedIds].every(expectedIds.has);
 
 				// Return early if the completed servers is more than threshold.
 				if (hasAllKeys) {
@@ -390,10 +389,7 @@ export class SealClient {
 
 		return keyServers
 			.values()
-			.map(
-				(keyServer) =>
-					[keyServer.objectId, this.#cachedKeys.get(`${fullId}:${keyServer.objectId}`)] as const,
-			)
+			.map(({ objectId }) => [objectId, this.#cachedKeys.get(keyCacheKey(fullId, objectId))])
 			.filter((v): v is [string, G1Element] => !!v)
 			.take(threshold)
 			.map(([objectId, key]) => [objectId, new BonehFranklinBLS12381DerivedKey(key!)] as const)

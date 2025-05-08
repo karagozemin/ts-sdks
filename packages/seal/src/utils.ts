@@ -5,6 +5,7 @@ import { fromHex, toHex } from '@mysten/bcs';
 import { isValidSuiObjectId } from '@mysten/sui/utils';
 
 import { UserError } from './error.js';
+import type { KeyCacheKey } from './types.js';
 
 export function xor(a: Uint8Array, b: Uint8Array): Uint8Array {
 	if (a.length !== b.length) {
@@ -79,4 +80,8 @@ export class Version {
 		}
 		return this.patch < other.patch;
 	}
+}
+
+export function keyCacheKey(fullId: string, objectId: string): KeyCacheKey {
+	return `${fullId}:${objectId}`;
 }
