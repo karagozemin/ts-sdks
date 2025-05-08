@@ -401,8 +401,7 @@ export class SealClient {
 			const cachedKey = this.#cachedKeys.get(`${fullId}:${keyServer.objectId}`);
 			if (cachedKey) {
 				derivedKeys.set(keyServer.objectId, new BonehFranklinBLS12381DerivedKey(cachedKey));
-				servicesAdded++;
-				if (servicesAdded === threshold) {
+				if (++servicesAdded === threshold) {
 					// We have enough keys, so we can stop.
 					break;
 				}
