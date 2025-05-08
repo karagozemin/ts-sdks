@@ -373,43 +373,40 @@ export class SealClient {
 		sessionKey: SessionKey;
 		threshold: number;
 	}): Promise<Map<string, DerivedKey>> {
-		if (kemType !== KemType.BonehFranklinBLS12381DemCCA) {
-			throw new InvalidKeyServerError(
-				`Key server type ${kemType} is not supported for derived keys`,
-			);
-		}
-
-		const keyServers = await this.getKeyServers();
-		if (threshold > this.#serverObjectIds.length) {
-			throw new InvalidThresholdError(
-				`Invalid threshold ${threshold} for ${this.#serverObjectIds.length} servers`,
-			);
-		}
-		await this.fetchKeys({
-			ids: [id],
-			txBytes,
-			sessionKey,
-			threshold,
-		});
-
-		// After calling fetchKeys, we can be sure that there are at least `threshold` of the required keys in the cache.
-		// It is also checked there that the KeyServerType is BonehFranklinBLS12381 for all services.
-
-		const fullId = createFullId(DST, sessionKey.getPackageId(), id);
-
-		const derivedKeys = new Map<string, DerivedKey>();
-		let servicesAdded = 0;
-		for (const keyServer of keyServers) {
-			// The code below assumes that the KeyServerType is BonehFranklinBLS12381.
-			const cachedKey = this.#cachedKeys.get(`${fullId}:${keyServer.objectId}`);
-			if (cachedKey) {
-				derivedKeys.set(keyServer.objectId, new BonehFranklinBLS12381DerivedKey(cachedKey));
-				if (++servicesAdded === threshold) {
-					// We have enough keys, so we can stop.
-					break;
+		switch (kemType) {
+			case KemType.BonehFranklinBLS12381DemCCA:
+				const keyServers = await this.getKeyServers();
+				if (threshold > this.#serverObjectIds.length) {
+					throw new InvalidThresholdError(
+						`Invalid threshold ${threshold} for ${this.#serverObjectIds.length} servers`,
+					);
 				}
-			}
+				await this.fetchKeys({
+					ids: [id],
+					txBytes,
+					sessionKey,
+					threshold,
+				});
+
+				// After calling fetchKeys, we can be sure that there are at least `threshold` of the required keys in the cache.
+				// It is also checked there that the KeyServerType is BonehFranklinBLS12381 for all services.
+
+				const fullId = createFullId(DST, sessionKey.getPackageId(), id);
+
+				const derivedKeys = new Map<string, DerivedKey>();
+				let servicesAdded = 0;
+				for (const keyServer of keyServers) {
+					// The code below assumes that the KeyServerType is BonehFranklinBLS12381.
+					const cachedKey = this.#cachedKeys.get(`${fullId}:${keyServer.objectId}`);
+					if (cachedKey) {
+						derivedKeys.set(keyServer.objectId, new BonehFranklinBLS12381DerivedKey(cachedKey));
+						if (++servicesAdded === threshold) {
+							// We have enough keys, so we can stop.
+							break;
+						}
+					}
+				}
+				return derivedKeys;
 		}
-		return derivedKeys;
 	}
 }
