@@ -372,7 +372,7 @@ export class SealClient {
 	}): Promise<Map<string, DerivedKey>> {
 		const keyServers = await this.getKeyServers();
 		this.#validateEncryptionServices(
-			keyServers.map((k) => k.objectId),
+			keyServers.map(({ objectId }) => objectId),
 			threshold,
 		);
 		await this.fetchKeys({
@@ -386,11 +386,10 @@ export class SealClient {
 		// It is also checked there that the KeyServerType is BonehFranklinBLS12381 for all services.
 
 		const fullId = createFullId(DST, sessionKey.getPackageId(), id);
-
 		return keyServers
 			.values()
 			.map(({ objectId }) => [objectId, this.#cachedKeys.get(keyCacheKey(fullId, objectId))])
-			.filter((v): v is [string, G1Element] => !!v)
+			.filter((v): v is [string, G1Element] => !!v[1])
 			.take(threshold)
 			.map(([objectId, key]) => [objectId, new BonehFranklinBLS12381DerivedKey(key!)] as const)
 			.reduce((acc, [objectId, key]) => acc.set(objectId, key), new Map<string, DerivedKey>());
