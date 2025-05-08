@@ -15,6 +15,7 @@ import { DST_POP } from './ibe.js';
 import { PACKAGE_VERSION } from './version.js';
 import type { SealCompatibleClient } from './types.js';
 import { Version } from './utils.js';
+import type { G1Element } from './bls12381.js';
 
 export type KeyServer = {
 	objectId: string;
@@ -135,5 +136,32 @@ export function verifyKeyServerVersion(response: Response) {
 		throw new InvalidKeyServerVersionError(
 			`Key server version ${keyServerVersion} is not supported`,
 		);
+	}
+}
+
+/**
+ * Type of a generic derived key. The underlying type depends on the KEM type.
+ * For now, the type is a trivial union of the G1Element type used in the Boneh-Franklin BLS12381 scheme.
+ */
+export type DerivedKey = GenericDerivedKey<G1Element>;
+
+abstract class GenericDerivedKey<T> {
+	abstract readonly value: T;
+	abstract bytes(): Uint8Array;
+}
+
+/**
+ * A user secret key for the Boneh-Franklin BLS12381 scheme.
+ * This is a wrapper around the G1Element type.
+ */
+export class BonehFranklinBLS12381DerivedKey implements GenericDerivedKey<G1Element> {
+	readonly value: G1Element;
+
+	constructor(value: G1Element) {
+		this.value = value;
+	}
+
+	bytes(): Uint8Array {
+		return this.value.toBytes();
 	}
 }
