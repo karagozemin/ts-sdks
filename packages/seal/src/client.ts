@@ -24,7 +24,6 @@ import type { DerivedKey, KeyServer } from './key-server.js';
 import { fetchKeysForAllIds } from './keys.js';
 import type { SessionKey } from './session-key.js';
 import type { KeyCacheKey, SealCompatibleClient } from './types.js';
-import { keyCacheKey } from './types.js';
 import { createFullId } from './utils.js';
 
 /**
@@ -260,7 +259,7 @@ export class SealClient {
 		for (const server of keyServers) {
 			let hasAllKeys = true;
 			for (const fullId of fullIds) {
-				if (!this.#cachedKeys.has(keyCacheKey(fullId, server.objectId))) {
+				if (!this.#cachedKeys.has(`${fullId}:${server.objectId}`)) {
 					hasAllKeys = false;
 					remainingKeyServers.add(server);
 					break;
@@ -316,7 +315,7 @@ export class SealClient {
 						console.warn('Received invalid key from key server ' + server.objectId);
 						continue;
 					}
-					this.#cachedKeys.set(keyCacheKey(fullId, server.objectId), keyElement);
+					this.#cachedKeys.set(`${fullId}:${server.objectId}`, keyElement);
 					receivedIds.add(fullId);
 				}
 
@@ -390,7 +389,7 @@ export class SealClient {
 		const fullId = createFullId(DST, sessionKey.getPackageId(), id);
 		return keyServers
 			.values()
-			.map(({ objectId }) => [objectId, this.#cachedKeys.get(keyCacheKey(fullId, objectId))])
+			.map(({ objectId }) => [objectId, this.#cachedKeys.get(`${fullId}:${objectId}`)])
 			.filter((v): v is [string, G1Element] => !!v[1])
 			.take(threshold)
 			.map(([objectId, key]) => [objectId, new BonehFranklinBLS12381DerivedKey(key!)] as const)

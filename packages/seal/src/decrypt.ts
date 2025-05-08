@@ -11,7 +11,6 @@ import { AesGcm256, Hmac256Ctr } from './dem.js';
 import { InvalidCiphertextError, UnsupportedFeatureError } from './error.js';
 import { BonehFranklinBLS12381Services, DST } from './ibe.js';
 import { deriveKey, KeyPurpose } from './kdf.js';
-import { keyCacheKey } from './types.js';
 import type { KeyCacheKey } from './types.js';
 import { createFullId } from './utils.js';
 
@@ -37,7 +36,7 @@ export async function decrypt({ encryptedObject, keys }: DecryptOptions): Promis
 	// Get the indices of the service whose keys are in the keystore.
 	const inKeystore = encryptedObject.services
 		.map((_, i) => i)
-		.filter((i) => keys.has(keyCacheKey(fullId, encryptedObject.services[i][0])));
+		.filter((i) => keys.has(`${fullId}:${encryptedObject.services[i][0]}`));
 
 	if (inKeystore.length < encryptedObject.threshold) {
 		throw new Error('Not enough shares. Please fetch more keys.');
@@ -58,7 +57,7 @@ export async function decrypt({ encryptedObject, keys }: DecryptOptions): Promis
 		// Use the index as the unique info parameter to allow for multiple shares per key server.
 		const share = BonehFranklinBLS12381Services.decrypt(
 			nonce,
-			keys.get(keyCacheKey(fullId, objectId))!,
+			keys.get(`${fullId}:${objectId}`)!,
 			encryptedShares[i],
 			fromHex(fullId),
 			[objectId, index],

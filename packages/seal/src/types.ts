@@ -7,7 +7,3 @@ export type KeyCacheKey = `${string}:${string}`;
 export type SealCompatibleClient = ClientWithExtensions<{
 	core: Experimental_CoreClient;
 }>;
-
-export function keyCacheKey(fullId: string, objectId: string): KeyCacheKey {
-	return `${fullId}:${objectId}`;
-}
