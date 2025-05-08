@@ -23,13 +23,12 @@ export function FileUpload() {
 	const currentAccount = useCurrentAccount();
 
 	if (!currentAccount) {
-		return <div>No account connected</div>
+		return <div>No account connected</div>;
 	}
 
 	return <button onClick={uploadFile}>Upload File</button>;
 
 	async function uploadFile() {
-
 		const file = new TextEncoder().encode('Hello from the TS SDK!!!\n');
 
 		const encoded = await walrusClient.encodeBlob(file);
