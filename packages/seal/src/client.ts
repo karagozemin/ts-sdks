@@ -391,13 +391,7 @@ export class SealClient {
 		const derivedKeys = new Map<string, DerivedKey>();
 		let servicesAdded = 0;
 		for (const keyServer of keyServers) {
-			// The code below assumes that the KeyServerType is BonehFranklinBLS12381. This is also checked in fetchKeys.
-			if (keyServer.keyType !== KeyServerType.BonehFranklinBLS12381) {
-				throw new InvalidKeyServerError(
-					`Server ${keyServer.objectId} has invalid key type: ${keyServer.keyType}`,
-				);
-			}
-
+			// The code below assumes that the KeyServerType is BonehFranklinBLS12381.
 			const cachedKey = this.#cachedKeys.get(`${fullId}:${keyServer.objectId}`);
 			if (cachedKey) {
 				derivedKeys.set(keyServer.objectId, new BonehFranklinBLS12381DerivedKey(cachedKey));
