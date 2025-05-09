@@ -18,16 +18,16 @@ export class DAppKitConnectModal extends ScopedRegistryHost(LitElement) {
 	};
 
 	@storeProperty()
-	store?: DAppKit;
+	dAppKit?: DAppKit;
 
 	override connectedCallback() {
-		this.store ||= getDefaultInstance();
+		this.dAppKit ||= getDefaultInstance();
 	}
 
 	override render() {
 		return html`<div class="dapp-kit-connect-modal">
 			<wallet-list></wallet-list>
-			<div>${JSON.stringify(this.store?.$wallets, null, 2) ?? 'No store'}</div>
+			<div>${JSON.stringify(this.dAppKit?.stores.$wallets, null, 2)}</div>
 		</div>`;
 	}
 }

@@ -30,13 +30,13 @@ export function storeProperty() {
 			get(this: Target): DAppKit | undefined {
 				return this[valueKey];
 			},
-			set(this: Target, newStore: DAppKit | undefined) {
-				const oldStore = this[valueKey];
-				if (oldStore === newStore) {
+			set(this: Target, newInstance: DAppKit | undefined) {
+				const oldInstance = this[valueKey];
+				if (oldInstance === newInstance) {
 					return;
 				}
 
-				this[valueKey] = newStore;
+				this[valueKey] = newInstance;
 
 				const existingController = this[controllerKey];
 				if (existingController) {
@@ -44,15 +44,14 @@ export function storeProperty() {
 					this.removeController(existingController);
 				}
 
-				Object.values(newStore!.stores);
-				const newController = newStore
-					? new MultiStoreController(this, Object.values(newStore.stores))
+				const newController = newInstance
+					? new MultiStoreController(this, Object.values(newInstance.stores))
 					: undefined;
 				this[controllerKey] = newController;
 
 				if (existingController && !newController) {
-					// If the store is removed, request an update. Otherwise the controller should handle it.
-					this.requestUpdate(propertyKey, oldStore);
+					// If the instance is removed, request an update. Otherwise the controller should handle it.
+					this.requestUpdate(propertyKey, oldInstance);
 				}
 			},
 			configurable: true,
