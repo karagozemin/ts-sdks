@@ -1,43 +1,25 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { computed, readonlyType } from 'nanostores';
-import { createState } from './state.js';
+import { createStores } from './store.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
-import { createActions } from './actions/index.js';
 import { DAppKitError } from '../utils/errors.js';
 import { autoConnectWallet } from './initializers/autoconnect-wallet.js';
 import { createInMemoryStorage, DEFAULT_STORAGE_KEY, getDefaultStorage } from '../utils/storage.js';
-import type { StateStorage } from '../utils/storage.js';
 import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
-import { getAssociatedWalletOrThrow } from '../utils/wallets.js';
 import { manageWalletConnection } from './initializers/manage-connection.js';
+import type { Experimental_BaseClient } from '@mysten/sui/experimental';
+import type { CreateDAppKitOptions } from './types.js';
+import { createActions } from './actions/index.js';
+import { buildNetworkConfig } from '../utils/networks.js';
 
 export type DAppKit = ReturnType<typeof createDAppKit>;
 
-type CreateDAppKitOptions = {
-	/**
-	 * Enables automatically connecting to the most recently used wallet account.
-	 * @defaultValue `true`
-	 */
-	autoConnect?: boolean;
-
-	/**
-	 * Configures how the most recently connected to wallet account is stored. Set to `null` to disable persisting state entirely.
-	 * @defaultValue `localStorage` if available
-	 */
-	storage?: StateStorage | null;
-
-	/**
-	 * The key to use to store the most recently connected wallet account.
-	 * @defaultValue `mysten-dapp-kit:selected-wallet-and-address`
-	 */
-	storageKey?: string;
-};
-
 let defaultInstance: DAppKit | undefined;
 
-export function createDAppKit(options: CreateDAppKitOptions) {
+export function createDAppKit<TClients extends Experimental_BaseClient[]>(
+	options: CreateDAppKitOptions<TClients>,
+) {
 	const dAppKit = createDAppKitInstance(options);
 
 	if (!defaultInstance) {
@@ -59,73 +41,35 @@ export function getDefaultInstance() {
 	return defaultInstance;
 }
 
-export function createDAppKitInstance({
+export function createDAppKitInstance<TClients extends Experimental_BaseClient[]>({
 	autoConnect = true,
+	clients,
+	defaultNetwork,
 	storage = getDefaultStorage(),
 	storageKey = DEFAULT_STORAGE_KEY,
-}: CreateDAppKitOptions = {}) {
-	const $state = createState();
-	const actions = createActions($state);
-
+}: CreateDAppKitOptions<TClients>) {
+	defaultNetwork ??= clients[0].network;
 	storage ||= createInMemoryStorage();
-	syncStateToStorage({ $state, storageKey, storage });
 
-	syncRegisteredWallets($state);
-	manageWalletConnection($state);
+	const networkConfig = buildNetworkConfig(clients);
+	const { $state, ...stores } = createStores({ networkConfig, defaultNetwork });
+	const actions = createActions(stores, Object.keys(networkConfig));
+
+	syncStateToStorage({ stores, storageKey, storage });
+	syncRegisteredWallets(stores);
+	manageWalletConnection(stores);
 
 	if (autoConnect) {
-		autoConnectWallet({ $state, storageKey, storage });
+		autoConnectWallet({ stores, storageKey, storage });
 	}
 
 	return {
 		...actions,
-		$state: readonlyType($state),
-		$wallets: computed($state, (state) => state.wallets),
-		$connection: computed([$state], ({ connection, wallets }) => {
-			switch (connection.status) {
-				case 'connected':
-					return {
-						wallet: getAssociatedWalletOrThrow(connection.currentAccount, wallets),
-						account: connection.currentAccount,
-						status: connection.status,
-						isConnected: true,
-						isConnecting: false,
-						isReconnecting: false,
-						isDisconnected: false,
-					} as const;
-				case 'connecting':
-					return {
-						wallet: null,
-						account: connection.currentAccount,
-						status: connection.status,
-						isConnected: false,
-						isConnecting: true,
-						isReconnecting: false,
-						isDisconnected: false,
-					} as const;
-				case 'reconnecting':
-					return {
-						wallet: getAssociatedWalletOrThrow(connection.currentAccount, wallets),
-						account: connection.currentAccount,
-						status: connection.status,
-						isConnected: false,
-						isConnecting: false,
-						isReconnecting: true,
-						isDisconnected: false,
-					} as const;
-				case 'disconnected':
-					return {
-						wallet: null,
-						account: connection.currentAccount,
-						status: connection.status,
-						isConnected: false,
-						isConnecting: false,
-						isReconnecting: false,
-						isDisconnected: true,
-					} as const;
-				default:
-					throw new Error(`Encountered unknown connection status: ${connection}`);
-			}
-		}),
+		stores: {
+			$wallets: stores.$wallets,
+			$connection: stores.$connection,
+			$currentNetwork: stores.$currentNetwork,
+			$suiClient: stores.$suiClient,
+		},
 	};
 }

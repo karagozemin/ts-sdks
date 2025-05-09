@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { listenKeys, onMount } from 'nanostores';
-import type { DAppKitState } from '../state.js';
+import type { DAppKitStores } from '../store.js';
 
 import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
 import { uiWalletAccountBelongsToUiWallet, uiWalletAccountsAreSame } from '@wallet-standard/ui';
@@ -10,7 +10,7 @@ import { uiWalletAccountBelongsToUiWallet, uiWalletAccountsAreSame } from '@wall
 /**
  * Handles updating the connection state in response to wallets and their properties changing.
  */
-export function manageWalletConnection($state: DAppKitState) {
+export function manageWalletConnection({ $state }: DAppKitStores) {
 	onMount($state, () => {
 		return listenKeys($state, ['wallets'], async ({ connection, wallets }) => {
 			if (connection.status !== 'connected') return;

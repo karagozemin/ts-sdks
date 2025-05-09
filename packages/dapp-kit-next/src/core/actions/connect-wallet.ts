@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { DAppKitState } from '../state.js';
+import type { DAppKitStores } from '../store.js';
 import { task } from 'nanostores';
 import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
 import type { StandardConnectInput } from '@mysten/wallet-standard';
@@ -25,7 +25,7 @@ export type ConnectWalletArgs = {
 	account?: UiWalletAccount;
 } & Omit<StandardConnectInput, 'silent'>;
 
-export function connectWalletCreator($state: DAppKitState) {
+export function connectWalletCreator({ $state }: DAppKitStores) {
 	/**
 	 * Prompts the specified wallet to connect and authorize new accounts for the current domain.
 	 */

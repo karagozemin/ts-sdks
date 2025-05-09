@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { listenKeys, onMount, task } from 'nanostores';
-import type { DAppKitState } from '../state.js';
+import type { DAppKitStores } from '../store.js';
 import type { StateStorage } from '../../utils/storage.js';
 import type { UiWallet } from '@wallet-standard/ui';
 import { getWalletUniqueIdentifier } from '../../utils/wallets.js';
@@ -11,16 +11,16 @@ import { getWalletUniqueIdentifier } from '../../utils/wallets.js';
  * Attempts to connect to a previously authorized wallet account on mount and when new wallets are registered.
  */
 export function autoConnectWallet({
-	$state,
+	stores,
 	storage,
 	storageKey,
 }: {
-	$state: DAppKitState;
+	stores: DAppKitStores;
 	storage: StateStorage;
 	storageKey: string;
 }) {
-	onMount($state, () => {
-		return listenKeys($state, ['wallets'], async ({ connection, wallets }, oldValue) => {
+	onMount(stores.$state, () => {
+		return listenKeys(stores.$state, ['wallets'], async ({ connection, wallets }, oldValue) => {
 			if (oldValue.wallets.length > wallets.length) return;
 			if (connection.status !== 'disconnected') return;
 
@@ -33,7 +33,7 @@ export function autoConnectWallet({
 			});
 
 			if (savedWalletAccount) {
-				$state.setKey('connection', {
+				stores.$state.setKey('connection', {
 					status: 'connected',
 					currentAccount: savedWalletAccount,
 				});

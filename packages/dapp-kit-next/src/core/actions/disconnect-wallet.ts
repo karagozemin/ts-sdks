@@ -3,15 +3,14 @@
 
 import type { StandardDisconnectFeature, StandardDisconnectMethod } from '@mysten/wallet-standard';
 import { StandardDisconnect } from '@mysten/wallet-standard';
-import type { DAppKitState } from '../state.js';
+import type { DAppKitStores } from '../store.js';
 import { task } from 'nanostores';
 import { getWalletFeature } from '@wallet-standard/ui';
 import { WalletNotConnectedError } from '../../utils/errors.js';
-import { getAssociatedWallet } from '../../utils/wallets.js';
 
 export type DisconnectWalletArgs = Parameters<StandardDisconnectMethod>;
 
-export function disconnectWalletCreator($state: DAppKitState) {
+export function disconnectWalletCreator({ $state, $connection }: DAppKitStores) {
 	/**
 	 * Disconnects the current wallet from the application and prompts the current wallet
 	 * to deauthorize accounts from the current domain depending on the wallet's implemetation
@@ -19,11 +18,7 @@ export function disconnectWalletCreator($state: DAppKitState) {
 	 */
 	return async function disconnectWallet(...standardDisconnectArgs: DisconnectWalletArgs) {
 		return await task(async () => {
-			const { connection, wallets } = $state.get();
-			const currentWallet = connection.currentAccount
-				? getAssociatedWallet(connection.currentAccount, wallets)
-				: null;
-
+			const { wallet: currentWallet } = $connection.get();
 			if (!currentWallet) {
 				throw new WalletNotConnectedError('No wallet is connected.');
 			}

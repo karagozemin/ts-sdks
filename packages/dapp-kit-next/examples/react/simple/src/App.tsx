@@ -3,11 +3,29 @@
 
 import { useStore } from '@nanostores/react';
 import { createDAppKit } from '@mysten/dapp-kit-next';
+import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 
-const dAppKit = createDAppKit();
+const mainnetClient = new SuiClient({
+	url: getFullnodeUrl('mainnet'),
+	network: 'mainnet',
+}).$extend({
+	name: 'seal' as const,
+	register: (client) => {
+		return {
+			abc: 'def' as const,
+		};
+	},
+});
+
+const dAppKit = createDAppKit({
+	clients: [mainnetClient],
+});
 
 function App() {
+	const suiClient = useStore(dAppKit.$suiClient);
 	const wallets = useStore(dAppKit.$wallets);
+
+	const network = useStore(dAppKit.$currentNetwork);
 
 	return (
 		<div>
