@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { listenKeys, onMount, task } from 'nanostores';
+import { onMount, task } from 'nanostores';
 import type { DAppKitStores } from '../store.js';
 import type { StateStorage } from '../../utils/storage.js';
 import type { UiWallet } from '@wallet-standard/ui';
@@ -11,7 +11,7 @@ import { getWalletUniqueIdentifier } from '../../utils/wallets.js';
  * Attempts to connect to a previously authorized wallet account on mount and when new wallets are registered.
  */
 export function autoConnectWallet({
-	stores,
+	stores: { $state, $connection, $wallets },
 	storage,
 	storageKey,
 }: {
@@ -19,9 +19,11 @@ export function autoConnectWallet({
 	storage: StateStorage;
 	storageKey: string;
 }) {
-	onMount(stores.$state, () => {
-		return listenKeys(stores.$state, ['wallets'], async ({ connection, wallets }, oldValue) => {
-			if (oldValue.wallets.length > wallets.length) return;
+	onMount($wallets, () => {
+		return $wallets.listen(async (wallets, oldWallets) => {
+			if (oldWallets.length > wallets.length) return;
+
+			const connection = $connection.get();
 			if (connection.status !== 'disconnected') return;
 
 			const savedWalletAccount = await task(() => {
@@ -33,7 +35,7 @@ export function autoConnectWallet({
 			});
 
 			if (savedWalletAccount) {
-				stores.$state.setKey('connection', {
+				$state.setKey('connection', {
 					status: 'connected',
 					currentAccount: savedWalletAccount,
 				});
@@ -49,7 +51,7 @@ async function getSavedWalletAccount({
 }: {
 	storage: StateStorage;
 	storageKey: string;
-	wallets: UiWallet[];
+	wallets: readonly UiWallet[];
 }) {
 	const savedWalletIdAndAddress = await storage.getItem(storageKey);
 	if (!savedWalletIdAndAddress) {

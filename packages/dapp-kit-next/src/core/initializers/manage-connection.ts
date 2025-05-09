@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { listenKeys, onMount } from 'nanostores';
+import { onMount } from 'nanostores';
 import type { DAppKitStores } from '../store.js';
 
 import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
@@ -10,9 +10,10 @@ import { uiWalletAccountBelongsToUiWallet, uiWalletAccountsAreSame } from '@wall
 /**
  * Handles updating the connection state in response to wallets and their properties changing.
  */
-export function manageWalletConnection({ $state }: DAppKitStores) {
-	onMount($state, () => {
-		return listenKeys($state, ['wallets'], async ({ connection, wallets }) => {
+export function manageWalletConnection({ $state, $wallets }: DAppKitStores) {
+	onMount($wallets, () => {
+		return $wallets.listen(async (wallets) => {
+			const { connection } = $state.get();
 			if (connection.status !== 'connected') return;
 
 			const resolvedAccount = resolveWalletAccount(connection.currentAccount, wallets);
@@ -32,7 +33,7 @@ export function manageWalletConnection({ $state }: DAppKitStores) {
 	});
 }
 
-function resolveWalletAccount(currentAccount: UiWalletAccount, wallets: UiWallet[]) {
+function resolveWalletAccount(currentAccount: UiWalletAccount, wallets: readonly UiWallet[]) {
 	for (const wallet of wallets) {
 		for (const walletAccount of wallet.accounts) {
 			if (uiWalletAccountsAreSame(currentAccount, walletAccount)) {

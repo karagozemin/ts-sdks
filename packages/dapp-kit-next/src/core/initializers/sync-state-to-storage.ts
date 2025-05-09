@@ -12,7 +12,7 @@ import { getWalletUniqueIdentifier } from '../../utils/wallets.js';
  * Syncs the most recently connected wallet name and address to storage.
  */
 export function syncStateToStorage({
-	stores,
+	stores: { $connection },
 	storage,
 	storageKey,
 }: {
@@ -20,8 +20,8 @@ export function syncStateToStorage({
 	storage: StateStorage;
 	storageKey: string;
 }) {
-	onMount(stores.$connection, () => {
-		return stores.$connection.listen((connection) => {
+	onMount($connection, () => {
+		return $connection.listen((connection) => {
 			if (connection.account) {
 				storage.setItem(storageKey, getSavedAccountStorageKey(connection.account));
 			} else {

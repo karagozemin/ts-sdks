@@ -48,14 +48,15 @@ export function createDAppKitInstance<TClients extends Experimental_BaseClient[]
 	storage = getDefaultStorage(),
 	storageKey = DEFAULT_STORAGE_KEY,
 }: CreateDAppKitOptions<TClients>) {
-	defaultNetwork ??= clients[0].network;
-	storage ||= createInMemoryStorage();
-
 	const networkConfig = buildNetworkConfig(clients);
-	const { $state, ...stores } = createStores({ networkConfig, defaultNetwork });
+	defaultNetwork ??= clients[0].network;
+
+	const stores = createStores({ networkConfig, defaultNetwork });
 	const actions = createActions(stores, Object.keys(networkConfig));
 
+	storage ||= createInMemoryStorage();
 	syncStateToStorage({ stores, storageKey, storage });
+
 	syncRegisteredWallets(stores);
 	manageWalletConnection(stores);
 
