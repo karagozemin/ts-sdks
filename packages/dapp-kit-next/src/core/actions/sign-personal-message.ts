@@ -2,17 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { DAppKitStores } from '../store.js';
-import { getWalletAccountFeature } from '@wallet-standard/ui';
-import {
-	WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
-	WalletStandardError,
-} from '@mysten/wallet-standard';
 import type {
 	SuiSignPersonalMessageFeature,
 	SuiSignPersonalMessageInput,
 } from '@mysten/wallet-standard';
 import { getWalletAccountForUiWalletAccount_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getWalletAccountForUiWalletAccount } from '@wallet-standard/ui-registry';
-import { ChainNotSupportedError, WalletNotConnectedError } from '../../utils/errors.js';
+import { WalletNotConnectedError } from '../../utils/errors.js';
+import { getChain } from '../../utils/networks.js';
+import { getAccountFeature } from '../../utils/wallets.js';
 
 export type SignPersonalMessageArgs = Omit<SuiSignPersonalMessageInput, 'account' | 'chain'>;
 
@@ -27,30 +24,16 @@ export function signPersonalMessageCreator({ $connection, $currentNetwork }: DAp
 		}
 
 		const currentNetwork = $currentNetwork.get();
-		const chain = `sui:${currentNetwork}` as const;
+		const chain = getChain(currentNetwork);
 
 		// TODO: Change this after https://github.com/MystenLabs/ts-sdks/pull/285 lands.
 		const featureName = 'sui:signPersonalMessage';
 
-		if (!currentAccount.chains.includes(chain)) {
-			throw new ChainNotSupportedError(`This account does not support the chain ${chain}.`, {
-				cause: new WalletStandardError(
-					WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
-					{
-						chain,
-						featureName,
-						supportedChains: [...currentAccount.chains],
-						supportedFeatures: [...currentAccount.features],
-						address: currentAccount.address,
-					},
-				),
-			});
-		}
-
-		const signPersonalMessageFeature = getWalletAccountFeature(
-			currentAccount,
+		const signPersonalMessageFeature = getAccountFeature({
+			account: currentAccount,
+			chain,
 			featureName,
-		) as SuiSignPersonalMessageFeature[typeof featureName];
+		}) as SuiSignPersonalMessageFeature[typeof featureName];
 
 		return await signPersonalMessageFeature.signPersonalMessage({
 			...standardArgs,

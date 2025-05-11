@@ -10,10 +10,10 @@ import { uiWalletAccountBelongsToUiWallet, uiWalletAccountsAreSame } from '@wall
 /**
  * Handles updating the connection state in response to wallets and their properties changing.
  */
-export function manageWalletConnection({ $state, $wallets }: DAppKitStores) {
-	onMount($wallets, () => {
-		return $wallets.listen(async (wallets) => {
-			const { connection } = $state.get();
+export function manageWalletConnection({ $compatibleWallets, $baseConnection }: DAppKitStores) {
+	onMount($compatibleWallets, () => {
+		return $compatibleWallets.listen(async (wallets) => {
+			const connection = $baseConnection.get();
 			if (connection.status !== 'connected') return;
 
 			const resolvedAccount = resolveWalletAccount(connection.currentAccount, wallets);
@@ -21,10 +21,10 @@ export function manageWalletConnection({ $state, $wallets }: DAppKitStores) {
 				// Update the current account in response to the account properties changing.
 				// If the current account was deemed incompatible, we'll default to the
 				// first account in the wallet:
-				$state.setKey('connection.currentAccount', resolvedAccount);
+				$baseConnection.setKey('currentAccount', resolvedAccount);
 			} else {
 				// Reset the connection if the underlying wallet was un-registered or deemed incompatible:
-				$state.setKey('connection', {
+				$baseConnection.set({
 					status: 'disconnected',
 					currentAccount: null,
 				});

@@ -12,6 +12,17 @@ export type CreateDAppKitOptions<TClients extends Experimental_BaseClient[]> = {
 	autoConnect?: boolean;
 
 	/**
+	 * A list of clients used for interacting with Sui.
+	 */
+	clients: TClients;
+
+	/**
+	 * The name of the network to use by default.
+	 * @defaultValue The `network` property of the first client: `clients[0].network`
+	 */
+	defaultNetwork?: TClients[number]['network'];
+
+	/**
 	 * Configures how the most recently connected to wallet account is stored. Set to `null` to disable persisting state entirely.
 	 * @defaultValue `localStorage` if available
 	 */
@@ -22,14 +33,4 @@ export type CreateDAppKitOptions<TClients extends Experimental_BaseClient[]> = {
 	 * @defaultValue `mysten-dapp-kit:selected-wallet-and-address`
 	 */
 	storageKey?: string;
-
-	/**
-	 *
-	 */
-	clients: TClients;
-
-	/**
-	 *
-	 */
-	defaultNetwork?: TClients[number]['network'];
 };

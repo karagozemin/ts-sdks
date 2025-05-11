@@ -12,6 +12,7 @@ import type { Experimental_BaseClient } from '@mysten/sui/experimental';
 import type { CreateDAppKitOptions } from './types.js';
 import { createActions } from './actions/index.js';
 import { buildNetworkConfig } from '../utils/networks.js';
+import { readonlyType } from 'nanostores';
 
 export type DAppKit = ReturnType<typeof createDAppKit>;
 
@@ -49,7 +50,7 @@ export function createDAppKitInstance<TClients extends Experimental_BaseClient[]
 	storageKey = DEFAULT_STORAGE_KEY,
 }: CreateDAppKitOptions<TClients>) {
 	const networkConfig = buildNetworkConfig(clients);
-	defaultNetwork ??= clients[0].network;
+	defaultNetwork ||= clients[0].network;
 
 	const stores = createStores({ networkConfig, defaultNetwork });
 	const actions = createActions(stores, Object.keys(networkConfig));
@@ -66,10 +67,11 @@ export function createDAppKitInstance<TClients extends Experimental_BaseClient[]
 
 	return {
 		...actions,
+		networkConfig,
 		stores: {
-			$wallets: stores.$wallets,
+			$wallets: stores.$compatibleWallets,
 			$connection: stores.$connection,
-			$currentNetwork: stores.$currentNetwork,
+			$currentNetwork: readonlyType(stores.$currentNetwork),
 			$suiClient: stores.$suiClient,
 		},
 	};

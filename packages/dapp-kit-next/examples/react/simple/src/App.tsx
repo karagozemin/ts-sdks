@@ -4,32 +4,52 @@
 import { useStore } from '@nanostores/react';
 import { createDAppKit } from '@mysten/dapp-kit-next';
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
+import { registerUnsafeBurnerWallet, useUnsafeBurnerWallet } from './unsafe.js';
 
 const mainnetClient = new SuiClient({
 	url: getFullnodeUrl('mainnet'),
 	network: 'mainnet',
-}).$extend({
-	name: 'seal' as const,
-	register: (client) => {
-		return {
-			abc: 'def' as const,
-		};
-	},
+});
+
+const testnetClient = new SuiClient({
+	url: getFullnodeUrl('localnet'),
+	network: 'localnet',
 });
 
 const dAppKit = createDAppKit({
-	clients: [mainnetClient],
+	clients: [testnetClient, mainnetClient],
+	defaultNetwork: 'testnet',
 });
 
-function App() {
-	const suiClient = useStore(dAppKit.$suiClient);
-	const wallets = useStore(dAppKit.$wallets);
+declare module '@mysten/dapp-kit-next' {
+	interface Register {
+		dAppKit: typeof dAppKit;
+	}
+}
 
-	const network = useStore(dAppKit.$currentNetwork);
+registerUnsafeBurnerWallet(null as any);
+
+function App() {
+	const _suiClient = useStore(dAppKit.stores.$suiClient);
+	const wallets = useStore(dAppKit.stores.$wallets);
+	const network = useStore(dAppKit.stores.$currentNetwork);
+
+	const connection = useStore(dAppKit.stores.$connection);
+
+	console.log(network, wallets, connection);
 
 	return (
 		<div>
+			{Object.keys(dAppKit.networkConfig).map((network) => {
+				return (
+					<button onClick={() => dAppKit.switchNetwork({ network })}>Switch to {network}</button>
+				);
+			})}
+			<button>Switch network</button>
 			<p>TODO: Flesh this out more / make it more use case specific ^.^</p>
+			<button onClick={() => dAppKit.connectWallet({ wallet: wallets[wallets.length - 1] })}>
+				Connect
+			</button>
 			{wallets.length > 0 ? (
 				<ul>
 					{wallets.map((wallet) => (

@@ -3,10 +3,11 @@
 import type {
 	Experimental_BaseClient,
 	Experimental_SuiClientTypes,
-} from '@mysten/sui/src/experimental';
+} from '@mysten/sui/experimental';
 import { DAppKitError } from './errors.js';
+import type { IdentifierString } from '@mysten/wallet-standard';
 
-export function getChain(network: Experimental_SuiClientTypes.Network) {
+export function getChain(network: Experimental_SuiClientTypes.Network): IdentifierString {
 	return `sui:${network}`;
 }
 
@@ -17,12 +18,21 @@ export function buildNetworkConfig<TClients extends Experimental_BaseClient[]>(c
 		);
 	}
 
-	return clients.reduce((accumulator, client) => {
-		if (accumulator.has(client.network)) {
+	const networkConfig = clients.reduce<
+		Partial<Record<TClients[number]['network'], TClients[number]>>
+	>((accumulator, client) => {
+		if (client.network in accumulator) {
 			throw new DAppKitError(
 				`Detected multiple clients configured for the "${client.network}" network. Please ensure that each client is configured with a unique network.`,
 			);
 		}
-		return accumulator.set(client.network, client);
-	}, new Map<TClients[number]['network'], TClients[number]>());
+		accumulator[client.network as TClients[number]['network']] = client;
+		return accumulator;
+	}, {});
+
+	// if (!('TODO' in networkConfig)) {
+	// 	throw new DAppKitError(`No client is configured for the specified default network "${'abc'}"`);
+	// }
+
+	return networkConfig;
 }

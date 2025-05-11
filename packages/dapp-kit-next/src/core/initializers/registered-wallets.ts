@@ -11,14 +11,14 @@ import type { StandardEventsFeature, Wallet, WalletWithFeatures } from '@mysten/
 /**
  * Handles updating the store in response to wallets being added, removed, and their properties changing.
  */
-export function syncRegisteredWallets({ $state }: DAppKitStores) {
-	onMount($state, () => {
+export function syncRegisteredWallets({ $registeredWallets }: DAppKitStores) {
+	onMount($registeredWallets, () => {
 		const walletsApi = getWallets();
 		const unsubscribeCallbacksByWallet = new Map<Wallet, () => void>();
 
 		const onWalletsChanged = () => {
 			const wallets = walletsApi.get();
-			$state.setKey('wallets', wallets.map(getOrCreateUiWalletForStandardWallet));
+			$registeredWallets.set(wallets.map(getOrCreateUiWalletForStandardWallet));
 		};
 
 		const subscribeToWalletEvents = (wallet: WalletWithFeatures<StandardEventsFeature>) => {

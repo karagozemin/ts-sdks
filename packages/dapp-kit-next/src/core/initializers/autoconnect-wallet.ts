@@ -11,7 +11,7 @@ import { getWalletUniqueIdentifier } from '../../utils/wallets.js';
  * Attempts to connect to a previously authorized wallet account on mount and when new wallets are registered.
  */
 export function autoConnectWallet({
-	stores: { $state, $connection, $wallets },
+	stores: { $baseConnection, $compatibleWallets },
 	storage,
 	storageKey,
 }: {
@@ -19,11 +19,11 @@ export function autoConnectWallet({
 	storage: StateStorage;
 	storageKey: string;
 }) {
-	onMount($wallets, () => {
-		return $wallets.listen(async (wallets, oldWallets) => {
+	onMount($compatibleWallets, () => {
+		return $compatibleWallets.listen(async (wallets, oldWallets) => {
 			if (oldWallets.length > wallets.length) return;
 
-			const connection = $connection.get();
+			const connection = $baseConnection.get();
 			if (connection.status !== 'disconnected') return;
 
 			const savedWalletAccount = await task(() => {
@@ -35,7 +35,7 @@ export function autoConnectWallet({
 			});
 
 			if (savedWalletAccount) {
-				$state.setKey('connection', {
+				$baseConnection.set({
 					status: 'connected',
 					currentAccount: savedWalletAccount,
 				});

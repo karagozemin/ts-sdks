@@ -2,11 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
-import { computed, deepMap } from 'nanostores';
-import type {
-	Experimental_BaseClient,
-	Experimental_SuiClientTypes,
-} from '@mysten/sui/experimental';
+import { atom, computed, map } from 'nanostores';
+import type { Experimental_BaseClient } from '@mysten/sui/experimental';
 import { getAssociatedWalletOrThrow, requiredWalletFeatures } from '../utils/wallets.js';
 import { getChain } from '../utils/networks.js';
 
@@ -20,48 +17,59 @@ type WalletConnection =
 			currentAccount: UiWalletAccount;
 	  };
 
-type DAppKitStateValues = {
-	wallets: UiWallet[];
-	connection: WalletConnection;
-	currentNetwork: Experimental_SuiClientTypes.Network;
-};
-
 export type DAppKitStores = ReturnType<typeof createStores>;
 
 export function createStores<TClients extends Experimental_BaseClient[]>({
 	networkConfig,
 	defaultNetwork,
 }: {
-	networkConfig: Map<TClients[number]['network'], TClients[number]>;
+	networkConfig: Partial<Record<TClients[number]['network'], TClients[number]>>;
 	defaultNetwork: TClients[number]['network'];
 }) {
-	const $state = deepMap<DAppKitStateValues>({
-		wallets: [],
-		connection: {
-			status: 'disconnected',
-			currentAccount: null,
-		},
-		currentNetwork: defaultNetwork,
-	});
+	const $currentNetwork = atom<TClients[number]['network']>(defaultNetwork);
 
-	return {
-		$state,
-		$wallets: computed($state, (state) => {
-			return state.wallets.filter((wallet) => {
+	const $registeredWallets = atom<UiWallet[]>([]);
+
+	const $compatibleWallets = computed(
+		[$registeredWallets, $currentNetwork],
+		(wallets, currentNetwork) => {
+			return wallets.filter((wallet) => {
 				const areChainsCompatible = wallet.chains.some(
-					(chain) => getChain(state.currentNetwork) === chain,
+					(chain) => getChain(currentNetwork) === chain,
 				);
 
 				const areFeaturesCompatible = requiredWalletFeatures.every((featureName) =>
 					wallet.features.includes(featureName),
 				);
 
+				console.log(
+					'WALLET',
+					areChainsCompatible,
+					areFeaturesCompatible,
+					wallet.name,
+					wallet.features,
+				);
 				return areChainsCompatible && areFeaturesCompatible;
 			});
+		},
+	);
+
+	const $baseConnection = map<WalletConnection>({
+		status: 'disconnected',
+		currentAccount: null,
+	});
+
+	return {
+		$currentNetwork,
+		$registeredWallets,
+		$compatibleWallets,
+		$baseConnection,
+		$suiClient: computed($currentNetwork, (currentNetwork) => {
+			const a = networkConfig[currentNetwork];
+			console.log('fff', a);
+			return networkConfig[currentNetwork]! satisfies TClients[number];
 		}),
-		$suiClient: computed($state, (state) => networkConfig.get(state.currentNetwork)!),
-		$currentNetwork: computed($state, (state) => state.currentNetwork),
-		$connection: computed($state, ({ connection, wallets }) => {
+		$connection: computed([$baseConnection, $compatibleWallets], (connection, wallets) => {
 			switch (connection.status) {
 				case 'connected':
 					return {
