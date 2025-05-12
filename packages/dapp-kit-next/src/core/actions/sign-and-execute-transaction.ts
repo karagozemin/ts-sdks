@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { DAppKitStores } from '../store.js';
+import { SuiSignAndExecuteTransaction } from '@mysten/wallet-standard';
 import type {
 	SuiSignAndExecuteTransactionFeature,
 	SuiSignAndExecuteTransactionInput,
@@ -32,25 +33,18 @@ export function signAndExecuteTransactionCreator({ $connection, $suiClient }: DA
 		const suiClient = $suiClient.get();
 		const chain = getChain(suiClient.network);
 
-		// TODO: Change this after https://github.com/MystenLabs/ts-sdks/pull/285 lands.
-		const featureName = 'sui:signAndExecuteTransaction';
-
 		const signAndExecuteTransactionFeature = getAccountFeature({
 			account,
 			chain,
-			featureName,
-		}) as SuiSignAndExecuteTransactionFeature[typeof featureName];
+			featureName: SuiSignAndExecuteTransaction,
+		}) as SuiSignAndExecuteTransactionFeature[typeof SuiSignAndExecuteTransaction];
 
 		return await signAndExecuteTransactionFeature.signAndExecuteTransaction({
 			...standardArgs,
 			transaction: {
 				toJSON: async () => {
-					return typeof transaction === 'string'
-						? transaction
-						: await transaction.toJSON({
-								supportedIntents: [],
-								client: suiClient,
-							});
+					// TODO: Fix passing through the client and supported intents for plugins.
+					return typeof transaction === 'string' ? transaction : await transaction.toJSON();
 				},
 			},
 			account: getWalletAccountForUiWalletAccount(account),

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { DAppKitStores } from '../store.js';
+import { SuiSignTransaction } from '@mysten/wallet-standard';
 import type { SuiSignTransactionFeature, SuiSignTransactionInput } from '@mysten/wallet-standard';
 import { getWalletAccountForUiWalletAccount_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getWalletAccountForUiWalletAccount } from '@wallet-standard/ui-registry';
 import { WalletNotConnectedError } from '../../utils/errors.js';
@@ -26,14 +27,11 @@ export function signTransactionCreator({ $connection, $suiClient }: DAppKitStore
 		const suiClient = $suiClient.get();
 		const chain = getChain(suiClient.network);
 
-		// TODO: Change this after https://github.com/MystenLabs/ts-sdks/pull/285 lands.
-		const featureName = 'sui:signTransaction';
-
 		const signTransactionFeature = getAccountFeature({
 			account,
 			chain,
-			featureName,
-		}) as SuiSignTransactionFeature[typeof featureName];
+			featureName: SuiSignTransaction,
+		}) as SuiSignTransactionFeature[typeof SuiSignTransaction];
 
 		return await signTransactionFeature.signTransaction({
 			...standardArgs,

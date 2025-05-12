@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { DAppKitStores } from '../store.js';
+import { SuiSignPersonalMessage } from '@mysten/wallet-standard';
 import type {
 	SuiSignPersonalMessageFeature,
 	SuiSignPersonalMessageInput,
@@ -18,26 +19,23 @@ export function signPersonalMessageCreator({ $connection, $currentNetwork }: DAp
 	 * Prompts the specified wallet account to sign a personal message.
 	 */
 	return async function signPersonalMessage({ ...standardArgs }: SignPersonalMessageArgs) {
-		const { account: currentAccount } = $connection.get();
-		if (!currentAccount) {
+		const { account } = $connection.get();
+		if (!account) {
 			throw new WalletNotConnectedError('No wallet is connected.');
 		}
 
 		const currentNetwork = $currentNetwork.get();
 		const chain = getChain(currentNetwork);
 
-		// TODO: Change this after https://github.com/MystenLabs/ts-sdks/pull/285 lands.
-		const featureName = 'sui:signPersonalMessage';
-
 		const signPersonalMessageFeature = getAccountFeature({
-			account: currentAccount,
+			account: account,
 			chain,
-			featureName,
-		}) as SuiSignPersonalMessageFeature[typeof featureName];
+			featureName: SuiSignPersonalMessage,
+		}) as SuiSignPersonalMessageFeature[typeof SuiSignPersonalMessage];
 
 		return await signPersonalMessageFeature.signPersonalMessage({
 			...standardArgs,
-			account: getWalletAccountForUiWalletAccount(currentAccount),
+			account: getWalletAccountForUiWalletAccount(account),
 			chain,
 		});
 	};

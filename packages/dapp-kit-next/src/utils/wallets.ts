@@ -42,25 +42,28 @@ export function getAccountFeature<TAccount extends UiWalletAccount>({
 	chain: TAccount['chains'][number];
 }) {
 	if (!account.chains.includes(chain)) {
-		throw new ChainNotSupportedError(`This account does not support the chain ${chain}.`, {
-			cause: new WalletStandardError(
-				WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
-				{
-					chain,
-					featureName,
-					supportedChains: [...account.chains],
-					supportedFeatures: [...account.features],
-					address: account.address,
-				},
-			),
-		});
+		throw new ChainNotSupportedError(
+			`The account ${account.address} does not support the chain ${chain}.`,
+			{
+				cause: new WalletStandardError(
+					WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
+					{
+						chain,
+						featureName,
+						supportedChains: [...account.chains],
+						supportedFeatures: [...account.features],
+						address: account.address,
+					},
+				),
+			},
+		);
 	}
 
 	try {
 		return getWalletAccountFeature(account, featureName);
 	} catch (error) {
 		throw new FeatureNotSupportedError(
-			`This account does not support the feature ${featureName}.`,
+			`This account ${account.address} does not support the feature ${featureName}.`,
 			{ cause: error },
 		);
 	}
