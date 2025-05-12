@@ -8,36 +8,20 @@ import { createActions } from './actions/index.js';
 import { DAppKitError } from '../utils/errors.js';
 import { autoConnectWallet } from './initializers/autoconnect-wallet.js';
 import { createInMemoryStorage, DEFAULT_STORAGE_KEY, getDefaultStorage } from '../utils/storage.js';
-import type { StateStorage } from '../utils/storage.js';
 import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
 import { getAssociatedWalletOrThrow } from '../utils/wallets.js';
 import { manageWalletConnection } from './initializers/manage-connection.js';
+import type { Experimental_BaseClient } from '@mysten/sui/experimental';
+import type { CreateDAppKitOptions } from './types.js';
+import { buildNetworkConfig } from '../utils/networks.js';
 
 export type DAppKit = ReturnType<typeof createDAppKit>;
 
-type CreateDAppKitOptions = {
-	/**
-	 * Enables automatically connecting to the most recently used wallet account.
-	 * @defaultValue `true`
-	 */
-	autoConnect?: boolean;
-
-	/**
-	 * Configures how the most recently connected to wallet account is stored. Set to `null` to disable persisting state entirely.
-	 * @defaultValue `localStorage` if available
-	 */
-	storage?: StateStorage | null;
-
-	/**
-	 * The key to use to store the most recently connected wallet account.
-	 * @defaultValue `mysten-dapp-kit:selected-wallet-and-address`
-	 */
-	storageKey?: string;
-};
-
 let defaultInstance: DAppKit | undefined;
 
-export function createDAppKit(options: CreateDAppKitOptions) {
+export function createDAppKit<TClients extends Experimental_BaseClient[]>(
+	options: CreateDAppKitOptions<TClients>,
+) {
 	const dAppKit = createDAppKitInstance(options);
 
 	if (!defaultInstance) {
@@ -59,13 +43,24 @@ export function getDefaultInstance() {
 	return defaultInstance;
 }
 
-export function createDAppKitInstance({
+export function createDAppKitInstance<TClients extends Experimental_BaseClient[]>({
 	autoConnect = true,
+	clients,
+	defaultNetwork,
 	storage = getDefaultStorage(),
 	storageKey = DEFAULT_STORAGE_KEY,
-}: CreateDAppKitOptions = {}) {
-	const $state = createState();
-	const actions = createActions($state);
+}: CreateDAppKitOptions<TClients>) {
+	const networkConfig = buildNetworkConfig(clients);
+
+	defaultNetwork ||= clients[0].network;
+	if (!(defaultNetwork in networkConfig)) {
+		throw new DAppKitError(
+			`No client is configured for the specified default network "${defaultNetwork}".`,
+		);
+	}
+
+	const $state = createState({ defaultNetwork });
+	const actions = createActions($state, Object.keys(networkConfig));
 
 	storage ||= createInMemoryStorage();
 	syncStateToStorage({ $state, storageKey, storage });
@@ -80,6 +75,8 @@ export function createDAppKitInstance({
 	return {
 		...actions,
 		$state: readonlyType($state),
+		$suiClient: computed($state, (state) => networkConfig[state.currentNetwork]!),
+		$currentNetwork: computed($state, (state) => state.currentNetwork),
 		$wallets: computed($state, (state) => state.wallets),
 		$connection: computed([$state], ({ connection, wallets }) => {
 			switch (connection.status) {
