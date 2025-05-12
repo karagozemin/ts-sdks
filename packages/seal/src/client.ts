@@ -165,7 +165,7 @@ export class SealClient {
 		// Check that the client's key servers are a subset of the encrypted object's key servers.
 		if (
 			services.some(
-				(objectId) => count(this.#serverObjectIds, objectId) < count(services, objectId),
+				(objectId) => count(this.#serverObjectIds, objectId) > count(services, objectId),
 			)
 		) {
 			throw new InconsistentKeyServersError(
