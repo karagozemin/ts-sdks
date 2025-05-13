@@ -461,8 +461,8 @@ describe('Integration test', () => {
 		global.fetch = globalFetch;
 
 		const serverObjectIds: [string, number][] = [
-			['0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e', 3],
-			['0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4', 2],
+			[objectIds[0][0], 3],
+			[objectIds[1][0], 2],
 		];
 		const client = new SealClient({
 			suiClient,
