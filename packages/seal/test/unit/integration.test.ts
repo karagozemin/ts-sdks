@@ -55,43 +55,58 @@ async function constructTxBytes(
 const pk = fromBase64(
 	'oEC1VIuwQo+6FZiVwHCAy/3HbvAbuIyiztXIWwd4LgmXCh9WhOKg3T0+Mb62y9fqAsSaN5SybG09n/3JnkmEzJgdDXLpM8KvMwkha/cBHp6Cx7aCdogvGLoOp/RadyHb',
 );
-const MOCK_KEY_SERVERS = [
-	{
-		name: 'server1',
-		objectId: 'server1',
-		url: 'url1',
-		keyType: KeyServerType.BonehFranklinBLS12381,
-		pk,
-	},
-	{
-		name: 'server2',
-		objectId: 'server2',
-		url: 'url2',
-		keyType: KeyServerType.BonehFranklinBLS12381,
-		pk,
-	},
-	{
-		name: 'server3',
-		objectId: 'server3',
-		url: 'url3',
-		keyType: KeyServerType.BonehFranklinBLS12381,
-		pk,
-	},
-	{
-		name: 'server4',
-		objectId: 'server4',
-		url: 'url4',
-		keyType: KeyServerType.BonehFranklinBLS12381,
-		pk,
-	},
-	{
-		name: 'server5',
-		objectId: 'server5',
-		url: 'url5',
-		keyType: KeyServerType.BonehFranklinBLS12381,
-		pk,
-	},
-];
+const MOCK_KEY_SERVERS = new Map([
+	[
+		'server1',
+		{
+			name: 'server1',
+			objectId: 'server1',
+			url: 'url1',
+			keyType: KeyServerType.BonehFranklinBLS12381,
+			pk,
+		},
+	],
+	[
+		'server2',
+		{
+			name: 'server2',
+			objectId: 'server2',
+			url: 'url2',
+			keyType: KeyServerType.BonehFranklinBLS12381,
+			pk,
+		},
+	],
+	[
+		'server3',
+		{
+			name: 'server3',
+			objectId: 'server3',
+			url: 'url3',
+			keyType: KeyServerType.BonehFranklinBLS12381,
+			pk,
+		},
+	],
+	[
+		'server4',
+		{
+			name: 'server4',
+			objectId: 'server4',
+			url: 'url4',
+			keyType: KeyServerType.BonehFranklinBLS12381,
+			pk,
+		},
+	],
+	[
+		'server5',
+		{
+			name: 'server5',
+			objectId: 'server5',
+			url: 'url5',
+			keyType: KeyServerType.BonehFranklinBLS12381,
+			pk,
+		},
+	],
+]);
 describe('Integration test', () => {
 	let keypair: Ed25519Keypair;
 	let suiAddress: string;
@@ -446,12 +461,13 @@ describe('Integration test', () => {
 		global.fetch = globalFetch;
 
 		const serverObjectIds: [string, number][] = [
-			[objectIds[0][0], 3],
-			[objectIds[1][0], 2],
+			['0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e', 3],
+			['0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4', 2],
 		];
 		const client = new SealClient({
 			suiClient,
 			serverObjectIds,
+			verifyKeyServers: false,
 		});
 		vi.spyOn(client as any, 'getKeyServers').mockResolvedValue(MOCK_KEY_SERVERS);
 

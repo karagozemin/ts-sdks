@@ -181,7 +181,7 @@ export class SealClient {
 		}
 	}
 
-	async getKeyServers() {
+	async getKeyServers(): Promise<Map<string, KeyServer>> {
 		if (!this.#keyServers) {
 			this.#keyServers = this.#loadKeyServers().catch((error) => {
 				this.#keyServers = null;
@@ -222,7 +222,6 @@ export class SealClient {
 				}),
 			);
 		}
-
 		return new Map(keyServers.map((server) => [server.objectId, server]));
 	}
 
@@ -257,21 +256,18 @@ export class SealClient {
 		}
 
 		let completedWeight = 0;
-		const remainingKeyServers = new Map<string, { server: KeyServer; weight: number }>();
+		const remainingKeyServers: string[] = [];
 		const fullIds = ids.map((id) => createFullId(DST, sessionKey.getPackageId(), id));
 
 		// Count a server as completed if it has keys for all fullIds.
 		// Duplicated key server ids will be counted towards the threshold.
 		let remainingKeyServersWeight = 0;
-		for (const [objectId, server] of keyServers.entries()) {
+		for (const [objectId, _] of keyServers.entries()) {
 			const weight = this.#weights.get(objectId)!;
 			if (fullIds.every((fullId) => this.#cachedKeys.has(`${fullId}:${objectId}`))) {
 				completedWeight += weight;
 			} else {
-				remainingKeyServers.set(objectId, {
-					server,
-					weight,
-				});
+				remainingKeyServers.push(objectId);
 				remainingKeyServersWeight += weight;
 			}
 		}
@@ -282,7 +278,8 @@ export class SealClient {
 		}
 
 		// Check server validities.
-		for (const [_, { server }] of remainingKeyServers.entries()) {
+		for (const objectId of remainingKeyServers) {
+			const server = keyServers.get(objectId)!;
 			if (server.keyType !== KeyServerType.BonehFranklinBLS12381) {
 				throw new InvalidKeyServerError(
 					`Server ${server.objectId} has invalid key type: ${server.keyType}`,
@@ -299,7 +296,9 @@ export class SealClient {
 		// The weight of the servers that failed to return keys.
 		let failedWeight = 0;
 
-		const keyFetches = remainingKeyServers.entries().map(async ([_, { server, weight }]) => {
+		const keyFetches = remainingKeyServers.map(async (objectId) => {
+			const server = keyServers.get(objectId)!;
+			const weight = this.#weights.get(objectId)!;
 			try {
 				const allKeys = await fetchKeysForAllIds(
 					server.url,
