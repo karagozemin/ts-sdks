@@ -193,6 +193,10 @@ export class SealClient {
 		return this.#keyServers;
 	}
 
+	/**
+	 * Returns a list of key servers with multiplicity according to their weights.
+	 * The list is used for encryption.
+	 */
 	async #getWeightedKeyServers() {
 		const keyServers = await this.getKeyServers();
 		const keyServersWithMultiplicity = [];
@@ -258,19 +262,18 @@ export class SealClient {
 		}
 
 		let completedWeight = 0;
-		const remainingKeyServers: string[] = [];
+		const remainingKeyServers = [];
 		const fullIds = ids.map((id) => createFullId(DST, sessionKey.getPackageId(), id));
 
 		// Count a server as completed if it has keys for all fullIds.
 		// Duplicated key server ids will be counted towards the threshold.
 		let remainingKeyServersWeight = 0;
 		for (const objectId of keyServers.keys()) {
-			const weight = this.#weight(objectId)!;
 			if (fullIds.every((fullId) => this.#cachedKeys.has(`${fullId}:${objectId}`))) {
-				completedWeight += weight;
+				completedWeight += this.#weight(objectId)!;
 			} else {
 				remainingKeyServers.push(objectId);
-				remainingKeyServersWeight += weight;
+				remainingKeyServersWeight += this.#weight(objectId)!;
 			}
 		}
 
@@ -399,14 +402,15 @@ export class SealClient {
 
 				const fullId = createFullId(DST, sessionKey.getPackageId(), id);
 
-				const derivedKeys = new Map<string, DerivedKey>();
-				let servicesAdded = 0;
-				for (const [objectId, _] of keyServers) {
+				const derivedKeys = new Map();
+				let weight = 0;
+				for (const objectId of keyServers.keys()) {
 					// The code below assumes that the KeyServerType is BonehFranklinBLS12381.
 					const cachedKey = this.#cachedKeys.get(`${fullId}:${objectId}`);
 					if (cachedKey) {
 						derivedKeys.set(objectId, new BonehFranklinBLS12381DerivedKey(cachedKey));
-						if (++servicesAdded === threshold) {
+						weight += this.#weight(objectId)!;
+						if (weight >= threshold) {
 							// We have enough keys, so we can stop.
 							break;
 						}
