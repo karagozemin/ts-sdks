@@ -211,7 +211,7 @@ export class SealClient {
 
 	async #loadKeyServers(): Promise<Map<string, KeyServer>> {
 		const keyServers = await retrieveKeyServers({
-			objectIds: this.#weights.keys().toArray(),
+			objectIds: [...this.#weights].map(([objectId]) => objectId),
 			client: this.#suiClient,
 		});
 
