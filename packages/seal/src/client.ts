@@ -254,19 +254,18 @@ export class SealClient {
 		sessionKey: SessionKey;
 		threshold: number;
 	}) {
-		const keyServers = await this.getKeyServers();
 		if (threshold > this.#totalWeight || threshold < 1) {
 			throw new InvalidThresholdError(
 				`Invalid threshold ${threshold} servers with weights ${this.#weights}`,
 			);
 		}
-
-		let completedWeight = 0;
-		const remainingKeyServers = [];
+		const keyServers = await this.getKeyServers();
 		const fullIds = ids.map((id) => createFullId(DST, sessionKey.getPackageId(), id));
 
 		// Count a server as completed if it has keys for all fullIds.
 		// Duplicated key server ids will be counted towards the threshold.
+		let completedWeight = 0;
+		const remainingKeyServers = [];
 		let remainingKeyServersWeight = 0;
 		for (const objectId of keyServers.keys()) {
 			if (fullIds.every((fullId) => this.#cachedKeys.has(`${fullId}:${objectId}`))) {
