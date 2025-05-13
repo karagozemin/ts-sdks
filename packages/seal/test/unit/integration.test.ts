@@ -12,6 +12,7 @@ import { EncryptedObject } from '../../src/bcs';
 import {
 	ExpiredSessionKeyError,
 	GeneralError,
+	InconsistentKeyServersError,
 	InvalidPersonalMessageSignatureError,
 	InvalidPTBError,
 	InvalidThresholdError,
@@ -354,6 +355,22 @@ describe('Integration test', () => {
 				txBytes,
 			}),
 		).rejects.toThrow(InvalidThresholdError);
+
+		// client with servers not a subset of the objects'
+		objectIds = [['0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4', 2]];
+		const clientDifferentWeight = new SealClient({
+			suiClient,
+			serverObjectIds: objectIds,
+			verifyKeyServers: false,
+		});
+
+		await expect(
+			clientDifferentWeight.decrypt({
+				data: encryptedBytes,
+				sessionKey,
+				txBytes,
+			}),
+		).rejects.toThrow(InconsistentKeyServersError);
 	});
 
 	it('test fetchKeys throws SealAPIError', async () => {
@@ -460,13 +477,13 @@ describe('Integration test', () => {
 		const globalFetch = vi.fn();
 		global.fetch = globalFetch;
 
-		const serverObjectIds: [string, number][] = [
-			[objectIds[0][0], 3],
-			[objectIds[1][0], 2],
+		objectIds = [
+			['0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e', 3],
+			['0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4', 2],
 		];
 		const client = new SealClient({
 			suiClient,
-			serverObjectIds,
+			serverObjectIds: objectIds,
 			verifyKeyServers: false,
 		});
 		vi.spyOn(client as any, 'getKeyServers').mockResolvedValue(MOCK_KEY_SERVERS);
