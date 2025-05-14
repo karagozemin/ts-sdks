@@ -3,8 +3,11 @@
 
 import { useStore } from '@nanostores/react';
 import { createDAppKit } from '@mysten/dapp-kit-next';
+import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 
-const dAppKit = createDAppKit();
+const dAppKit = createDAppKit({
+	clients: [new SuiClient({ network: 'testnet', url: getFullnodeUrl('testnet') })],
+});
 
 function App() {
 	const wallets = useStore(dAppKit.$wallets);

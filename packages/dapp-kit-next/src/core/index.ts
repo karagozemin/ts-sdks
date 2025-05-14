@@ -51,7 +51,7 @@ type CreateDAppKitOptions<TClients extends NonEmptyArray<Experimental_BaseClient
 
 let defaultInstance: DAppKit | undefined;
 
-export function createDAppKit<TClients extends NonEmptyArray<Experimental_BaseClient>>(
+export function createDAppKit<const TClients extends NonEmptyArray<Experimental_BaseClient>>(
 	options: CreateDAppKitOptions<TClients>,
 ) {
 	const dAppKit = createDAppKitInstance(options);
@@ -106,7 +106,7 @@ export function createDAppKitInstance<TClients extends NonEmptyArray<Experimenta
 
 	return {
 		...actions,
-		clients,
+		clients: Object.freeze(clients),
 		$state: readonlyType($state),
 		$wallets: computed($state, (state) => state.wallets),
 		$currentClient: computed($state, (state) => networkConfig.get(state.currentNetwork)!),
