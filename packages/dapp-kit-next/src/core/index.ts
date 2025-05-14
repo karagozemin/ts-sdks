@@ -12,8 +12,8 @@ import type { StateStorage } from '../utils/storage.js';
 import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
 import { getAssociatedWalletOrThrow } from '../utils/wallets.js';
 import { manageWalletConnection } from './initializers/manage-connection.js';
-import type { NonEmptyArray } from '../../../utils/src/types.js';
-import type { Experimental_BaseClient } from '@mysten/sui/src/experimental/client.js';
+import type { NonEmptyArray } from '@mysten/utils';
+import type { Experimental_BaseClient } from '@mysten/sui/experimental';
 import { buildNetworkConfig } from '../utils/networks.js';
 
 export type DAppKit = ReturnType<typeof createDAppKit>;
