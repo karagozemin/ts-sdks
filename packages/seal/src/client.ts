@@ -345,7 +345,7 @@ export class SealClient {
 
 				// Check if all the receivedIds are consistent with the requested fullIds.
 				// If so, consider the key server got all keys and mark as completed.
-				if (fullIds.every((fullIds) => receivedIds.has(fullIds))) {
+				if (fullIds.every((fullId) => receivedIds.has(fullId))) {
 					completedWeight += this.#weight(objectId)!;
 
 					// Return early if the completed servers is more than the threshold.
