@@ -13,7 +13,7 @@ import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
 import { getAssociatedWalletOrThrow } from '../utils/wallets.js';
 import { manageWalletConnection } from './initializers/manage-connection.js';
 
-export type DAppKit = ReturnType<typeof createDAppKit>;
+export type DAppKit = ReturnType<typeof createDAppKitInstance>;
 
 type CreateDAppKitOptions = {
 	/**
@@ -35,28 +35,22 @@ type CreateDAppKitOptions = {
 	storageKey?: string;
 };
 
-let defaultInstance: DAppKit | undefined;
-
 export function createDAppKit(options: CreateDAppKitOptions) {
-	const dAppKit = createDAppKitInstance(options);
+	const instance = createDAppKitInstance(options);
 
-	if (!defaultInstance) {
-		defaultInstance = dAppKit;
-
-		globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ ||= defaultInstance;
-		if (globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ !== defaultInstance) {
-			console.warn('Detected multiple dApp-kit instances. This may cause un-expected behavior.');
-		}
+	globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ ||= instance;
+	if (globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ !== instance) {
+		console.warn('Detected multiple dApp-kit instances. This may cause un-expected behavior.');
 	}
 
-	return dAppKit;
+	return instance;
 }
 
 export function getDefaultInstance() {
-	if (!defaultInstance) {
+	if (!globalThis.__DEFAULT_DAPP_KIT_INSTANCE__) {
 		throw new DAppKitError('dApp-kit has not been initialized yet.');
 	}
-	return defaultInstance;
+	return globalThis.__DEFAULT_DAPP_KIT_INSTANCE__;
 }
 
 export function createDAppKitInstance({
