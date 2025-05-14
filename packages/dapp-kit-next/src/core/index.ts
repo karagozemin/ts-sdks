@@ -35,7 +35,7 @@ type CreateDAppKitOptions = {
 	storageKey?: string;
 };
 
-export function createDAppKit(options: CreateDAppKitOptions) {
+export function createDAppKit(options: CreateDAppKitOptions = {}) {
 	const instance = createDAppKitInstance(options);
 
 	globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ ||= instance;
