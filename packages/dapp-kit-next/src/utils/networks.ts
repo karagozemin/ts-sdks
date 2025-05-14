@@ -7,15 +7,16 @@ import type {
 } from '@mysten/sui/experimental';
 import { DAppKitError } from './errors.js';
 import type { IdentifierString } from '@mysten/wallet-standard';
-import type { NonEmptyArray } from '@mysten/utils';
+
+type NonEmptyArray<T> = readonly [T, ...T[]] | readonly [...T[], T] | readonly [T, ...T[], T];
+
+export type BaseClients = NonEmptyArray<Experimental_BaseClient>;
 
 export function getChain(network: Experimental_SuiClientTypes.Network): IdentifierString {
 	return `sui:${network}`;
 }
 
-export function buildNetworkConfig<TClients extends NonEmptyArray<Experimental_BaseClient>>(
-	clients: TClients,
-) {
+export function buildNetworkConfig<TClients extends BaseClients>(clients: TClients) {
 	return clients.reduce((accumulator, client) => {
 		if (client.network in accumulator) {
 			throw new DAppKitError(

@@ -12,13 +12,12 @@ import type { StateStorage } from '../utils/storage.js';
 import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
 import { getAssociatedWalletOrThrow } from '../utils/wallets.js';
 import { manageWalletConnection } from './initializers/manage-connection.js';
-import type { NonEmptyArray } from '@mysten/utils';
-import type { Experimental_BaseClient } from '@mysten/sui/experimental';
+import type { BaseClients } from '../utils/networks.js';
 import { buildNetworkConfig } from '../utils/networks.js';
 
 export type DAppKit = ReturnType<typeof createDAppKit>;
 
-type CreateDAppKitOptions<TClients extends NonEmptyArray<Experimental_BaseClient>> = {
+type CreateDAppKitOptions<TClients extends BaseClients> = {
 	/**
 	 * Enables automatically connecting to the most recently used wallet account.
 	 * @defaultValue `true`
@@ -51,7 +50,7 @@ type CreateDAppKitOptions<TClients extends NonEmptyArray<Experimental_BaseClient
 
 let defaultInstance: DAppKit | undefined;
 
-export function createDAppKit<const TClients extends NonEmptyArray<Experimental_BaseClient>>(
+export function createDAppKit<const TClients extends BaseClients>(
 	options: CreateDAppKitOptions<TClients>,
 ) {
 	const dAppKit = createDAppKitInstance(options);
@@ -75,7 +74,7 @@ export function getDefaultInstance() {
 	return defaultInstance;
 }
 
-export function createDAppKitInstance<TClients extends NonEmptyArray<Experimental_BaseClient>>({
+export function createDAppKitInstance<TClients extends BaseClients>({
 	autoConnect = true,
 	clients,
 	defaultNetwork,
