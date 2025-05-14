@@ -84,7 +84,7 @@ export function createDAppKitInstance<TClients extends BaseClients>({
 	const networkConfig = buildNetworkConfig(clients);
 
 	defaultNetwork ||= clients[0].network;
-	if (!(defaultNetwork in networkConfig)) {
+	if (!networkConfig.has(defaultNetwork)) {
 		throw new DAppKitError(
 			`No client is configured for the specified default network "${defaultNetwork}".`,
 		);
