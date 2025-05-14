@@ -145,7 +145,7 @@ export class InvalidThresholdError extends UserError {}
 export class InconsistentKeyServersError extends UserError {}
 export class DecryptionError extends UserError {}
 export class InvalidClientOptionsError extends UserError {}
-export class TooManyFailedFetchKeysError extends UserError {}
+export class TooManyFailedFetchKeyRequestsError extends UserError {}
 
 export function toMajorityError(errors: Error[]): Error {
 	let maxCount = 0;

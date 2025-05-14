@@ -13,7 +13,7 @@ import {
 	InvalidKeyServerError,
 	InvalidThresholdError,
 	toMajorityError,
-	TooManyFailedFetchKeysError as TooManyFailedFetchKeyRequestsError,
+	TooManyFailedFetchKeyRequestsError,
 } from './error.js';
 import { BonehFranklinBLS12381Services, DST } from './ibe.js';
 import {
