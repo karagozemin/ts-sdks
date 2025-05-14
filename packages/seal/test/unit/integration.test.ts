@@ -356,7 +356,6 @@ describe('Integration test', () => {
 			}),
 		).rejects.toThrow(InvalidThresholdError);
 
-
 		// client with different weights should fail even though the threshold could be achieved
 		objectIds = [
 			['0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e', 1],
