@@ -9,9 +9,11 @@ import { AesGcm256, Hmac256Ctr } from './dem.js';
 import { DemType, encrypt, KemType } from './encrypt.js';
 import {
 	InconsistentKeyServersError,
+	InvalidClientOptionsError,
 	InvalidKeyServerError,
 	InvalidThresholdError,
 	toMajorityError,
+	TooManyFailedFetchKeysError as TooManyFailedFetchKeyRequestsError,
 } from './error.js';
 import { BonehFranklinBLS12381Services, DST } from './ibe.js';
 import {
@@ -57,10 +59,19 @@ export class SealClient {
 
 	constructor(options: SealClientOptions) {
 		this.#suiClient = options.suiClient;
+
+		if (
+			new Set(options.serverObjectIds.map(([objectId, _]) => objectId)).size !==
+			options.serverObjectIds.length
+		) {
+			throw new InvalidClientOptionsError('Duplicate object IDs');
+		}
+
 		this.#weights = new Map(options.serverObjectIds);
 		this.#totalWeight = options.serverObjectIds
 			.map(([_, weight]) => weight)
 			.reduce((sum, term) => sum + term, 0);
+
 		this.#verifyKeyServers = options.verifyKeyServers ?? true;
 		this.#timeout = options.timeout ?? 10_000;
 	}
@@ -170,7 +181,12 @@ export class SealClient {
 
 	#validateEncryptionServices(services: string[], threshold: number) {
 		// Check that the client's key servers are a subset of the encrypted object's key servers.
-		if (services.some((objectId) => this.#weight(objectId) > count(services, objectId))) {
+		if (
+			services.some((objectId) => {
+				const countInClient = this.#weight(objectId);
+				return countInClient > 0 && countInClient !== count(services, objectId);
+			})
+		) {
 			throw new InconsistentKeyServersError(
 				`Client's key servers must be a subset of the encrypted object's key servers`,
 			);
@@ -297,9 +313,6 @@ export class SealClient {
 		const controller = new AbortController();
 		const errors: Error[] = [];
 
-		// The weight of the servers that failed to return keys.
-		let failedWeight = 0;
-
 		const keyFetches = remainingKeyServers.map(async (objectId) => {
 			const server = keyServers.get(objectId)!;
 			try {
@@ -343,11 +356,12 @@ export class SealClient {
 			} catch (error) {
 				if (!controller.signal.aborted) {
 					errors.push(error as Error);
-					failedWeight += this.#weight(objectId)!;
 				}
+			} finally {
 				// If there are too many errors that the threshold is not attainable, return early with error.
-				if (remainingKeyServersWeight - failedWeight < threshold - completedWeight) {
-					controller.abort(error);
+				remainingKeyServersWeight -= this.#weight(objectId)!;
+				if (remainingKeyServersWeight < threshold - completedWeight) {
+					controller.abort(new TooManyFailedFetchKeyRequestsError());
 				}
 			}
 		});
