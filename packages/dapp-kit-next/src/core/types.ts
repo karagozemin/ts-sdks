@@ -18,9 +18,10 @@ export type CreateDAppKitOptions<TNetworks extends Networks> = {
 	networks: TNetworks;
 
 	/**
+	 * Creates a new client instance for the given network.
 	 *
-	 * @param network
-	 * @returns
+	 * @param network - A supported network identifier as defined by the `networks` field.
+	 * @returns An `Experimental_BaseClient` that’s pre-configured to interact with the specified network.
 	 */
 	createClient: (network: TNetworks[number]) => Experimental_BaseClient;
 
