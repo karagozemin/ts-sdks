@@ -27,8 +27,7 @@ export function createDAppKit<TNetworks extends Networks>(
 ) {
 	const instance = createDAppKitInstance(options);
 
-	// @ts-expect-error uuuuh
-	globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ ||= instance;
+	globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ ||= instance as DAppKit;
 	if (globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ !== instance) {
 		console.warn('Detected multiple dApp-kit instances. This may cause un-expected behavior.');
 	}
@@ -36,11 +35,11 @@ export function createDAppKit<TNetworks extends Networks>(
 	return instance;
 }
 
-export function getDefaultInstance<TNetworks extends Networks = Networks>() {
+export function getDefaultInstance() {
 	if (!globalThis.__DEFAULT_DAPP_KIT_INSTANCE__) {
 		throw new DAppKitError('dApp-kit has not been initialized yet.');
 	}
-	return globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ as DAppKit<TNetworks>;
+	return globalThis.__DEFAULT_DAPP_KIT_INSTANCE__;
 }
 
 export function createDAppKitInstance<TNetworks extends Networks>({
