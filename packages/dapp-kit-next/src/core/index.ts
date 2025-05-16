@@ -14,8 +14,11 @@ import { manageWalletConnection } from './initializers/manage-connection.js';
 import type { Networks } from '../utils/networks.js';
 import type { CreateDAppKitOptions } from './types.js';
 import type { Experimental_BaseClient } from '@mysten/sui/experimental';
+import { switchNetworkCreator } from './actions/switch-network.js';
 
-export type DAppKit = ReturnType<typeof createDAppKitInstance>;
+export type DAppKit<TNetworks extends Networks> = ReturnType<
+	typeof createDAppKitInstance<TNetworks>
+>;
 
 export function createDAppKit<TNetworks extends Networks>(
 	options: CreateDAppKitOptions<TNetworks>,
@@ -45,17 +48,17 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 	storage = getDefaultStorage(),
 	storageKey = DEFAULT_STORAGE_KEY,
 }: CreateDAppKitOptions<TNetworks>) {
-	const $state = createState({ defaultNetwork });
-	const actions = createActions($state, networks);
+	const state = createState({ defaultNetwork });
+	const actions = createActions(state);
 
 	storage ||= createInMemoryStorage();
-	syncStateToStorage({ $state, storageKey, storage });
+	syncStateToStorage({ state, storageKey, storage });
 
-	syncRegisteredWallets($state);
-	manageWalletConnection($state);
+	syncRegisteredWallets(state);
+	manageWalletConnection(state);
 
 	if (autoConnect) {
-		autoConnectWallet({ $state, storageKey, storage });
+		autoConnectWallet({ state, storageKey, storage });
 	}
 
 	const networkConfig = new Map<TNetworks[number], Experimental_BaseClient>();
@@ -71,12 +74,13 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 
 	return {
 		...actions,
+		switchNetwork: switchNetworkCreator(state),
 		getClient,
-		$state: readonlyType($state),
-		$wallets: computed($state, (state) => state.wallets),
-		$currentClient: computed($state, (state) => getClient(state.currentNetwork)),
-		$currentNetwork: computed($state, (state) => state.currentNetwork),
-		$connection: computed([$state], ({ connection, wallets }) => {
+		$state: readonlyType(state.$state),
+		$wallets: computed(state.$state, (state) => state.wallets),
+		$currentNetwork: readonlyType(state.$currentNetwork),
+		$currentClient: computed(state.$currentNetwork, (network) => getClient(network)),
+		$connection: computed([state.$state], ({ connection, wallets }) => {
 			switch (connection.status) {
 				case 'connected':
 					return {

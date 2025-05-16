@@ -3,20 +3,20 @@
 
 import { useStore } from '@nanostores/react';
 import { createDAppKit } from '@mysten/dapp-kit-next';
-<<<<<<< HEAD
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 
 const dAppKit = createDAppKit({
-	clients: [new SuiClient({ network: 'testnet', url: getFullnodeUrl('testnet') })],
+	networks: ['mainnet', 'testnet'],
+	defaultNetwork: 'testnet',
+	createClient(network) {
+		return new SuiClient({ network, url: getFullnodeUrl(network) });
+	},
 });
-=======
-
-const dAppKit = createDAppKit();
->>>>>>> origin/main
 
 function App() {
 	const wallets = useStore(dAppKit.$wallets);
 
+	dAppKit.switchNetwork({ network: 'localnet' });
 	return (
 		<div>
 			<p>TODO: Flesh this out more / make it more use case specific ^.^</p>

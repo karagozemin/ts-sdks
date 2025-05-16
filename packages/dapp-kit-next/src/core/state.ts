@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
-import { deepMap } from 'nanostores';
+import { atom, deepMap } from 'nanostores';
 import type { Networks } from '../utils/networks.js';
 
 type WalletConnection =
@@ -15,25 +15,29 @@ type WalletConnection =
 			currentAccount: UiWalletAccount;
 	  };
 
-export type DAppKitStateValues<TNetworks extends Networks> = {
+export type DAppKitStateValues = {
 	wallets: UiWallet[];
 	connection: WalletConnection;
-	currentNetwork: TNetworks[number];
 };
 
-export type DAppKitState = ReturnType<typeof createState>;
+export type DAppKitState<TNetworks extends Networks = Networks> = ReturnType<
+	typeof createState<TNetworks>
+>;
 
-export function createState<TNetworks extends Networks = Networks>({
+export function createState<TNetworks extends Networks>({
 	defaultNetwork,
 }: {
 	defaultNetwork: TNetworks[number];
 }) {
-	return deepMap<DAppKitStateValues<TNetworks>>({
+	const $currentNetwork = atom<TNetworks[number]>(defaultNetwork);
+
+	const $state = deepMap<DAppKitStateValues>({
 		wallets: [],
 		connection: {
 			status: 'disconnected',
 			currentAccount: null,
 		},
-		currentNetwork: defaultNetwork,
 	});
+
+	return { $state, $currentNetwork };
 }

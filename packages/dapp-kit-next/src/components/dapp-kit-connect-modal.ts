@@ -10,6 +10,7 @@ import { storeProperty } from '../utils/lit.js';
 import { WalletList } from './internal/wallet-list.js';
 import { getDefaultInstance } from '../core/index.js';
 import type { DAppKit } from '../core/index.js';
+import type { Networks } from '../utils/networks.js';
 
 @customElement('mysten-dapp-kit-connect-modal')
 export class DAppKitConnectModal extends ScopedRegistryHost(LitElement) {
@@ -18,7 +19,7 @@ export class DAppKitConnectModal extends ScopedRegistryHost(LitElement) {
 	};
 
 	@storeProperty()
-	store?: DAppKit;
+	store?: DAppKit<Networks>;
 
 	override connectedCallback() {
 		this.store ||= getDefaultInstance();
