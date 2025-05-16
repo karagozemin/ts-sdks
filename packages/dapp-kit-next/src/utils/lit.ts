@@ -5,7 +5,6 @@ import type { ReactiveElement } from 'lit';
 import { StoreController } from '@nanostores/lit';
 import type { DAppKit } from '../core/index.js';
 import type { DAppKitStateValues } from '../core/state.js';
-import { Networks } from './networks.js';
 
 /**
  * Property decorator that creates a property that can be assigned different dApp Kit instances.
@@ -22,14 +21,14 @@ export function storeProperty() {
 
 		interface Target extends ReactiveElement {
 			[controllerKey]: StoreController<DAppKitStateValues> | undefined;
-			[valueKey]: DAppKit<Networks> | undefined;
+			[valueKey]: DAppKit | undefined;
 		}
 
 		Object.defineProperty(target, propertyKey, {
-			get(this: Target): DAppKit<Networks> | undefined {
+			get(this: Target): DAppKit | undefined {
 				return this[valueKey];
 			},
-			set(this: Target, newInstance: DAppKit<Networks> | undefined) {
+			set(this: Target, newInstance: DAppKit | undefined) {
 				const oldInstance = this[valueKey];
 				if (oldInstance === newInstance) {
 					return;

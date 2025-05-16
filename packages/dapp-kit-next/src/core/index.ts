@@ -4,7 +4,6 @@
 import { computed, readonlyType } from 'nanostores';
 import { createState } from './state.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
-import { createActions } from './actions/index.js';
 import { DAppKitError } from '../utils/errors.js';
 import { autoConnectWallet } from './initializers/autoconnect-wallet.js';
 import { createInMemoryStorage, DEFAULT_STORAGE_KEY, getDefaultStorage } from '../utils/storage.js';
@@ -15,8 +14,11 @@ import type { Networks } from '../utils/networks.js';
 import type { CreateDAppKitOptions } from './types.js';
 import type { Experimental_BaseClient } from '@mysten/sui/experimental';
 import { switchNetworkCreator } from './actions/switch-network.js';
+import { connectWalletCreator } from './actions/connect-wallet.js';
+import { disconnectWalletCreator } from './actions/disconnect-wallet.js';
+import { switchAccountCreator } from './actions/switch-account.js';
 
-export type DAppKit<TNetworks extends Networks> = ReturnType<
+export type DAppKit<TNetworks extends Networks = Networks> = ReturnType<
 	typeof createDAppKitInstance<TNetworks>
 >;
 
@@ -25,6 +27,7 @@ export function createDAppKit<TNetworks extends Networks>(
 ) {
 	const instance = createDAppKitInstance(options);
 
+	// @ts-expect-error uuuuh
 	globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ ||= instance;
 	if (globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ !== instance) {
 		console.warn('Detected multiple dApp-kit instances. This may cause un-expected behavior.');
@@ -33,11 +36,11 @@ export function createDAppKit<TNetworks extends Networks>(
 	return instance;
 }
 
-export function getDefaultInstance() {
+export function getDefaultInstance<TNetworks extends Networks = Networks>() {
 	if (!globalThis.__DEFAULT_DAPP_KIT_INSTANCE__) {
 		throw new DAppKitError('dApp-kit has not been initialized yet.');
 	}
-	return globalThis.__DEFAULT_DAPP_KIT_INSTANCE__;
+	return globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ as DAppKit<TNetworks>;
 }
 
 export function createDAppKitInstance<TNetworks extends Networks>({
@@ -48,8 +51,11 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 	storage = getDefaultStorage(),
 	storageKey = DEFAULT_STORAGE_KEY,
 }: CreateDAppKitOptions<TNetworks>) {
+	if (networks.length === 0) {
+		throw new DAppKitError('You must specify at least one Sui network for your application.');
+	}
+
 	const state = createState({ defaultNetwork });
-	const actions = createActions(state);
 
 	storage ||= createInMemoryStorage();
 	syncStateToStorage({ state, storageKey, storage });
@@ -73,9 +79,11 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 	};
 
 	return {
-		...actions,
-		switchNetwork: switchNetworkCreator(state),
 		getClient,
+		connectWallet: connectWalletCreator(state),
+		disconnectWallet: disconnectWalletCreator(state),
+		switchAccount: switchAccountCreator(state),
+		switchNetwork: switchNetworkCreator(state),
 		$state: readonlyType(state.$state),
 		$wallets: computed(state.$state, (state) => state.wallets),
 		$currentNetwork: readonlyType(state.$currentNetwork),

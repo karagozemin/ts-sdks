@@ -24,7 +24,7 @@ export type DAppKitState<TNetworks extends Networks = Networks> = ReturnType<
 	typeof createState<TNetworks>
 >;
 
-export function createState<TNetworks extends Networks>({
+export function createState<TNetworks extends Networks = Networks>({
 	defaultNetwork,
 }: {
 	defaultNetwork: TNetworks[number];
