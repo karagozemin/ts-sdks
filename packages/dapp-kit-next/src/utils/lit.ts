@@ -9,9 +9,9 @@ type ValueOf<T> = T[keyof T];
 type StoreValues = ValueOf<DAppKit['stores']>[];
 
 /**
- * Property decorator that creates a property that can be assigned different stores.
- * When the property changes, it will automatically disconnect the old store's controller
- * and create a new one for the new store.
+ * Property decorator that creates a property that can be assigned different dApp Kit instances.
+ * When a property in the internal store changes, it will automatically disconnect the old store's
+ * controller and create a new one for the new store.
  *
  * Inspired by https://github.com/nanostores/lit/issues/10#issuecomment-2781516844 :)
  */
