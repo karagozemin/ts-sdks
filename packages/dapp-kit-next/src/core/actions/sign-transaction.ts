@@ -37,8 +37,13 @@ export function signTransactionCreator({ $connection, $currentClient }: DAppKitS
 			...standardArgs,
 			transaction: {
 				toJSON: async () => {
+					if (typeof transaction === 'string') {
+						return transaction;
+					}
+
 					// TODO: Fix passing through the client and supported intents for plugins.
-					return typeof transaction === 'string' ? transaction : await transaction.toJSON();
+					transaction.setSenderIfNotSet(account.address);
+					return await transaction.toJSON();
 				},
 			},
 			account: getWalletAccountForUiWalletAccount(account),
