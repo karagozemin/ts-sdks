@@ -16,7 +16,6 @@ const dAppKit = createDAppKit({
 function App() {
 	const wallets = useStore(dAppKit.$wallets);
 
-	dAppKit.switchNetwork({ network: 'localnet' });
 	return (
 		<div>
 			<p>TODO: Flesh this out more / make it more use case specific ^.^</p>
