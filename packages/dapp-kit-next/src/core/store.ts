@@ -5,7 +5,7 @@ import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
 import { atom, computed, map } from 'nanostores';
 import { getChain } from '../utils/networks.js';
 import type { Networks } from '../utils/networks.js';
-import { getAssociatedWalletOrThrow } from '../utils/wallets.js';
+import { getAssociatedWalletOrThrow, requiredWalletFeatures } from '../utils/wallets.js';
 import { publicKeyFromSuiBytes } from '@mysten/sui/verify';
 import type { Experimental_BaseClient } from '@mysten/sui/experimental';
 
