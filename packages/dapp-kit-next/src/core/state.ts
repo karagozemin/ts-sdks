@@ -3,7 +3,7 @@
 
 import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
 import { deepMap } from 'nanostores';
-import type { Experimental_SuiClientTypes } from '@mysten/sui/experimental';
+import type { Networks } from '../utils/networks.js';
 
 type WalletConnection =
 	| {
@@ -15,20 +15,20 @@ type WalletConnection =
 			currentAccount: UiWalletAccount;
 	  };
 
-export type DAppKitStateValues = {
+export type DAppKitStateValues<TNetworks extends Networks> = {
 	wallets: UiWallet[];
 	connection: WalletConnection;
-	currentNetwork: Experimental_SuiClientTypes.Network;
+	currentNetwork: TNetworks[number];
 };
 
 export type DAppKitState = ReturnType<typeof createState>;
 
-export function createState({
+export function createState<TNetworks extends Networks = Networks>({
 	defaultNetwork,
 }: {
-	defaultNetwork: Experimental_SuiClientTypes.Network;
+	defaultNetwork: TNetworks[number];
 }) {
-	return deepMap<DAppKitStateValues>({
+	return deepMap<DAppKitStateValues<TNetworks>>({
 		wallets: [],
 		connection: {
 			status: 'disconnected',
