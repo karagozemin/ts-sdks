@@ -10,26 +10,24 @@
  */
 
 const mainnetResolution = {
-  packages: {
-    "@deepbook/core":
-      "0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a",
-  },
-  types: {
-    "@deepbook/core::balance_manager::BalanceManager":
-      "0x2c8d603bc51326b8c13cef9dd07031a408a48dddb541963357661df5d3204809::balance_manager::BalanceManager",
-  },
+	packages: {
+		'@deepbook/core': '0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a',
+	},
+	types: {
+		'@deepbook/core::balance_manager::BalanceManager':
+			'0x2c8d603bc51326b8c13cef9dd07031a408a48dddb541963357661df5d3204809::balance_manager::BalanceManager',
+	},
 };
 const testnetResolution = {
-  packages: {
-    "@deepbook/core":
-      "0x9592ac923593f37f4fed15ee15f760ebd4c39729f53ee3e8c214de7a17157769",
-  },
-  types: {
-    "@deepbook/core::balance_manager::BalanceManager":
-      "0xfb28c4cbc6865bd1c897d26aecbe1f8792d1509a20ffec692c800660cbec6982::balance_manager::BalanceManager",
-  },
+	packages: {
+		'@deepbook/core': '0x9592ac923593f37f4fed15ee15f760ebd4c39729f53ee3e8c214de7a17157769',
+	},
+	types: {
+		'@deepbook/core::balance_manager::BalanceManager':
+			'0xfb28c4cbc6865bd1c897d26aecbe1f8792d1509a20ffec692c800660cbec6982::balance_manager::BalanceManager',
+	},
 };
 
-export function getMvrCache(network: "mainnet" | "testnet") {
-  return network === "mainnet" ? mainnetResolution : testnetResolution;
+export function getMvrCache(network: 'mainnet' | 'testnet') {
+	return network === 'mainnet' ? mainnetResolution : testnetResolution;
 }
