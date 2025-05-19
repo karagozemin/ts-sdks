@@ -8,6 +8,13 @@ import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 const dAppKit = createDAppKit({
 	networks: ['mainnet', 'testnet'],
 	defaultNetwork: 'testnet',
+	walletInitializers: [
+		(client) => {},
+		(client) => {
+			registerSlushWallet('My wallet', { abc: 'google.com ' });
+		},
+		registerUnsafeBurnerWallet,
+	],
 	createClient(network) {
 		return new SuiClient({ network, url: getFullnodeUrl(network) });
 	},

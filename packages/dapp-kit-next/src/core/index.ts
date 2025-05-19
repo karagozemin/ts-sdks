@@ -51,22 +51,13 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 	defaultNetwork = networks[0],
 	storage = getDefaultStorage(),
 	storageKey = DEFAULT_STORAGE_KEY,
+	walletInitializers = [],
 }: CreateDAppKitOptions<TNetworks>) {
 	if (networks.length === 0) {
 		throw new DAppKitError('You must specify at least one Sui network for your application.');
 	}
 
 	const state = createState({ defaultNetwork });
-
-	storage ||= createInMemoryStorage();
-	syncStateToStorage({ state, storageKey, storage });
-
-	syncRegisteredWallets(state);
-	manageWalletConnection(state);
-
-	if (autoConnect) {
-		autoConnectWallet({ state, storageKey, storage });
-	}
 
 	const networkConfig = new Map<TNetworks[number], Experimental_BaseClient>();
 	const getClient = (network: TNetworks[number]) => {
@@ -78,6 +69,16 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 		networkConfig.set(network, client);
 		return client;
 	};
+
+	storage ||= createInMemoryStorage();
+	syncStateToStorage({ state, storageKey, storage });
+
+	syncRegisteredWallets(state);
+	manageWalletConnection(state);
+
+	if (autoConnect) {
+		autoConnectWallet({ state, storageKey, storage });
+	}
 
 	return {
 		getClient,
