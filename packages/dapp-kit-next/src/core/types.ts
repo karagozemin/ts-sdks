@@ -5,7 +5,9 @@ import type { Experimental_BaseClient } from '@mysten/sui/experimental';
 import type { Networks } from '../utils/networks.js';
 import type { StateStorage } from '../utils/storage.js';
 
-type WalletInitializer = () => Promise<void>;
+type UnregisterCallback = () => void;
+
+type WalletInitializer = (currentClient: Experimental_BaseClient) => UnregisterCallback;
 
 export type CreateDAppKitOptions<TNetworks extends Networks> = {
 	/**

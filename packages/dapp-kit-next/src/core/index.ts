@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { computed, readonlyType } from 'nanostores';
+import { computed, onMount, readonlyType } from 'nanostores';
 import { createState } from './state.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
 import { DAppKitError } from '../utils/errors.js';
@@ -69,6 +69,14 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 		networkConfig.set(network, client);
 		return client;
 	};
+
+	onMount(state.$currentNetwork, () => {
+		const unregisterCallbacks = walletInitializers.map((init) =>
+			init(getClient(state.$currentNetwork.get())),
+		);
+
+		return () => unregisterCallbacks.forEach((unregister) => unregister());
+	});
 
 	storage ||= createInMemoryStorage();
 	syncStateToStorage({ state, storageKey, storage });
