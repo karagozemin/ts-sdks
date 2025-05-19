@@ -5,9 +5,12 @@ import {
 	StandardConnect,
 	StandardEvents,
 	SuiSignAndExecuteTransaction,
+<<<<<<< HEAD
 	SuiSignTransaction,
 	WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
 	WalletStandardError,
+=======
+>>>>>>> origin/main
 } from '@mysten/wallet-standard';
 import type { Wallet } from '@mysten/wallet-standard';
 import type { UiWallet, UiWalletAccount } from '@wallet-standard/ui';
