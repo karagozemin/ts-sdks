@@ -2,13 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-	isWalletStandardError,
 	StandardConnect,
 	StandardEvents,
 	SuiSignAndExecuteTransaction,
 	SuiSignTransaction,
 	WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
-	WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_FEATURE_UNIMPLEMENTED,
 	WalletStandardError,
 } from '@mysten/wallet-standard';
 import type { Wallet } from '@mysten/wallet-standard';
