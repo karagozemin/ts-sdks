@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+	isWalletStandardError,
 	StandardConnect,
 	StandardEvents,
 	SuiSignAndExecuteTransaction,
 	SuiSignTransaction,
 	WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
+	WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_FEATURE_UNIMPLEMENTED,
 	WalletStandardError,
 } from '@mysten/wallet-standard';
 import type { Wallet } from '@mysten/wallet-standard';
@@ -45,20 +47,20 @@ export function getAccountFeature<TAccount extends UiWalletAccount>({
 	chain: TAccount['chains'][number];
 }) {
 	if (!account.chains.includes(chain)) {
-		throw new ChainNotSupportedError(
-			`The account ${account.address} does not support the chain ${chain}.`,
+		const cause = new WalletStandardError(
+			WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
 			{
-				cause: new WalletStandardError(
-					WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
-					{
-						chain,
-						featureName,
-						supportedChains: [...account.chains],
-						supportedFeatures: [...account.features],
-						address: account.address,
-					},
-				),
+				chain,
+				featureName,
+				supportedChains: [...account.chains],
+				supportedFeatures: [...account.features],
+				address: account.address,
 			},
+		);
+
+		throw new ChainNotSupportedError(
+			`The account ${cause.context.address} does not support the chain "${cause.context.chain}".`,
+			{ cause },
 		);
 	}
 
@@ -66,7 +68,7 @@ export function getAccountFeature<TAccount extends UiWalletAccount>({
 		return getWalletAccountFeature(account, featureName);
 	} catch (error) {
 		throw new FeatureNotSupportedError(
-			`The account ${account.address} does not support the feature ${featureName}.`,
+			`The account ${account.address} does not support the feature "${featureName}".`,
 			{ cause: error },
 		);
 	}

@@ -82,7 +82,7 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 		getClient,
 		...createSignerActions(),
 		signPersonalMessage: signPersonalMessageCreator(stores),
-		connectWallet: connectWalletCreator(stores, Object.keys(networkConfig)),
+		connectWallet: connectWalletCreator(stores, networks),
 		disconnectWallet: disconnectWalletCreator(stores),
 		switchAccount: switchAccountCreator(stores),
 		switchNetwork: switchNetworkCreator(stores),
