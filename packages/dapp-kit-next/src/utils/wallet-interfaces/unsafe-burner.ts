@@ -4,7 +4,6 @@
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import type { SuiClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
-import { toBase64 } from '@mysten/sui/utils';
 import type {
 	StandardConnectFeature,
 	StandardConnectMethod,
@@ -25,10 +24,9 @@ import {
 	SuiSignTransaction,
 } from '@mysten/wallet-standard';
 import type { Wallet } from '@mysten/wallet-standard';
-import type { ClientWithCoreApi } from '@mysten/sui/experimental';
+import { toBase64 } from '@mysten/utils';
 
 export class UnsafeBurnerWallet implements Wallet {
-	#client: ClientWithCoreApi;
 	#keypair = new Ed25519Keypair();
 
 	#account = new ReadonlyWalletAccount({
@@ -38,8 +36,8 @@ export class UnsafeBurnerWallet implements Wallet {
 		features: [SuiSignTransaction, SuiSignAndExecuteTransaction, SuiSignPersonalMessage],
 	});
 
-	constructor({ client }: { client: SuiClient }) {
-		this.#client = client;
+	constructor({ getClient }: { getClient: SuiClient }) {
+		this.#getClient = getClient;
 	}
 
 	get version() {
@@ -100,45 +98,36 @@ export class UnsafeBurnerWallet implements Wallet {
 		return { bytes, signature };
 	};
 
-	#signTransaction: SuiSignTransactionMethod = async (transactionInput) => {
-		const { bytes, signature } = await Transaction.from(
-			await transactionInput.transaction.toJSON(),
-		).sign({
-			client: suiClient,
-			signer: this.#keypair,
-		});
+	#signTransaction: SuiSignTransactionMethod = async ({ transaction, signal, chain }) => {
+		signal?.throwIfAborted();
 
-		transactionInput.signal?.throwIfAborted();
-
-		return {
-			bytes,
-			signature: signature,
-		};
+		const client = this.#getClient(`sui:${chain}`);
+		const parsedTransaction = Transaction.from(await transaction.toJSON());
+		const builtTransaction = await parsedTransaction.build({ client });
+		return await this.#keypair.signTransaction(builtTransaction);
 	};
 
-	#signAndExecuteTransaction: SuiSignAndExecuteTransactionMethod = async (transactionInput) => {
-		const { bytes, signature } = await Transaction.from(
-			await transactionInput.transaction.toJSON(),
-		).sign({
-			client: suiClient,
-			signer: this.#keypair,
-		});
+	#signAndExecuteTransaction: SuiSignAndExecuteTransactionMethod = async ({
+		transaction,
+		signal,
+		chain,
+	}) => {
+		signal?.throwIfAborted();
 
-		transactionInput.signal?.throwIfAborted();
+		const client = this.#getClient(`sui:${chain}`);
+		const parsedTransaction = Transaction.from(await transaction.toJSON());
+		const bytes = await parsedTransaction.build({ client });
 
-		const { rawEffects, digest } = await suiClient.executeTransactionBlock({
-			signature,
-			transactionBlock: bytes,
-			options: {
-				showRawEffects: true,
-			},
+		const result = await this.#keypair.signAndExecuteTransaction({
+			transaction: parsedTransaction,
+			client,
 		});
 
 		return {
-			bytes,
-			signature,
-			digest,
-			effects: toBase64(new Uint8Array(rawEffects!)),
+			bytes: toBase64(bytes),
+			signature: result.signatures[0],
+			digest: result.digest,
+			effects: toBase64(result.effects.bcs!),
 		};
 	};
 }
