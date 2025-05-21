@@ -5,7 +5,6 @@ import type { PaginationArguments, SuiObjectData } from '@mysten/sui/client';
 import { isValidSuiAddress } from '@mysten/sui/utils';
 
 import type {
-	ClientWithKioskExtension,
 	FetchKioskOptions,
 	KioskExtension,
 	KioskListing,
@@ -19,13 +18,12 @@ import {
 	attachObjects,
 	extractKioskData,
 	getAllDynamicFields,
-	getAllObjects,
 	getKioskObject,
 } from '../utils.js';
-import type { Experimental_SuiClientTypes } from '@mysten/sui/experimental';
+import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui/experimental';
 
 export async function fetchKiosk(
-	client: ClientWithKioskExtension,
+	client: ClientWithCoreApi,
 	kioskId: string,
 	pagination: PaginationArguments<string>,
 	options: FetchKioskOptions,
@@ -48,12 +46,18 @@ export async function fetchKiosk(
 	const [kiosk, listingObjects, items] = await Promise.all([
 		options.withKioskFields ? getKioskObject(client, kioskId) : Promise.resolve(undefined),
 		options.withListingPrices
-			? getAllObjects(client, kioskData.listingIds, {
-					showContent: true,
-				})
+			? client.core
+					.getObjects({
+						objectIds: kioskData.listingIds,
+					})
+					.then((res) => res.objects)
 			: Promise.resolve([]),
 		options.withObjects
-			? getAllObjects(client, kioskData.itemIds, options.objectOptions || { showDisplay: true })
+			? client.core
+					.getObjects({
+						objectIds: kioskData.itemIds,
+					})
+					.then((res) => res.objects)
 			: Promise.resolve([]),
 	]);
 
@@ -66,7 +70,7 @@ export async function fetchKiosk(
 	// Attach the objects for the queried items.
 	attachObjects(
 		kioskData,
-		items.filter((x) => !!x.data).map((x) => x.data!),
+		items.filter((x): x is Experimental_SuiClientTypes.ObjectResponse => !(x instanceof Error)),
 	);
 
 	return {
@@ -87,7 +91,7 @@ const DEFAULT_PAGE_SIZE = 50;
 const PERSON_KIOSK_CURSOR = 'personal';
 const OWNED_KIOSKS_CURSOR = 'owned';
 export async function getOwnedKiosks(
-	client: ClientWithKioskExtension,
+	client: ClientWithCoreApi,
 	address: string,
 	options?: {
 		pagination?: PaginationArguments<string>;
@@ -211,7 +215,7 @@ function formatOwnedKioskResponse(
 
 // Get a kiosk extension data for a given kioskId and extensionType.
 export async function fetchKioskExtension(
-	client: ClientWithKioskExtension,
+	client: ClientWithCoreApi,
 	kioskId: string,
 	extensionType: string,
 ): Promise<KioskExtension | null> {

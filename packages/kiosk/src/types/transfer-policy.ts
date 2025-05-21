@@ -58,7 +58,7 @@ export type RuleResolvingParams = {
 	itemType: string;
 	itemId: string;
 	price: string;
-	policyId: ObjectArgument;
+	policyId: string;
 	sellerKiosk: ObjectArgument;
 	kiosk: ObjectArgument;
 	kioskCap: ObjectArgument;

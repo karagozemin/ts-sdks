@@ -6,21 +6,18 @@ import { isValidSuiAddress } from '@mysten/sui/utils';
 import '../bcs.js';
 
 import { TransferPolicyType } from '../bcs.js';
-import type {
-	ClientWithKioskExtension,
-	TransferPolicy,
-	TransferPolicyCap,
-} from '../types/index.js';
+import type { TransferPolicy, TransferPolicyCap } from '../types/index.js';
 import {
 	TRANSFER_POLICY_CAP_TYPE,
 	TRANSFER_POLICY_CREATED_EVENT,
 	TRANSFER_POLICY_TYPE,
 } from '../types/index.js';
 import { getAllOwnedObjects, parseTransferPolicyCapObject } from '../utils.js';
-import type { Experimental_SuiClientTypes } from '@mysten/sui/experimental';
+import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui/experimental';
+import type { SuiClient } from '@mysten/sui/client';
 
 /**
- * Searches the `TransferPolicy`-s for the given type. The seach is performed via
+ * Searches the `TransferPolicy`-s for the given type. The search is performed via
  * the `TransferPolicyCreated` event. The policy can either be owned or shared,
  * and the caller needs to filter the results accordingly (ie single owner can not
  * be accessed by anyone but the owner).
@@ -29,12 +26,12 @@ import type { Experimental_SuiClientTypes } from '@mysten/sui/experimental';
  * @param type
  */
 export async function queryTransferPolicy(
-	client: ClientWithKioskExtension,
+	client: ClientWithCoreApi,
 	type: string,
 ): Promise<TransferPolicy[]> {
 	// console.log('event type: %s', `${TRANSFER_POLICY_CREATED_EVENT}<${type}>`);
 	// TOD0: implement queryEvents
-	const { data } = await client.queryEvents({
+	const { data } = await (client as SuiClient).queryEvents({
 		query: {
 			MoveEventType: `${TRANSFER_POLICY_CREATED_EVENT}<${type}>`,
 		},
@@ -70,24 +67,16 @@ export async function queryTransferPolicy(
  * @returns TransferPolicyCap Object ID | undefined if not found.
  */
 export async function queryTransferPolicyCapsByType(
-	client: SuiClient,
+	client: ClientWithCoreApi,
 	address: string,
 	type: string,
 ): Promise<TransferPolicyCap[]> {
 	if (!isValidSuiAddress(address)) return [];
 
-	const filter = {
-		MatchAll: [
-			{
-				StructType: `${TRANSFER_POLICY_CAP_TYPE}<${type}>`,
-			},
-		],
-	};
-
 	// fetch owned kiosk caps, paginated.
 	const data = await getAllOwnedObjects({
 		client,
-		filter,
+		type: `${TRANSFER_POLICY_CAP_TYPE}<${type}>`,
 		owner: address,
 	});
 
@@ -104,24 +93,18 @@ export async function queryTransferPolicyCapsByType(
  * @returns TransferPolicyCap Object ID | undefined if not found.
  */
 export async function queryOwnedTransferPolicies(
-	client: SuiClient,
+	client: ClientWithCoreApi,
 	address: string,
 ): Promise<TransferPolicyCap[] | undefined> {
 	if (!isValidSuiAddress(address)) return;
 
-	const filter = {
-		MatchAll: [
-			{
-				MoveModule: {
-					module: 'transfer_policy',
-					package: '0x2',
-				},
-			},
-		],
-	};
-
 	// fetch all owned kiosk caps, paginated.
-	const data = await getAllOwnedObjects({ client, owner: address, filter });
+	const data = await getAllOwnedObjects({
+		client,
+		owner: address,
+		// TODO: ensure this works across APIs without a fully resolved type?
+		type: '0x2::transfer_policy',
+	});
 
 	const policies: TransferPolicyCap[] = [];
 
