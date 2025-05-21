@@ -240,7 +240,7 @@ export class WalrusClient {
 		});
 	}
 
-	#wasmBindings() {
+	wasmBindings() {
 		return this.#cache.read(['wasmBindings'], async () => {
 			return getWasmBindings(this.#wasmUrl);
 		});
@@ -290,7 +290,7 @@ export class WalrusClient {
 
 		const slivers = await this.getSlivers({ blobId, signal });
 
-		const bindings = await this.#wasmBindings();
+		const bindings = await this.wasmBindings();
 
 		const blobBytes = bindings.decodePrimarySlivers(
 			blobId,
@@ -320,20 +320,10 @@ export class WalrusClient {
 			shardCount = systemState.committee.n_shards;
 		}
 
-		const bindings = await this.#wasmBindings();
+		const bindings = await this.wasmBindings();
 		const { blob_id, metadata } = bindings.computeMetadata(shardCount, bytes);
 
-		return {
-			blobId: blob_id,
-			metadata: {
-				encodingType: metadata.V1.encoding_type,
-				hashes: Array.from(metadata.V1.hashes).map((hashes) => ({
-					primaryHash: hashes.primary_hash,
-					secondaryHash: hashes.secondary_hash,
-				})),
-				unencodedLength: metadata.V1.unencoded_length,
-			},
-		};
+		return blob_id;
 	}
 
 	async getBlobMetadata({ blobId, signal }: GetBlobMetadataOptions) {
@@ -982,7 +972,7 @@ export class WalrusClient {
 				},
 			}).toBase64();
 
-			const bindings = await this.#wasmBindings();
+			const bindings = await this.wasmBindings();
 			const verifySignature = bindings.getVerifySignature();
 
 			const filteredConfirmations = confirmations
@@ -1451,7 +1441,7 @@ export class WalrusClient {
 		const committee = await this.#getActiveCommittee();
 
 		const numShards = systemState.committee.n_shards;
-		const bindings = await this.#wasmBindings();
+		const bindings = await this.wasmBindings();
 		const { blobId, metadata, sliverPairs, rootHash } = bindings.encodeBlob(numShards, blob);
 
 		const sliversByNodeMap = new Map<number, SliversForNode>();

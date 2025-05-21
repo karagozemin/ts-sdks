@@ -5,21 +5,46 @@ import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 
 import { WalrusClient } from '../../src/client.js';
 
+import { Bench, nToMs } from 'tinybench';
+
 const client = new SuiClient({
-	url: getFullnodeUrl('testnet'),
-	network: 'testnet',
-}).$extend(WalrusClient.experimental_asClientExtension());
+	url: getFullnodeUrl('mainnet'),
+	network: 'mainnet',
+}).$extend(WalrusClient.experimental_asClientExtension({ network: 'mainnet' }));
 
-export async function retrieveBlob(blobId: string) {
-	const blobBytes = await client.walrus.readBlob({ blobId });
-	return new Blob([new Uint8Array(blobBytes)]);
-}
+const smallBytes = new TextEncoder().encode(`hello world`);
 
-(async function main() {
-	const blob = await retrieveBlob('OFrKO0ofGc4inX8roHHaAB-pDHuUiIA08PW4N2B2gFk');
+const bigBytes = new TextEncoder().encode(`hello world`.repeat(2000000));
 
-	const textDecoder = new TextDecoder('utf-8');
-	const resultString = textDecoder.decode(await blob.arrayBuffer());
+const bench = new Bench({
+	name: 'simple benchmark bun',
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+	now: () => nToMs(Bun.nanoseconds()),
+	iterations: 3,
+	setup: (_task, mode) => {
+		// Run the garbage collector before warmup at each cycle
+		if (mode === 'warmup') {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+			Bun.gc(true);
+		}
+	},
 
-	console.log(resultString);
-})();
+	time: 5000,
+});
+
+const bindings = await client.walrus.wasmBindings();
+
+bench
+	.add('encode_blob with large blob', async () => {
+		const result = await bindings.encodeBlob(1000, bigBytes);
+		console.log(result.blobId);
+	})
+	.add('encode_blob with small blob', async () => {
+		const result = await bindings.encodeBlob(1000, smallBytes);
+		console.log(result.blobId);
+	});
+
+await bench.run();
+
+console.log(bench.name);
+console.table(bench.table());

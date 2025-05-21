@@ -49,6 +49,7 @@
 		"hono": "^4.7.5",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
+		"tinybench": "^4.0.1",
 		"typescript": "^5.8.2",
 		"undici": "^7.7.0",
 		"vitest": "^3.1.1"
