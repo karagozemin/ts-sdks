@@ -21,7 +21,7 @@ const dAppKit = createDAppKit({
 });
 
 function App() {
-	const wallets = useStore(dAppKit.$wallets);
+	const wallets = useStore(dAppKit.stores.$wallets);
 
 	return (
 		<div>

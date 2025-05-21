@@ -5,9 +5,16 @@ import type { Experimental_BaseClient } from '@mysten/sui/experimental';
 import type { Networks } from '../utils/networks.js';
 import type { StateStorage } from '../utils/storage.js';
 
-type UnregisterCallback = () => void;
+export type UnregisterCallback = () => void;
 
-type WalletInitializer = (currentClient: Experimental_BaseClient) => UnregisterCallback;
+export type WalletInitializerArgs<TNetworks extends Networks> = {
+	networks: TNetworks;
+	getClient: (network: TNetworks[number]) => Experimental_BaseClient;
+};
+
+export type WalletInitializer<TNetworks extends Networks> = (
+	input: WalletInitializerArgs<TNetworks>,
+) => UnregisterCallback;
 
 export type CreateDAppKitOptions<TNetworks extends Networks> = {
 	/**
@@ -50,5 +57,5 @@ export type CreateDAppKitOptions<TNetworks extends Networks> = {
 	/**
 	 *
 	 */
-	walletInitializers?: WalletInitializer[];
+	walletInitializers?: WalletInitializer<TNetworks>[];
 };
