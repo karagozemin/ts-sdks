@@ -206,8 +206,9 @@ const secretKey = 'suiprivkey1qzse89atw7d3zum8ujep76d2cxmgduyuast0y9fu23xcl0mpaf
 const keypair = Ed25519Keypair.fromSecretKey(secretKey);
 ```
 
-You can also derive a `Keypair` by converting the 33-byte secret key encoded in Bech32 string to a
-`Uint8Array` and passing it to the `fromSecretKey` method of a `Keypair` class.
+You can also use the `decodeSuiPrivateKey` function to decode the secret key and determine the
+keyScheme, and get the keypairs private key bytes, which can be used to instantiate the appropriate
+`Keypair` class.
 
 ```typescript
 import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
@@ -215,11 +216,10 @@ import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { Secp256r1Keypair } from '@mysten/sui/keypairs/secp256r1';
 import { Secp256k1Keypair } from '@mysten/sui/keypairs/secp256k1';
 
-const { schema, secretKey } = decodeSuiPrivateKey(encoded);
+const { scheme, secretKey } = decodeSuiPrivateKey(encoded);
 
-// use schema to choose the correct key pair
-
-switch (schema) {
+// use scheme to choose the correct key pair
+switch (scheme) {
 	case 'ED25519':
 		keypair = Ed25519Keypair.fromSecretKey(secretKey);
 		break;
@@ -230,14 +230,14 @@ switch (schema) {
 		keypair = Secp256k1Keypair.fromSecretKey(secretKey);
 		break;
 	default:
-		throw new Error(`Unsupported key pair scheme: ${schema}`);
+		throw new Error(`Unsupported key pair scheme: ${scheme}`);
 }
 ```
 
 See [SIP-15](https://github.com/sui-foundation/sips/blob/main/sips/sip-15.md) for additional context
 and motivation.
 
-If you know your keypair schema, you can use the `fromSecretKey` method of the appropriate keypair
+If you know your keypair scheme, you can use the `fromSecretKey` method of the appropriate keypair
 to directly derive the keypair from the secret key.
 
 ```typescript
