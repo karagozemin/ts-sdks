@@ -298,6 +298,7 @@ class ModuleBuilder {
 	}
 }
 
+// Currently this only generates to the test directory.  CLI for configuring sources/destinations will be added in the future.
 async function generatePackage(path: string, name: string) {
 	const modules = (await readdir(join(path, 'build', name, 'bytecode_modules')))
 		.map((mod) => join(path, 'build', name, 'bytecode_modules', mod))
