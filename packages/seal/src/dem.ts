@@ -157,9 +157,8 @@ export class Hmac256Ctr implements EncryptionInput {
 	}
 
 	private static computeMac(key: Uint8Array, aad: Uint8Array, ciphertext: Uint8Array): Uint8Array {
-		const macKey = hmac(sha3_256, key, MacKeyTag);
-		const macInput = flatten([toBytes(aad.length), aad, ciphertext]);
-		const mac = hmac(sha3_256, macKey, macInput);
+		const macInput = flatten([MacKeyTag, toBytes(aad.length), aad, ciphertext]);
+		const mac = hmac(sha3_256, key, macInput);
 		return mac;
 	}
 
@@ -169,7 +168,7 @@ export class Hmac256Ctr implements EncryptionInput {
 		const encryptionKey = hmac(sha3_256, key, EncryptionKeyTag);
 		for (let i = 0; i * blockSize < msg.length; i++) {
 			const block = msg.subarray(i * blockSize, (i + 1) * blockSize);
-			const mask = hmac(sha3_256, encryptionKey, toBytes(i));
+			const mask = hmac(sha3_256, encryptionKey, flatten([EncryptionKeyTag, toBytes(i)]));
 			const encryptedBlock = xorUnchecked(block, mask);
 			result.set(encryptedBlock, i * blockSize);
 		}
@@ -184,5 +183,5 @@ function toBytes(n: number): Uint8Array {
 	return bcs.u64().serialize(n).toBytes();
 }
 
-const EncryptionKeyTag = new Uint8Array([1]);
-const MacKeyTag = new Uint8Array([2]);
+const EncryptionKeyTag = new TextEncoder().encode('HMAC_CTR-ENCRYPTION-00');
+const MacKeyTag = new TextEncoder().encode('HMAC_CTR-MAC-00');
