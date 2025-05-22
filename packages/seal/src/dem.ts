@@ -165,10 +165,9 @@ export class Hmac256Ctr implements EncryptionInput {
 	private static encryptInCtrMode(key: Uint8Array, msg: Uint8Array): Uint8Array {
 		const blockSize = 32;
 		const result = new Uint8Array(msg.length);
-		const encryptionKey = hmac(sha3_256, key, EncryptionKeyTag);
 		for (let i = 0; i * blockSize < msg.length; i++) {
 			const block = msg.subarray(i * blockSize, (i + 1) * blockSize);
-			const mask = hmac(sha3_256, encryptionKey, flatten([EncryptionKeyTag, toBytes(i)]));
+			const mask = hmac(sha3_256, key, flatten([EncryptionKeyTag, toBytes(i)]));
 			const encryptedBlock = xorUnchecked(block, mask);
 			result.set(encryptedBlock, i * blockSize);
 		}
