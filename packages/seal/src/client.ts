@@ -326,7 +326,6 @@ export class SealClient {
 					controller.signal,
 				);
 				// Check validity of the keys and add them to the cache.
-				const receivedIds = new Set<string>();
 				for (const { fullId, key } of allKeys) {
 					const keyElement = G1Element.fromBytes(key);
 					if (
@@ -340,12 +339,11 @@ export class SealClient {
 						continue;
 					}
 					this.#cachedKeys.set(`${fullId}:${server.objectId}`, keyElement);
-					receivedIds.add(fullId);
 				}
 
 				// Check if all the receivedIds are consistent with the requested fullIds.
 				// If so, consider the key server got all keys and mark as completed.
-				if (fullIds.every((fullId) => receivedIds.has(fullId))) {
+				if (fullIds.every((fullId) => this.#cachedKeys.has(`${fullId}:${server.objectId}`))) {
 					completedWeight += this.#weight(objectId)!;
 
 					// Return early if the completed servers is more than the threshold.
