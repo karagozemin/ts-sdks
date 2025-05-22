@@ -2,26 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useStore } from '@nanostores/react';
-import { createDAppKit } from '@mysten/dapp-kit-next';
-import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 
-const dAppKit = createDAppKit({
-	networks: ['mainnet', 'testnet'],
-	defaultNetwork: 'testnet',
-	walletInitializers: [
-		(client) => {},
-		(client) => {
-			registerSlushWallet('My wallet', { abc: 'google.com ' });
-		},
-		registerUnsafeBurnerWallet,
-	],
-	createClient(network) {
-		return new SuiClient({ network, url: getFullnodeUrl(network) });
-	},
-});
+import { dAppKit } from './dApp-kit.js';
+import { getWallets } from '@mysten/wallet-standard';
+
+console.log('app');
 
 function App() {
+	console.log('render');
 	const wallets = useStore(dAppKit.stores.$wallets);
+
+	console.log('oob');
 
 	return (
 		<div>
@@ -29,12 +20,13 @@ function App() {
 			{wallets.length > 0 ? (
 				<ul>
 					{wallets.map((wallet) => (
-						<li key={wallet.name}>{wallet.name}</li>
+						<li key={wallet.name + crypto.randomUUID()}>{wallet.name}</li>
 					))}
 				</ul>
 			) : (
 				<p>No registered wallets</p>
 			)}
+			<button onClick={() => console.log(getWallets().get())}>conn</button>
 		</div>
 	);
 }

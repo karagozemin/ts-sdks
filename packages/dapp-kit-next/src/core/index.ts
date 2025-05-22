@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { onMount, readonlyType } from 'nanostores';
+import { onMount, readonlyType, task } from 'nanostores';
 import { createStores } from './store.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
 import { DAppKitError } from '../utils/errors.js';
@@ -10,14 +10,15 @@ import { createInMemoryStorage, DEFAULT_STORAGE_KEY, getDefaultStorage } from '.
 import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
 import { manageWalletConnection } from './initializers/manage-connection.js';
 import type { Networks } from '../utils/networks.js';
-import type { CreateDAppKitOptions } from './types.js';
-import type { Experimental_BaseClient } from '@mysten/sui/experimental';
+import type { CreateDAppKitOptions, UnregisterCallback } from './types.js';
+import type { ClientWithCoreApi } from '@mysten/sui/experimental';
 import { switchNetworkCreator } from './actions/switch-network.js';
 import { connectWalletCreator } from './actions/connect-wallet.js';
 import { disconnectWalletCreator } from './actions/disconnect-wallet.js';
 import { switchAccountCreator } from './actions/switch-account.js';
 import { createSignerActions } from './actions/signer.js';
 import { signPersonalMessageCreator } from './actions/sign-personal-message.js';
+import { registerSlushWallet } from '@mysten/slush-wallet';
 
 export type DAppKit<TNetworks extends Networks = Networks> = ReturnType<
 	typeof createDAppKitInstance<TNetworks>
@@ -48,6 +49,7 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 	networks,
 	createClient,
 	defaultNetwork = networks[0],
+	slushWalletConfig,
 	storage = getDefaultStorage(),
 	storageKey = DEFAULT_STORAGE_KEY,
 	walletInitializers = [],
@@ -56,7 +58,7 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 		throw new DAppKitError('You must specify at least one Sui network for your application.');
 	}
 
-	const networkConfig = new Map<TNetworks[number], Experimental_BaseClient>();
+	const networkConfig = new Map<TNetworks[number], ClientWithCoreApi>();
 	const getClient = (network: TNetworks[number]) => {
 		if (networkConfig.has(network)) {
 			return networkConfig.get(network)!;
@@ -69,9 +71,44 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 
 	const stores = createStores({ defaultNetwork, getClient });
 
-	onMount(stores.$currentNetwork, () => {
-		const unregisterCallbacks = walletInitializers.map((init) => init({ networks, getClient }));
-		return () => unregisterCallbacks.forEach((unregister) => unregister());
+	console.log('CREATE CALLED');
+	onMount(stores.$compatibleWallets, () => {
+		const unregisterCallbacks: UnregisterCallback[] = [];
+
+		console.log('MOUNT');
+
+		const slushInitializer = async () => {
+			console.log('REGISTERING SLUSH WALLET');
+			if (!slushWalletConfig) throw new Error('Not enabled. Skipping.');
+
+			const result = await registerSlushWallet(slushWalletConfig.name, {
+				origin: slushWalletConfig.origin,
+				metadataApiUrl: slushWalletConfig.metadataApiUrl,
+			});
+
+			console.log('RES', result);
+			if (!result) throw new Error('Registration un-successful. Skipping.');
+			return result.unregister;
+		};
+
+		task(async () => {
+			const initializers = [slushInitializer, ...walletInitializers];
+			const settledResults = await Promise.allSettled(
+				initializers.map((init) => init({ networks, getClient })),
+			);
+
+			unregisterCallbacks.push(
+				...settledResults
+					.filter((result) => result.status === 'fulfilled')
+					.map((result) => result.value),
+			);
+		});
+
+		return () => {
+			console.log('UNOMUNT', unregisterCallbacks);
+			unregisterCallbacks.forEach((unregister) => unregister());
+			unregisterCallbacks.length = 0;
+		};
 	});
 
 	storage ||= createInMemoryStorage();
@@ -93,6 +130,7 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 		switchAccount: switchAccountCreator(stores),
 		switchNetwork: switchNetworkCreator(stores),
 		stores: {
+			$allWallets: stores.$registeredWallets,
 			$publicKey: stores.$publicKey,
 			$wallets: stores.$compatibleWallets,
 			$connection: stores.$connection,

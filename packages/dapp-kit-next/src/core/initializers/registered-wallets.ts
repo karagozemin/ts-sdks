@@ -33,11 +33,13 @@ export function syncRegisteredWallets({ $registeredWallets }: DAppKitStores) {
 		};
 
 		const unsubscribeFromRegister = walletsApi.on('register', (...addedWallets) => {
+			console.log('REGISTERD', addedWallets);
 			addedWallets.filter(hasStandardEvents).forEach(subscribeToWalletEvents);
 			onWalletsChanged();
 		});
 
 		const unsubscribeFromUnregister = walletsApi.on('unregister', (...removedWallets) => {
+			console.log('UNREGISTERED WALLET', removedWallets);
 			removedWallets.filter(hasStandardEvents).forEach((wallet) => {
 				const unsubscribeFromChange = unsubscribeCallbacksByWallet.get(wallet);
 				if (unsubscribeFromChange) {

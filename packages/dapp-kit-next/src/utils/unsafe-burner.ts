@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import type { SuiClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 import type {
+	IdentifierArray,
+	IdentifierString,
 	StandardConnectFeature,
 	StandardConnectMethod,
 	StandardEventsFeature,
@@ -15,29 +16,59 @@ import type {
 	SuiSignTransactionMethod,
 } from '@mysten/wallet-standard';
 import {
+	getWallets,
 	ReadonlyWalletAccount,
 	StandardConnect,
 	StandardEvents,
-	SUI_CHAINS,
 	SuiSignAndExecuteTransaction,
 	SuiSignPersonalMessage,
 	SuiSignTransaction,
 } from '@mysten/wallet-standard';
 import type { Wallet } from '@mysten/wallet-standard';
 import { toBase64 } from '@mysten/utils';
+import type { ClientWithCoreApi } from '@mysten/sui/experimental';
+import type { Networks } from './networks.js';
+import { getChain } from './networks.js';
+import type { WalletInitializerArgs } from '../core/types.js';
+
+export function registerUnsafeBurnerWallet<TNetworks extends Networks>({
+	networks,
+	getClient,
+}: WalletInitializerArgs<TNetworks>) {
+	console.warn(
+		'Your application is currently using the unsafe burner wallet. Make sure that this wallet is disabled in production.',
+	);
+
+	const wallet = new UnsafeBurnerWallet({ clients: networks.map(getClient) });
+	const unregister = getWallets().register(wallet);
+	return () => {
+		console.log('UNREGISTERING');
+		return unregister();
+	};
+}
 
 export class UnsafeBurnerWallet implements Wallet {
-	#keypair = new Ed25519Keypair();
+	#chainConfig: Record<IdentifierString, ClientWithCoreApi>;
+	#keypair: Ed25519Keypair;
+	#account: ReadonlyWalletAccount;
 
-	#account = new ReadonlyWalletAccount({
-		address: this.#keypair.getPublicKey().toSuiAddress(),
-		publicKey: this.#keypair.getPublicKey().toSuiBytes(),
-		chains: SUI_CHAINS,
-		features: [SuiSignTransaction, SuiSignAndExecuteTransaction, SuiSignPersonalMessage],
-	});
+	constructor({ clients }: { clients: ClientWithCoreApi[] }) {
+		this.#chainConfig = clients.reduce<Record<IdentifierString, ClientWithCoreApi>>(
+			(accumulator, client) => {
+				const chain = getChain(client.network);
+				accumulator[chain] = client;
+				return accumulator;
+			},
+			{},
+		);
 
-	constructor({ getClient }: { getClient: SuiClient }) {
-		this.#getClient = getClient;
+		this.#keypair = new Ed25519Keypair();
+		this.#account = new ReadonlyWalletAccount({
+			address: this.#keypair.getPublicKey().toSuiAddress(),
+			publicKey: this.#keypair.getPublicKey().toSuiBytes(),
+			chains: this.chains,
+			features: [SuiSignTransaction, SuiSignAndExecuteTransaction, SuiSignPersonalMessage],
+		});
 	}
 
 	get version() {
@@ -53,7 +84,7 @@ export class UnsafeBurnerWallet implements Wallet {
 	}
 
 	get chains() {
-		return SUI_CHAINS;
+		return Object.keys(this.#chainConfig) as IdentifierArray;
 	}
 
 	get accounts() {
@@ -94,14 +125,15 @@ export class UnsafeBurnerWallet implements Wallet {
 	};
 
 	#signPersonalMessage: SuiSignPersonalMessageMethod = async (messageInput) => {
-		const { bytes, signature } = await this.#keypair.signPersonalMessage(messageInput.message);
-		return { bytes, signature };
+		return await this.#keypair.signPersonalMessage(messageInput.message);
 	};
 
 	#signTransaction: SuiSignTransactionMethod = async ({ transaction, signal, chain }) => {
 		signal?.throwIfAborted();
 
-		const client = this.#getClient(`sui:${chain}`);
+		const client = this.#chainConfig[chain];
+		if (!client) throw new Error(`Invalid chain "${chain}" specified.`);
+
 		const parsedTransaction = Transaction.from(await transaction.toJSON());
 		const builtTransaction = await parsedTransaction.build({ client });
 		return await this.#keypair.signTransaction(builtTransaction);
@@ -114,7 +146,9 @@ export class UnsafeBurnerWallet implements Wallet {
 	}) => {
 		signal?.throwIfAborted();
 
-		const client = this.#getClient(`sui:${chain}`);
+		const client = this.#chainConfig[chain];
+		if (!client) throw new Error(`Invalid chain "${chain}" specified.`);
+
 		const parsedTransaction = Transaction.from(await transaction.toJSON());
 		const bytes = await parsedTransaction.build({ client });
 

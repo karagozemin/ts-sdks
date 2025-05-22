@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Experimental_BaseClient } from '@mysten/sui/experimental';
+import type { ClientWithCoreApi } from '@mysten/sui/experimental';
 import type { Networks } from '../utils/networks.js';
 import type { StateStorage } from '../utils/storage.js';
 
@@ -9,12 +9,31 @@ export type UnregisterCallback = () => void;
 
 export type WalletInitializerArgs<TNetworks extends Networks> = {
 	networks: TNetworks;
-	getClient: (network: TNetworks[number]) => Experimental_BaseClient;
+	getClient: (network: TNetworks[number]) => ClientWithCoreApi;
 };
 
-export type WalletInitializer<TNetworks extends Networks> = (
+export type WalletInitializerCallback<TNetworks extends Networks> = (
 	input: WalletInitializerArgs<TNetworks>,
-) => UnregisterCallback;
+) => Promise<UnregisterCallback> | UnregisterCallback;
+
+export type SlushWalletConfig = {
+	/**
+	 * The name of your application, shown to the user when connecting to the wallet.
+	 */
+	name: string;
+
+	/**
+	 * The host origin of the wallet.
+	 * @defaultValue https://my.slush.app
+	 */
+	origin?: string;
+
+	/**
+	 * The URL to fetch the wallet metadata from.
+	 * @defaultValue https://api.slush.app/api/wallet/metadata
+	 */
+	metadataApiUrl?: string;
+};
 
 export type CreateDAppKitOptions<TNetworks extends Networks> = {
 	/**
@@ -32,15 +51,20 @@ export type CreateDAppKitOptions<TNetworks extends Networks> = {
 	 * Creates a new client instance for the given network.
 	 *
 	 * @param network - A supported network identifier as defined by the `networks` field.
-	 * @returns An `Experimental_BaseClient` that’s pre-configured to interact with the specified network.
+	 * @returns An `ClientWithCoreApi` that’s pre-configured to interact with the specified network.
 	 */
-	createClient: (network: TNetworks[number]) => Experimental_BaseClient;
+	createClient: (network: TNetworks[number]) => ClientWithCoreApi;
 
 	/**
 	 * The name of the network to use by default.
 	 * @defaultValue The first network specified in `networks`.
 	 */
 	defaultNetwork?: TNetworks[number];
+
+	/**
+	 * Configuration options for the Slush web wallet. Set to `null` to disable the wallet.
+	 */
+	slushWalletConfig: SlushWalletConfig | null;
 
 	/**
 	 * Configures how the most recently connected to wallet account is stored. Set to `null` to disable persisting state entirely.
@@ -55,7 +79,12 @@ export type CreateDAppKitOptions<TNetworks extends Networks> = {
 	storageKey?: string;
 
 	/**
+	 * A list of wallet initializer callbacks to invoke on initial page load.
 	 *
+	 * Each callback receives a `registerWallet` function and should call it
+	 * with a custom wallet descriptor to extend the set of available wallets.
+	 * Useful for plugging in third‑party or proprietary wallets alongside
+	 * standard wallets, enabling custom integrations.
 	 */
-	walletInitializers?: WalletInitializer<TNetworks>[];
+	walletInitializers?: WalletInitializerCallback<TNetworks>[];
 };
