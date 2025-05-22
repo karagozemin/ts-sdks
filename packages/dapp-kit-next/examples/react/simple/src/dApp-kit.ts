@@ -3,7 +3,6 @@
 
 import { createDAppKit, registerUnsafeBurnerWallet } from '@mysten/dapp-kit-next';
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
-import { cleanStores } from 'nanostores';
 
 export const dAppKit = createDAppKit({
 	slushWalletConfig: {
@@ -20,7 +19,7 @@ export const dAppKit = createDAppKit({
 if (import.meta.hot) {
 	import.meta.hot.accept(() => {
 		console.log('ABC');
-		import.meta.hot.invalidate('Welp');
+		import.meta.hot?.invalidate('Welp');
 	});
 }
-console.log('oofdfdossooob0oooooooo00ddfdfoooodoooooPPPoooooraot');
+console.log('borat');

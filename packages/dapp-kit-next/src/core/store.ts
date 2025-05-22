@@ -41,21 +41,6 @@ export function createStores<TNetworks extends Networks>({
 	const $compatibleWallets = computed(
 		[$registeredWallets, $currentNetwork],
 		(wallets, currentNetwork) => {
-			console.log(
-				wallets,
-				wallets.filter((wallet) => {
-					const areChainsCompatible = wallet.chains.some(
-						(chain) => getChain(currentNetwork) === chain,
-					);
-
-					const areFeaturesCompatible = requiredWalletFeatures.every((featureName) =>
-						wallet.features.includes(featureName),
-					);
-
-					console.log(wallet.name, areChainsCompatible && areFeaturesCompatible);
-					return areChainsCompatible && areFeaturesCompatible;
-				}),
-			);
 			return wallets.filter((wallet) => {
 				const areChainsCompatible = wallet.chains.some(
 					(chain) => getChain(currentNetwork) === chain,
@@ -65,7 +50,6 @@ export function createStores<TNetworks extends Networks>({
 					wallet.features.includes(featureName),
 				);
 
-				console.log(wallet.name, areChainsCompatible && areFeaturesCompatible);
 				return areChainsCompatible && areFeaturesCompatible;
 			});
 		},
