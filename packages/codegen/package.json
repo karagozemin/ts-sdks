@@ -50,14 +50,13 @@
 	"homepage": "https://github.com/mystenlabs/sui#readme",
 	"devDependencies": {
 		"@mysten/build-scripts": "workspace:*",
-		"typescript": "^5.5.3",
-		"vitest": "^2.0.1"
+		"vitest": "^3.1.1"
 	},
 	"dependencies": {
 		"@mysten/bcs": "workspace:*",
-		"@mysten/sui": "workspace:*",
 		"@mysten/move-bytecode-template": "workspace:*",
-		"@types/node": "^20.14.10",
-		"typescript": "^5.5.3"
+		"@mysten/sui": "workspace:*",
+		"@types/node": "^22.13.17",
+		"typescript": "^5.8.2"
 	}
 }

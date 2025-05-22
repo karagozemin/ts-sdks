@@ -12,8 +12,6 @@ async function generatePackage(path: string, name: string) {
 		.map((mod) => join(path, 'build', name, 'bytecode_modules', mod))
 		.filter((mod) => mod.endsWith('.mv'));
 
-	console.log(modules);
-
 	const builders = await Promise.all(modules.map((mod) => MoveModuleBuilder.fromFile(mod)));
 
 	for (const builder of builders) {
