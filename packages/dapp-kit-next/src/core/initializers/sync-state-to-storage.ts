@@ -22,7 +22,6 @@ export function syncStateToStorage({
 }) {
 	onMount($connection, () => {
 		return $connection.listen((connection) => {
-			console.log('ABC CONN', connection);
 			if (connection.account) {
 				storage.setItem(storageKey, getSavedAccountStorageKey(connection.account));
 			} else {
