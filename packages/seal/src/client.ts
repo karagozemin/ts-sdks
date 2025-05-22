@@ -30,13 +30,13 @@ import { createFullId, count } from './utils.js';
 
 /**
  * Configuration options for initializing a SealClient
- * @property serverObjectIds: Array of object IDs for the key servers to use.
+ * @property serverObjectIds: Array of the key servers to use.
+ * 	 The first element is the object ID, and the second element is the weight of the key server.
  * @property verifyKeyServers: Whether to verify the key servers' authenticity.
  * 	 Should be false if servers are pre-verified (e.g., getAllowlistedKeyServers).
  * 	 Defaults to true.
  * @property timeout: Timeout in milliseconds for network requests. Defaults to 10 seconds.
  */
-
 export interface SealClientExtensionOptions {
 	serverObjectIds: [string, number][];
 	verifyKeyServers?: boolean;
