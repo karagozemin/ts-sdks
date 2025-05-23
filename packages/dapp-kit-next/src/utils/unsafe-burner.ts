@@ -35,16 +35,8 @@ export function registerUnsafeBurnerWallet<TNetworks extends Networks>({
 	networks,
 	getClient,
 }: WalletInitializerArgs<TNetworks>) {
-	console.warn(
-		'Your application is currently using the unsafe burner wallet. Make sure that this wallet is disabled in production.',
-	);
-
 	const wallet = new UnsafeBurnerWallet({ clients: networks.map(getClient) });
-	const unregister = getWallets().register(wallet);
-	return () => {
-		console.log('UNREGISTERING');
-		return unregister();
-	};
+	return getWallets().register(wallet);
 }
 
 export class UnsafeBurnerWallet implements Wallet {
@@ -69,6 +61,10 @@ export class UnsafeBurnerWallet implements Wallet {
 			chains: this.chains,
 			features: [SuiSignTransaction, SuiSignAndExecuteTransaction, SuiSignPersonalMessage],
 		});
+
+		console.warn(
+			'Your application is currently using the unsafe burner wallet. Make sure that this wallet is disabled in production.',
+		);
 	}
 
 	get version() {

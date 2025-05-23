@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { onMount, readonlyType, task } from 'nanostores';
+import { readonlyType, task } from 'nanostores';
 import { createStores } from './store.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
 import { DAppKitError } from '../utils/errors.js';
@@ -71,44 +71,30 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 
 	const stores = createStores({ defaultNetwork, getClient });
 
-	console.log('CREATE CALLED');
-	onMount(stores.$compatibleWallets, () => {
-		const unregisterCallbacks: UnregisterCallback[] = [];
+	const unregisterCallbacks: UnregisterCallback[] = [];
+	const slushInitializer = async () => {
+		if (!slushWalletConfig) throw new Error('Not enabled. Skipping.');
 
-		console.log('MOUNT');
-
-		const slushInitializer = async () => {
-			console.log('REGISTERING SLUSH WALLET');
-			if (!slushWalletConfig) throw new Error('Not enabled. Skipping.');
-
-			const result = await registerSlushWallet(slushWalletConfig.name, {
-				origin: slushWalletConfig.origin,
-				metadataApiUrl: slushWalletConfig.metadataApiUrl,
-			});
-
-			console.log('RES', result);
-			if (!result) throw new Error('Registration un-successful. Skipping.');
-			return result.unregister;
-		};
-
-		task(async () => {
-			const initializers = [slushInitializer, ...walletInitializers];
-			const settledResults = await Promise.allSettled(
-				initializers.map((init) => init({ networks, getClient })),
-			);
-
-			unregisterCallbacks.push(
-				...settledResults
-					.filter((result) => result.status === 'fulfilled')
-					.map((result) => result.value),
-			);
+		const result = await registerSlushWallet(slushWalletConfig.name, {
+			origin: slushWalletConfig.origin,
+			metadataApiUrl: slushWalletConfig.metadataApiUrl,
 		});
 
-		return () => {
-			console.log('UNOMUNT', unregisterCallbacks);
-			unregisterCallbacks.forEach((unregister) => unregister());
-			unregisterCallbacks.length = 0;
-		};
+		if (!result) throw new Error('Registration un-successful. Skipping.');
+		return result.unregister;
+	};
+
+	task(async () => {
+		const initializers = [slushInitializer, ...walletInitializers];
+		const settledResults = await Promise.allSettled(
+			initializers.map((init) => init({ networks, getClient })),
+		);
+
+		for (const settledResult of settledResults) {
+			if (settledResult.status === 'fulfilled') {
+				unregisterCallbacks.push(settledResult.value);
+			}
+		}
 	});
 
 	storage ||= createInMemoryStorage();
@@ -136,6 +122,10 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 			$connection: stores.$connection,
 			$currentNetwork: readonlyType(stores.$currentNetwork),
 			$currentClient: stores.$currentClient,
+		},
+		teardown: () => {
+			unregisterCallbacks.forEach((unregister) => unregister());
+			unregisterCallbacks.length = 0;
 		},
 	};
 }
