@@ -182,5 +182,5 @@ function toBytes(n: number): Uint8Array {
 	return bcs.u64().serialize(n).toBytes();
 }
 
-const EncryptionKeyTag = new TextEncoder().encode('HMAC_CTR-ENCRYPTION-00');
-const MacKeyTag = new TextEncoder().encode('HMAC_CTR-MAC-00');
+const EncryptionKeyTag = new TextEncoder().encode('HMAC-CTR-ENC');
+const MacKeyTag = new TextEncoder().encode('HMAC-CTR-MAC');

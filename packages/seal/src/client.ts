@@ -15,7 +15,7 @@ import {
 	toMajorityError,
 	TooManyFailedFetchKeyRequestsError,
 } from './error.js';
-import { BonehFranklinBLS12381Services, DST } from './ibe.js';
+import { BonehFranklinBLS12381Services } from './ibe.js';
 import {
 	BonehFranklinBLS12381DerivedKey,
 	KeyServerType,
@@ -276,7 +276,7 @@ export class SealClient {
 			);
 		}
 		const keyServers = await this.getKeyServers();
-		const fullIds = ids.map((id) => createFullId(DST, sessionKey.getPackageId(), id));
+		const fullIds = ids.map((id) => createFullId(sessionKey.getPackageId(), id));
 
 		// Count a server as completed if it has keys for all fullIds.
 		// Duplicated key server ids will be counted towards the threshold.
@@ -411,7 +411,7 @@ export class SealClient {
 				// After calling fetchKeys, we can be sure that there are at least `threshold` of the required keys in the cache.
 				// It is also checked there that the KeyServerType is BonehFranklinBLS12381 for all services.
 
-				const fullId = createFullId(DST, sessionKey.getPackageId(), id);
+				const fullId = createFullId(sessionKey.getPackageId(), id);
 
 				const derivedKeys = new Map();
 				let weight = 0;
