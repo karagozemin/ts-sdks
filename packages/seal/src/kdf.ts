@@ -11,7 +11,7 @@ import { flatten } from './utils.js';
 /**
  * The domain separation tag for the hash-to-group function.
  */
-export const DST: Uint8Array = new TextEncoder().encode('SUI-SEAL-IBE-BLS12381-00');
+const DST: Uint8Array = new TextEncoder().encode('SUI-SEAL-IBE-BLS12381-00');
 const KDF_DST = new TextEncoder().encode('SUI-SEAL-IBE-BLS12381-H2-00');
 const DERIVE_KEY_DST = new TextEncoder().encode('SUI-SEAL-IBE-BLS12381-H3-00');
 
@@ -28,8 +28,6 @@ export function hashToG1(id: Uint8Array): G1Element {
 /**
  * The default key derivation function.
  *
- * @param element The GTElement to derive the key from.
- * @param info Optional context and application specific information.
  * @returns The derived key.
  */
 export function kdf(
@@ -85,7 +83,7 @@ export function deriveKey(
 	hash.update(baseKey);
 	hash.update(tag(purpose));
 	hash.update(new Uint8Array([threshold]));
-	hash.update(flatten(encryptedShares));
-	hash.update(flatten(keyServers.map((objectId) => fromHex(objectId))));
+	encryptedShares.forEach((share) => hash.update(share));
+	keyServers.forEach((keyServer) => hash.update(fromHex(keyServer)));
 	return hash.digest();
 }

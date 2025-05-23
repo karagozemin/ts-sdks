@@ -75,7 +75,7 @@ export class BonehFranklinBLS12381Services extends IBEServers {
 			xor(msg, kdf(keys[i], nonce, id, this.objectIds[i], index)),
 		);
 		const randomnessKey = deriveKey(
-			KeyPurpose.DEM,
+			KeyPurpose.EncryptedRandomness,
 			baseKey,
 			encryptedShares,
 			threshold,
