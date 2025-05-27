@@ -259,10 +259,6 @@ function renderDataType(
 	switch (options.format) {
 		case 'typescriptArg':
 			return 'string';
-		// return typeParameters.length === 0
-		// 	? `ReturnType<typeof ${typeNameRef}>['$inferType']`
-		// 	: `ReturnType<typeof ${typeNameRef}<${typeParameters.map((type) => renderTypeSignature(type, options)).join(', ')}>>['$inferType']`;
-
 		case 'bcs':
 			return `${typeNameRef}(
                 ${filteredTypeParameters.map((type) => renderTypeSignature(type, options)).join(', ')})`;
