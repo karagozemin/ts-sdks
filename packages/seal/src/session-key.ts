@@ -46,38 +46,42 @@ export class SessionKey {
 	#sessionKey: Ed25519Keypair;
 	#personalMessageSignature?: string;
 	#signer?: Signer;
-	#client?: ZkLoginCompatibleClient;
+	#suiClient?: ZkLoginCompatibleClient;
 
 	constructor({
 		address,
 		packageId,
 		ttlMin,
 		signer,
-		client,
+		suiClient,
 	}: {
 		address: string;
 		packageId: string;
 		ttlMin: number;
 		signer?: Signer;
-		client?: ZkLoginCompatibleClient;
+		suiClient?: ZkLoginCompatibleClient;
 	}) {
+		if ((signer && suiClient) || (!signer && !suiClient)) {
+			throw new UserError('SessionKey requires exactly one of signer or suiClient to be provided');
+		}
 		if (!isValidSuiObjectId(packageId) || !isValidSuiAddress(address)) {
 			throw new UserError(`Invalid package ID ${packageId} or address ${address}`);
 		}
 		if (ttlMin > 30 || ttlMin < 1) {
 			throw new UserError(`Invalid TTL ${ttlMin}, must be between 1 and 30`);
 		}
-
 		if (signer && signer.getPublicKey().toSuiAddress() !== address) {
 			throw new UserError('Signer address does not match session key address');
 		}
+		// TODO: Verify that the given package is the first version of the package.
+
 		this.#address = address;
 		this.#packageId = packageId;
 		this.#creationTimeMs = Date.now();
 		this.#ttlMin = ttlMin;
 		this.#sessionKey = Ed25519Keypair.generate();
 		this.#signer = signer;
-		this.#client = client;
+		this.#suiClient = suiClient;
 	}
 
 	isExpired(): boolean {
@@ -101,14 +105,16 @@ export class SessionKey {
 	}
 
 	async setPersonalMessageSignature(personalMessageSignature: string) {
-		try {
-			await verifyPersonalMessageSignature(this.getPersonalMessage(), personalMessageSignature, {
-				address: this.#address,
-				client: this.#client,
-			});
-			this.#personalMessageSignature = personalMessageSignature;
-		} catch (e) {
-			throw new InvalidPersonalMessageSignatureError('Not valid');
+		if (!this.#personalMessageSignature) {
+			try {
+				await verifyPersonalMessageSignature(this.getPersonalMessage(), personalMessageSignature, {
+					address: this.#address,
+					client: this.#suiClient,
+				});
+				this.#personalMessageSignature = personalMessageSignature;
+			} catch (e) {
+				throw new InvalidPersonalMessageSignatureError('Not valid');
+			}
 		}
 	}
 
@@ -174,25 +180,28 @@ export class SessionKey {
 	 * Restore a SessionKey instance for the given object.
 	 * @returns A new SessionKey instance with restored state
 	 */
-	static async import(
+	static import(
 		data: SessionKeyType,
-		{ signer, client }: { signer?: Signer; client?: ZkLoginCompatibleClient },
-	): Promise<SessionKey> {
+		{ signer, suiClient }: { signer?: Signer; suiClient?: ZkLoginCompatibleClient },
+	): SessionKey {
 		const instance = new SessionKey({
 			address: data.address,
 			packageId: data.packageId,
 			ttlMin: data.ttlMin,
 			signer,
-			client,
+			suiClient,
 		});
 
 		instance.#creationTimeMs = data.creationTimeMs;
 		instance.#sessionKey = Ed25519Keypair.fromSecretKey(data.sessionKey);
+		instance.#personalMessageSignature = data.personalMessageSignature;
 
-		// check if personal message signature is consistent with the personal message committed to
-		// the session key pk, package id, creationTime and ttlMin.
-		if (data.personalMessageSignature) {
-			await instance.setPersonalMessageSignature(data.personalMessageSignature);
+		if (!instance.#personalMessageSignature) {
+			if ((signer && suiClient) || (!signer && !suiClient)) {
+				throw new UserError(
+					'Either signer or suiClient must be provided when personalMessageSignature is not set',
+				);
+			}
 		}
 
 		if (instance.isExpired()) {

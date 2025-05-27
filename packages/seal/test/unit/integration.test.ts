@@ -4,6 +4,7 @@
 import { fromBase64, fromHex, toBase64 } from '@mysten/bcs';
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { SuiGraphQLClient } from '@mysten/sui/graphql';
 import { Transaction } from '@mysten/sui/transactions';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -399,6 +400,7 @@ describe('Integration test', () => {
 			address: wrongSuiAddress,
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
+			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
 		const sig = await keypair.signPersonalMessage(sessionKey.getPersonalMessage());
 		await expect(sessionKey.setPersonalMessageSignature(sig.signature)).rejects.toThrow(
@@ -463,6 +465,7 @@ describe('Integration test', () => {
 			address: kp.getPublicKey().toSuiAddress(),
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
+			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
 		// Wrong signature set throws error.
 		const sig = await kp.signPersonalMessage(new TextEncoder().encode('hello'));

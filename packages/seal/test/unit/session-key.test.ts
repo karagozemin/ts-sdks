@@ -4,7 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import { SessionKey } from '../../src/session-key';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import { InvalidPersonalMessageSignatureError, UserError } from '../../src/error';
+import { SuiGraphQLClient } from '@mysten/sui/graphql';
+import { UserError } from '../../src/error';
 
 describe('Session key tests', () => {
 	const TESTNET_PACKAGE_ID = '0x9709d4ee371488c2bc09f508e98e881bd1d5335e0805d7e6a99edd54a7027954';
@@ -14,32 +15,18 @@ describe('Session key tests', () => {
 			address: kp.getPublicKey().toSuiAddress(),
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 1,
+			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
 		const sig = await kp.signPersonalMessage(sessionKey.getPersonalMessage());
 		await sessionKey.setPersonalMessageSignature(sig.signature);
 
 		const exportedSessionKey = sessionKey.export();
-		const restoredSessionKey = await SessionKey.import(exportedSessionKey, {});
+		const restoredSessionKey = SessionKey.import(exportedSessionKey, {});
 
 		expect(restoredSessionKey.getAddress()).toBe(kp.getPublicKey().toSuiAddress());
 		expect(restoredSessionKey.getPackageId()).toBe(TESTNET_PACKAGE_ID);
 		expect(restoredSessionKey.export().sessionKey).toBe(sessionKey.export().sessionKey);
 		expect(restoredSessionKey.getPersonalMessage()).toEqual(sessionKey.getPersonalMessage());
-
-		// invalid personal sig
-		await expect(
-			SessionKey.import(
-				{
-					address: kp.getPublicKey().toSuiAddress(),
-					packageId: TESTNET_PACKAGE_ID,
-					ttlMin: 1,
-					sessionKey: sessionKey.export().sessionKey,
-					creationTimeMs: sessionKey.export().creationTimeMs,
-					personalMessageSignature: 'invalid',
-				},
-				{},
-			),
-		).rejects.toThrowError(InvalidPersonalMessageSignatureError);
 
 		// invalid signer
 		const kp2 = Ed25519Keypair.generate();
