@@ -46,7 +46,7 @@ export class SessionKey {
 	#sessionKey: Ed25519Keypair;
 	#personalMessageSignature?: string;
 	#signer?: Signer;
-	#suiClient?: ZkLoginCompatibleClient;
+	#suiClient: ZkLoginCompatibleClient;
 
 	constructor({
 		address,
@@ -59,11 +59,8 @@ export class SessionKey {
 		packageId: string;
 		ttlMin: number;
 		signer?: Signer;
-		suiClient?: ZkLoginCompatibleClient;
+		suiClient: ZkLoginCompatibleClient;
 	}) {
-		if ((signer && suiClient) || (!signer && !suiClient)) {
-			throw new UserError('SessionKey requires exactly one of signer or suiClient to be provided');
-		}
 		if (!isValidSuiObjectId(packageId) || !isValidSuiAddress(address)) {
 			throw new UserError(`Invalid package ID ${packageId} or address ${address}`);
 		}
@@ -182,7 +179,8 @@ export class SessionKey {
 	 */
 	static import(
 		data: SessionKeyType,
-		{ signer, suiClient }: { signer?: Signer; suiClient?: ZkLoginCompatibleClient },
+		suiClient: ZkLoginCompatibleClient,
+		signer?: Signer,
 	): SessionKey {
 		const instance = new SessionKey({
 			address: data.address,
@@ -195,14 +193,6 @@ export class SessionKey {
 		instance.#creationTimeMs = data.creationTimeMs;
 		instance.#sessionKey = Ed25519Keypair.fromSecretKey(data.sessionKey);
 		instance.#personalMessageSignature = data.personalMessageSignature;
-
-		if (!instance.#personalMessageSignature) {
-			if ((signer && suiClient) || (!signer && !suiClient)) {
-				throw new UserError(
-					'Either signer or suiClient must be provided when personalMessageSignature is not set',
-				);
-			}
-		}
 
 		if (instance.isExpired()) {
 			throw new ExpiredSessionKeyError();

@@ -11,17 +11,18 @@ describe('Session key tests', () => {
 	const TESTNET_PACKAGE_ID = '0x9709d4ee371488c2bc09f508e98e881bd1d5335e0805d7e6a99edd54a7027954';
 	it('import and export session key', async () => {
 		const kp = Ed25519Keypair.generate();
+		const suiClient = new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' });
 		const sessionKey = new SessionKey({
 			address: kp.getPublicKey().toSuiAddress(),
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 1,
-			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
+			suiClient,
 		});
 		const sig = await kp.signPersonalMessage(sessionKey.getPersonalMessage());
 		await sessionKey.setPersonalMessageSignature(sig.signature);
 
 		const exportedSessionKey = sessionKey.export();
-		const restoredSessionKey = SessionKey.import(exportedSessionKey, {});
+		const restoredSessionKey = SessionKey.import(exportedSessionKey, suiClient);
 
 		expect(restoredSessionKey.getAddress()).toBe(kp.getPublicKey().toSuiAddress());
 		expect(restoredSessionKey.getPackageId()).toBe(TESTNET_PACKAGE_ID);
@@ -30,7 +31,7 @@ describe('Session key tests', () => {
 
 		// invalid signer
 		const kp2 = Ed25519Keypair.generate();
-		await expect(
+		expect(() =>
 			SessionKey.import(
 				{
 					address: kp.getPublicKey().toSuiAddress(),
@@ -40,8 +41,9 @@ describe('Session key tests', () => {
 					creationTimeMs: sessionKey.export().creationTimeMs,
 					personalMessageSignature: sig.signature,
 				},
-				{ signer: kp2 },
+				suiClient,
+				kp2,
 			),
-		).rejects.toThrowError(UserError);
+		).toThrow(UserError);
 	});
 });

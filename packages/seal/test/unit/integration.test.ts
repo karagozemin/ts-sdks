@@ -157,6 +157,7 @@ describe('Integration test', () => {
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
+			suiClient,
 		});
 
 		// decrypt the object encrypted to whitelist 1.
@@ -222,6 +223,7 @@ describe('Integration test', () => {
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
+			suiClient,
 		});
 
 		const derivedKeys = await client.getDerivedKeys({
@@ -281,6 +283,7 @@ describe('Integration test', () => {
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
+			suiClient,
 		});
 		// decrypt the object encrypted to whitelist 1.
 		const decryptedBytes = await client.seal.decrypt({
@@ -324,6 +327,7 @@ describe('Integration test', () => {
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
+			suiClient,
 		});
 
 		// client with only 2 servers should suffice
@@ -413,6 +417,7 @@ describe('Integration test', () => {
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
+			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
 
 		const wrongTxBytes = await constructTxBytes(TESTNET_PACKAGE_ID, 'whitelist', suiClient, [
@@ -444,6 +449,7 @@ describe('Integration test', () => {
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
+			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
 		await expect(
 			client2.fetchKeys({
@@ -506,6 +512,7 @@ describe('Integration test', () => {
 			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
+			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
 
 		const whitelistId = '0xaae704d2280f2c3d24fc08972bb31f2ef1f1c968784935434c3296be5bfd9d5b';
