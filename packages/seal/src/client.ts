@@ -1,7 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { Signer } from '@mysten/sui/dist/cjs/cryptography/keypair.js';
 import { EncryptedObject } from './bcs.js';
 import { G1Element, G2Element } from './bls12381.js';
 import { decrypt } from './decrypt.js';
@@ -25,8 +24,7 @@ import {
 } from './key-server.js';
 import type { DerivedKey, KeyServer } from './key-server.js';
 import { fetchKeysForAllIds } from './keys.js';
-import { SessionKey } from './session-key.js';
-import type { SessionKeyType } from './session-key.js';
+import type { SessionKey } from './session-key.js';
 import type { KeyCacheKey, SealCompatibleClient } from './types.js';
 import { createFullId, count } from './utils.js';
 
@@ -431,38 +429,5 @@ export class SealClient {
 				}
 				return derivedKeys;
 		}
-	}
-
-	/**
-	 * Create a new session key with defined Sui Client.
-	 * @param address - The sender adress
-	 * @param packageId - The package ID for Seal approval
-	 * @param ttlMin - The TTL of the session key.
-	 * @param signer - The optional signer to use.
-	 * @returns The session key.
-	 */
-	createSessionKey(
-		address: string,
-		packageId: string,
-		ttlMin: number,
-		signer?: Signer,
-	): SessionKey {
-		return new SessionKey({
-			address,
-			packageId,
-			ttlMin,
-			signer,
-			suiClient: this.#suiClient,
-		});
-	}
-
-	/**
-	 * Import a session key with the provided fields and defined Sui Client
-	 * @param data - The session key data.
-	 * @param signer - The optional signer to use.
-	 * @returns The session key.
-	 */
-	importSessionKey(data: SessionKeyType, signer?: Signer): SessionKey {
-		return SessionKey.import(data, this.#suiClient, signer);
 	}
 }
