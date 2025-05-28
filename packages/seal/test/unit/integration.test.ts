@@ -112,7 +112,7 @@ describe('Integration test', () => {
 	let suiAddress: string;
 	let suiClient: SuiClient;
 	let TESTNET_PACKAGE_ID: string;
-	let objectIds: [string, number][];
+	let objectIds: { objectId: string; weight: number; apiKeyName?: string; apiKey?: string }[];
 	beforeAll(async () => {
 		keypair = Ed25519Keypair.fromSecretKey(
 			'suiprivkey1qqgzvw5zc2zmga0uyp4rzcgk42pzzw6387zqhahr82pp95yz0scscffh2d8',
@@ -122,8 +122,14 @@ describe('Integration test', () => {
 		TESTNET_PACKAGE_ID = '0x9709d4ee371488c2bc09f508e98e881bd1d5335e0805d7e6a99edd54a7027954';
 		// Object ids pointing to ci key servers' urls
 		objectIds = [
-			['0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e', 1],
-			['0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4', 1],
+			{
+				objectId: '0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e',
+				weight: 1,
+			},
+			{
+				objectId: '0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4',
+				weight: 1,
+			},
 		];
 	});
 
@@ -136,7 +142,7 @@ describe('Integration test', () => {
 
 		const client = new SealClient({
 			suiClient,
-			serverObjectIds: objectIds,
+			serverConfigs: objectIds,
 			verifyKeyServers: false,
 		});
 
@@ -208,7 +214,7 @@ describe('Integration test', () => {
 
 		const client = new SealClient({
 			suiClient,
-			serverObjectIds: objectIds,
+			serverConfigs: objectIds,
 			verifyKeyServers: false,
 		});
 
@@ -259,7 +265,7 @@ describe('Integration test', () => {
 
 		const client = suiClient.$extend(
 			SealClient.experimental_asClientExtension({
-				serverObjectIds: objectIds,
+				serverConfigs: objectIds,
 				verifyKeyServers: false,
 			}),
 		);
@@ -296,14 +302,20 @@ describe('Integration test', () => {
 		const data = new Uint8Array([1, 2, 3]);
 
 		objectIds = [
-			['0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e', 2],
-			['0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4', 1],
+			{
+				objectId: '0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e',
+				weight: 2,
+			},
+			{
+				objectId: '0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4',
+				weight: 1,
+			},
 		];
 
 		// encrypt using 2 out of 3
 		const clientAllServers = new SealClient({
 			suiClient,
-			serverObjectIds: objectIds,
+			serverConfigs: objectIds,
 			verifyKeyServers: false,
 		});
 
@@ -328,7 +340,7 @@ describe('Integration test', () => {
 		// client with only 2 servers should suffice
 		const client2Servers = new SealClient({
 			suiClient,
-			serverObjectIds: objectIds.slice(0, 2),
+			serverConfigs: objectIds.slice(0, 2),
 			verifyKeyServers: false,
 		});
 
@@ -343,7 +355,7 @@ describe('Integration test', () => {
 		// client with only 1 server should fail
 		const client1Server = new SealClient({
 			suiClient,
-			serverObjectIds: objectIds.slice(2),
+			serverConfigs: objectIds.slice(2),
 			verifyKeyServers: false,
 		});
 
@@ -357,12 +369,18 @@ describe('Integration test', () => {
 
 		// client with different weights should fail even though the threshold could be achieved
 		objectIds = [
-			['0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e', 1],
-			['0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4', 1],
+			{
+				objectId: '0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e',
+				weight: 1,
+			},
+			{
+				objectId: '0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4',
+				weight: 1,
+			},
 		];
 		const clientDifferentWeight = new SealClient({
 			suiClient,
-			serverObjectIds: objectIds,
+			serverConfigs: objectIds,
 			verifyKeyServers: false,
 		});
 
@@ -380,7 +398,7 @@ describe('Integration test', () => {
 		const whitelistId = '0xaae704d2280f2c3d24fc08972bb31f2ef1f1c968784935434c3296be5bfd9d5b';
 		const client = new SealClient({
 			suiClient,
-			serverObjectIds: objectIds,
+			serverConfigs: objectIds,
 		});
 		const data = new Uint8Array([1, 2, 3]);
 
@@ -433,7 +451,7 @@ describe('Integration test', () => {
 
 		const client2 = new SealClient({
 			suiClient,
-			serverObjectIds: objectIds,
+			serverConfigs: objectIds,
 			verifyKeyServers: false,
 		});
 
@@ -478,14 +496,19 @@ describe('Integration test', () => {
 	it('test majority error with 3 out of 5 key servers', async () => {
 		const globalFetch = vi.fn();
 		global.fetch = globalFetch;
-
 		objectIds = [
-			['0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e', 3],
-			['0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4', 2],
+			{
+				objectId: '0x5ff11892a21430921fa7b1e3e0eb63d6d25dff2e0c8eeb6b5a79b37c974e355e',
+				weight: 3,
+			},
+			{
+				objectId: '0xe015d62f26a7877de22e6d3c763e97c1aa9a8d064cd79a1bf8fc6b435f7a50b4',
+				weight: 2,
+			},
 		];
 		const client = new SealClient({
 			suiClient,
-			serverObjectIds: objectIds,
+			serverConfigs: objectIds,
 			verifyKeyServers: false,
 		});
 		vi.spyOn(client as any, 'getKeyServers').mockResolvedValue(MOCK_KEY_SERVERS);
