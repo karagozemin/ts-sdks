@@ -6,12 +6,22 @@ import { buildCommand } from '@stricli/core';
 export const generateCommand = buildCommand({
 	loader: async () => import('./impl'),
 	parameters: {
+		flags: {
+			outputDir: {
+				kind: 'parsed',
+				parse: String,
+				brief: 'Output directory',
+			},
+		},
 		positional: {
 			kind: 'array',
 			parameter: {
 				brief: 'Paths to move modules',
 				parse: String,
 			},
+		},
+		aliases: {
+			o: 'outputDir',
 		},
 	},
 	docs: {

@@ -6,7 +6,6 @@
 		"outDir": "dist/esm",
 		"isolatedModules": true,
 		"rootDir": "src",
-		"lib": ["ESNext", "dom"],
-
-	},
+		"lib": ["ESNext", "dom"]
+	}
 }
