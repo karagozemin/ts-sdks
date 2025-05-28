@@ -2,10 +2,11 @@
 	"extends": "../build-scripts/tsconfig.shared.json",
 	"include": ["src"],
 	"compilerOptions": {
-		"module": "CommonJS",
-		"outDir": "dist/cjs",
+		"target": "ESNext",
+		"outDir": "dist/esm",
 		"isolatedModules": true,
 		"rootDir": "src",
-		"lib": ["ESNext", "dom"]
-	}
+		"lib": ["ESNext", "dom"],
+
+	},
 }
