@@ -5,12 +5,28 @@
 import { run } from '@stricli/core';
 import { buildContext } from '../cli/context.js';
 import { buildCli } from '../cli/cli.js';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
-const { version }: { version: string } = require(
-	__dirname.endsWith('src/bin') ? '../../package.json' : '../../../package.json',
-);
+async function getVersion() {
+	let dirname;
+
+	try {
+		dirname = __dirname;
+	} catch {
+		dirname = import.meta.dirname;
+	}
+
+	const packageJsonPath = resolve(
+		dirname,
+		dirname.endsWith('src/bin') ? '../../package.json' : '../../../package.json',
+	);
+	const packageJson: { version: string } = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
+	return packageJson.version;
+}
 
 async function main() {
+	const version = await getVersion();
 	await run(buildCli(version), process.argv.slice(2), buildContext(process));
 }
 
