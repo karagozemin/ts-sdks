@@ -9,8 +9,7 @@ interface SubdirCommandFlags {
 	outputDir: string;
 }
 
-// eslint-disable-next-line import/no-anonymous-default-export
-export default async function (
+export async function generate(
 	this: LocalContext,
 	flags: SubdirCommandFlags,
 	...paths: string[]
