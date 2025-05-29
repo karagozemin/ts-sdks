@@ -14,6 +14,7 @@ async function getVersion() {
 	try {
 		dirname = __dirname;
 	} catch {
+		// @ts-ignore
 		dirname = import.meta.dirname;
 	}
 
