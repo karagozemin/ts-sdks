@@ -30,8 +30,7 @@ import { createFullId, count } from './utils.js';
 
 /**
  * Configuration options for initializing a SealClient
- * @property serverObjectIds: Array of the key servers to use.
- * 	 The first element is the object ID, and the second element is the weight of the key server.
+ * @property serverConfigs: Array of key server configs consisting of objectId, weight, optional API key name and API key.
  * @property verifyKeyServers: Whether to verify the key servers' authenticity.
  * 	 Should be false if servers are pre-verified (e.g., getAllowlistedKeyServers).
  * 	 Defaults to true.
@@ -71,6 +70,14 @@ export class SealClient {
 			new Set(options.serverConfigs.map((s) => s.objectId)).size !== options.serverConfigs.length
 		) {
 			throw new InvalidClientOptionsError('Duplicate object IDs');
+		}
+
+		if (
+			options.serverConfigs.some((s) => (s.apiKeyName && !s.apiKey) || (!s.apiKeyName && s.apiKey))
+		) {
+			throw new InvalidClientOptionsError(
+				'Both apiKeyName and apiKey must be provided or not provided for all key servers',
+			);
 		}
 
 		this.#configs = new Map(options.serverConfigs.map((server) => [server.objectId, server]));
