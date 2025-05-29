@@ -12,7 +12,7 @@ export function buildCli(version: string) {
 			uninstall: buildUninstallCommand('sui-ts-codegen', { bash: true }),
 		},
 		docs: {
-			brief: 'Generate TypeScript bindings for your move code',
+			brief: 'Generate TypeScript bindings for your Move code',
 			hideRoute: {
 				install: true,
 				uninstall: true,

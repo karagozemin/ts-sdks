@@ -16,7 +16,7 @@ export const generateCommand = buildCommand({
 		positional: {
 			kind: 'array',
 			parameter: {
-				brief: 'Paths to move modules',
+				brief: 'Paths to Move modules',
 				parse: String,
 			},
 		},
@@ -25,6 +25,6 @@ export const generateCommand = buildCommand({
 		},
 	},
 	docs: {
-		brief: 'Generate BCS and moveCall helpers from you move code',
+		brief: 'Generate BCS and moveCall helpers from you Move code',
 	},
 });
