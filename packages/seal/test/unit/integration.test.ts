@@ -21,7 +21,7 @@ import {
 	toMajorityError,
 } from '../../src/error';
 import { KeyServerType } from '../../src/key-server';
-import { Package, RequestFormat, SessionKey } from '../../src/session-key';
+import { RequestFormat, SessionKey } from '../../src/session-key';
 import { decrypt } from '../../src/decrypt';
 import { KeyCacheKey } from '../../src/types';
 import { G1Element } from '../../src/bls12381';
@@ -113,7 +113,6 @@ describe('Integration test', () => {
 	let suiAddress: string;
 	let suiClient: SuiClient;
 	let TESTNET_PACKAGE_ID: string;
-	let TESTNET_PACKAGE: Package;
 	let objectIds: { objectId: string; weight: number; apiKeyName?: string; apiKey?: string }[];
 	beforeAll(async () => {
 		keypair = Ed25519Keypair.fromSecretKey(
@@ -122,9 +121,6 @@ describe('Integration test', () => {
 		suiAddress = keypair.getPublicKey().toSuiAddress();
 		suiClient = new SuiClient({ url: getFullnodeUrl('testnet') });
 		TESTNET_PACKAGE_ID = '0x9709d4ee371488c2bc09f508e98e881bd1d5335e0805d7e6a99edd54a7027954';
-		TESTNET_PACKAGE = {
-			packageId: TESTNET_PACKAGE_ID,
-		};
 		// Object ids pointing to ci key servers' urls
 		objectIds = [
 			{
@@ -164,7 +160,7 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
 			suiClient,
@@ -230,7 +226,7 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
 			suiClient,
@@ -290,7 +286,7 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
 			suiClient,
@@ -340,7 +336,7 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
 			suiClient,
@@ -424,7 +420,7 @@ describe('Integration test', () => {
 		const wrongSuiAddress = Ed25519Keypair.generate().getPublicKey().toSuiAddress();
 		const sessionKey = new SessionKey({
 			address: wrongSuiAddress,
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
@@ -436,7 +432,7 @@ describe('Integration test', () => {
 		// Wrong txBytes fails to verify.
 		const sessionKey2 = new SessionKey({
 			address: suiAddress,
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
@@ -468,7 +464,7 @@ describe('Integration test', () => {
 
 		const sessionKey3 = new SessionKey({
 			address: suiAddress,
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
@@ -491,7 +487,7 @@ describe('Integration test', () => {
 		const kp = Ed25519Keypair.generate();
 		const sessionKey = new SessionKey({
 			address: kp.getPublicKey().toSuiAddress(),
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
@@ -536,7 +532,7 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 10,
 			signer: keypair,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),

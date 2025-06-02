@@ -9,15 +9,12 @@ import { UserError } from '../../src/error';
 
 describe('Session key tests', () => {
 	const TESTNET_PACKAGE_ID = '0x9709d4ee371488c2bc09f508e98e881bd1d5335e0805d7e6a99edd54a7027954';
-	const TESTNET_PACKAGE = {
-		packageId: TESTNET_PACKAGE_ID,
-	};
 	it('import and export session key', async () => {
 		const kp = Ed25519Keypair.generate();
 		const suiClient = new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' });
 		const sessionKey = new SessionKey({
 			address: kp.getPublicKey().toSuiAddress(),
-			pkg: TESTNET_PACKAGE,
+			packageId: TESTNET_PACKAGE_ID,
 			ttlMin: 1,
 			suiClient,
 		});
@@ -38,7 +35,7 @@ describe('Session key tests', () => {
 			SessionKey.import(
 				{
 					address: kp.getPublicKey().toSuiAddress(),
-					pkg: TESTNET_PACKAGE,
+					packageId: TESTNET_PACKAGE_ID,
 					ttlMin: 1,
 					sessionKey: sessionKey.export().sessionKey,
 					creationTimeMs: sessionKey.export().creationTimeMs,
