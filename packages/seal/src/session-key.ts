@@ -41,15 +41,8 @@ export type SessionKeyType = {
 
 export type Package = {
 	mvr_name: string | null;
-	address: string;
+	packageId: string;
 };
-
-export function packageId(address: string): Package {
-	return {
-		mvr_name: null,
-		address,
-	};
-}
 
 export class SessionKey {
 	#address: string;
@@ -78,8 +71,8 @@ export class SessionKey {
 			// TODO: Verify that the MVR name points to pkg.address.
 			throw new UserError(`Invalid package name ${pkg.mvr_name}`);
 		}
-		if (!isValidSuiObjectId(pkg.address) || !isValidSuiAddress(address)) {
-			throw new UserError(`Invalid package ${pkg} or address ${address}`);
+		if (!isValidSuiObjectId(pkg.packageId) || !isValidSuiAddress(address)) {
+			throw new UserError(`Invalid package ID ${pkg.packageId} or address ${address}`);
 		}
 		if (ttlMin > 30 || ttlMin < 1) {
 			throw new UserError(`Invalid TTL ${ttlMin}, must be between 1 and 30`);
@@ -111,11 +104,11 @@ export class SessionKey {
 		if (this.#pkg.mvr_name) {
 			return this.#pkg.mvr_name;
 		}
-		return this.#pkg.address;
+		return this.#pkg.packageId;
 	}
 
 	getPackageId(): string {
-		return this.#pkg.address;
+		return this.#pkg.packageId;
 	}
 
 	getPersonalMessage(): Uint8Array {
