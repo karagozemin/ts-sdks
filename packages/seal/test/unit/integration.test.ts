@@ -160,7 +160,10 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 10,
 			signer: keypair,
 			suiClient,
@@ -226,7 +229,10 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 10,
 			signer: keypair,
 			suiClient,
@@ -286,7 +292,10 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 10,
 			signer: keypair,
 			suiClient,
@@ -336,7 +345,10 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 10,
 			signer: keypair,
 			suiClient,
@@ -420,7 +432,10 @@ describe('Integration test', () => {
 		const wrongSuiAddress = Ed25519Keypair.generate().getPublicKey().toSuiAddress();
 		const sessionKey = new SessionKey({
 			address: wrongSuiAddress,
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 10,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
@@ -432,7 +447,10 @@ describe('Integration test', () => {
 		// Wrong txBytes fails to verify.
 		const sessionKey2 = new SessionKey({
 			address: suiAddress,
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 10,
 			signer: keypair,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
@@ -464,7 +482,10 @@ describe('Integration test', () => {
 
 		const sessionKey3 = new SessionKey({
 			address: suiAddress,
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 10,
 			signer: keypair,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
@@ -487,7 +508,10 @@ describe('Integration test', () => {
 		const kp = Ed25519Keypair.generate();
 		const sessionKey = new SessionKey({
 			address: kp.getPublicKey().toSuiAddress(),
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 10,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),
 		});
@@ -532,7 +556,10 @@ describe('Integration test', () => {
 
 		const sessionKey = new SessionKey({
 			address: suiAddress,
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 10,
 			signer: keypair,
 			suiClient: new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' }),

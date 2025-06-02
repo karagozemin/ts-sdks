@@ -14,7 +14,10 @@ describe('Session key tests', () => {
 		const suiClient = new SuiGraphQLClient({ url: 'https://sui-testnet.mystenlabs.com/graphql' });
 		const sessionKey = new SessionKey({
 			address: kp.getPublicKey().toSuiAddress(),
-			packageId: TESTNET_PACKAGE_ID,
+			pkg: {
+				mvr_name: null,
+				address: TESTNET_PACKAGE_ID,
+			},
 			ttlMin: 1,
 			suiClient,
 		});
@@ -25,7 +28,7 @@ describe('Session key tests', () => {
 		const restoredSessionKey = SessionKey.import(exportedSessionKey, suiClient);
 
 		expect(restoredSessionKey.getAddress()).toBe(kp.getPublicKey().toSuiAddress());
-		expect(restoredSessionKey.getPackageId()).toBe(TESTNET_PACKAGE_ID);
+		expect(restoredSessionKey.getPackageName()).toBe(TESTNET_PACKAGE_ID);
 		expect(restoredSessionKey.export().sessionKey).toBe(sessionKey.export().sessionKey);
 		expect(restoredSessionKey.getPersonalMessage()).toEqual(sessionKey.getPersonalMessage());
 
@@ -35,7 +38,10 @@ describe('Session key tests', () => {
 			SessionKey.import(
 				{
 					address: kp.getPublicKey().toSuiAddress(),
-					packageId: TESTNET_PACKAGE_ID,
+					pkg: {
+						mvr_name: null,
+						address: TESTNET_PACKAGE_ID,
+					},
 					ttlMin: 1,
 					sessionKey: sessionKey.export().sessionKey,
 					creationTimeMs: sessionKey.export().creationTimeMs,
