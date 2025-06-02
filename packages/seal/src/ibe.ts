@@ -241,5 +241,5 @@ function decryptRandomness(encrypted_randomness: Uint8Array, derived_key: Uint8A
  * @returns True if the randomness was used to create the nonce, false otherwise.
  */
 function verifyNonce(randomness: Scalar, nonce: G2Element): boolean {
-	return G2Element.generator().multiply(randomness) === nonce;
+	return G2Element.generator().multiply(randomness).equals(nonce);
 }

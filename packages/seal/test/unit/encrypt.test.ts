@@ -148,7 +148,6 @@ describe('Seal encryption tests', () => {
 					[`${id}:${objectId2}`, usk2],
 					[`${id}:${objectId3}`, usk3],
 				]),
-				publicKeys: [pk1, pk2, pk3],
 			}),
 		).resolves.toEqual(msg);
 
@@ -159,7 +158,6 @@ describe('Seal encryption tests', () => {
 					[`${id}:${objectId2}`, usk2],
 					[`${id}:${objectId3}`, usk3],
 				]),
-				publicKeys: [pk1, pk2, pk3],
 			}),
 		).resolves.toEqual(msg);
 
@@ -245,6 +243,7 @@ describe('Seal encryption tests', () => {
 					[`${id}:${objectId2}`, usk2],
 					[`${id}:${objectId3}`, usk3],
 				]),
+				publicKeys: [pk1, pk2, pk3],
 			}),
 		).resolves.toEqual(msg);
 
@@ -255,6 +254,7 @@ describe('Seal encryption tests', () => {
 					[`${id}:${objectId2}`, usk2],
 					[`${id}:${objectId3}`, usk3],
 				]),
+				publicKeys: [pk1, pk2, pk3],
 			}),
 		).resolves.toEqual(msg);
 

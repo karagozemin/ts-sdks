@@ -26,6 +26,8 @@ export interface DecryptOptions {
  * It's assumed that fetchKeys has been called to fetch the secret keys for enough key servers
  * otherwise, this will throw an error.
  *
+ * If all public keys are provided, the shares are checked for consistency.
+ *
  * @returns - The decrypted plaintext corresponding to ciphertext.
  */
 export async function decrypt({
@@ -72,11 +74,12 @@ export async function decrypt({
 		return { index, share };
 	});
 
-	const baseKey = await combine(shares);
+	let baseKey: Uint8Array;
 
 	// If public keys are provided, check consistency of the shares.
 	if (publicKeys) {
 		const polynomial = interpolate(shares);
+		baseKey = polynomial(0);
 
 		const allShares = BonehFranklinBLS12381Services.decryptAllShares(
 			encryptedObject.encryptedShares.BonehFranklinBLS12381.encryptedRandomness,
@@ -92,6 +95,8 @@ export async function decrypt({
 		if (allShares.some(({ index, share }) => !equals(polynomial(index), share))) {
 			throw new InvalidCiphertextError('Invalid shares');
 		}
+	} else {
+		baseKey = await combine(shares);
 	}
 
 	const demKey = deriveKey(

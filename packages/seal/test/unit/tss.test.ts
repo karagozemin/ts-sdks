@@ -37,9 +37,6 @@ describe('polynomial', () => {
 		expect(polynomial.degree()).toBeLessThanOrEqual(2);
 
 		x.forEach((x, i) => {
-			console.log(x.value);
-			console.log(y[i].value);
-			console.log(polynomial.evaluate(x).value);
 			expect(polynomial.evaluate(x).equals(y[i])).toBe(true);
 		});
 	});
