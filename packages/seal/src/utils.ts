@@ -52,10 +52,6 @@ export function count<T>(array: T[], value: T): number {
 	return array.reduce((count, item) => (item === value ? count + 1 : count), 0);
 }
 
-export function allDistinct<T>(array: T[]): boolean {
-	return array.every((item, index, self) => self.indexOf(item) === index);
-}
-
 /**
  * Check if two Uint8Arrays are equal.
  * @param a - The first Uint8Array.
