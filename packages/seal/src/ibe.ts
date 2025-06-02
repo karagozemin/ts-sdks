@@ -49,7 +49,6 @@ export abstract class IBEServers {
 
 /**
  * Identity-based encryption based on the Boneh-Franklin IBE scheme (https://eprint.iacr.org/2001/090).
- * Note that this implementation is of the "BasicIdent" protocol which on its own is not CCA secure, so this IBE implementation should not be used on its own.
  *
  * This object represents a set of key servers that can be used to encrypt messages for a given identity.
  */
@@ -124,6 +123,57 @@ export class BonehFranklinBLS12381Services extends IBEServers {
 	): Uint8Array {
 		return xor(ciphertext, kdf(decap(nonce, sk), nonce, id, objectId, index));
 	}
+
+	static decryptDeterministic(
+		randomness: Scalar,
+		ciphertext: Uint8Array,
+		publicKey: G2Element,
+		id: Uint8Array,
+		[objectId, index]: [string, number],
+	): Uint8Array {
+		const gid = hashToG1(id);
+		const gid_r = gid.multiply(randomness);
+		const nonce = G2Element.generator().multiply(randomness);
+		return xor(ciphertext, kdf(gid_r.pairing(publicKey), nonce, id, objectId, index));
+	}
+
+	static decryptAllShares(
+		encryptedRandomness: Uint8Array,
+		encryptedShares: Uint8Array[],
+		services: [string, number][],
+		baseKey: Uint8Array,
+		publicKeys: G2Element[],
+		nonce: G2Element,
+		threshold: number,
+		id: Uint8Array,
+	): { index: number; share: Uint8Array }[] {
+		if (publicKeys.length !== encryptedShares.length) {
+			throw new Error('The number of public keys and encrypted shares must be the same');
+		}
+		const r = decryptAndVerifyNonce(
+			encryptedRandomness,
+			deriveKey(
+				KeyPurpose.EncryptedRandomness,
+				baseKey,
+				encryptedShares,
+				threshold,
+				services.map(([objectId, _]) => objectId),
+			),
+			nonce,
+		);
+		return publicKeys.map((publicKey, i) => {
+			return {
+				index: services[i][1],
+				share: BonehFranklinBLS12381Services.decryptDeterministic(
+					r,
+					encryptedShares[i],
+					publicKey,
+					id,
+					services[i],
+				),
+			};
+		});
+	}
 }
 
 /**
@@ -152,4 +202,22 @@ function encapBatched(publicKeys: G2Element[], id: Uint8Array): [Scalar, G2Eleme
  */
 function decap(nonce: G2Element, usk: G1Element): GTElement {
 	return usk.pairing(nonce);
+}
+
+// Decrypt the Randomness using a key and verify that the randomness was used to create the given nonce.
+function decryptAndVerifyNonce(
+	encrypted_randomness: Uint8Array,
+	derived_key: Uint8Array,
+	nonce: G2Element,
+): Scalar {
+	const randomness = Scalar.fromBytes(xor(derived_key, encrypted_randomness));
+	if (!verifyNonce(randomness, nonce)) {
+		throw new Error('Invalid randomness');
+	}
+	return randomness;
+}
+
+// Verify that the given randomness was used to crate the nonce.
+function verifyNonce(randomness: Scalar, nonce: G2Element): boolean {
+	return G2Element.generator().multiply(randomness) === nonce;
 }

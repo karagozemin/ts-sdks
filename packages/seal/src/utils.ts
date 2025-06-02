@@ -52,6 +52,13 @@ export function count<T>(array: T[], value: T): number {
 	return array.reduce((count, item) => (item === value ? count + 1 : count), 0);
 }
 
+export function equals(a: Uint8Array, b: Uint8Array): boolean {
+	if (a.length !== b.length) {
+		return false;
+	}
+	return a.every((ai, i) => ai === b[i]);
+}
+
 /**
  * A simple class to represent a version number of the form x.y.z.
  */
