@@ -123,7 +123,6 @@ describe('Integration test', () => {
 		suiClient = new SuiClient({ url: getFullnodeUrl('testnet') });
 		TESTNET_PACKAGE_ID = '0x9709d4ee371488c2bc09f508e98e881bd1d5335e0805d7e6a99edd54a7027954';
 		TESTNET_PACKAGE = {
-			mvr_name: null,
 			packageId: TESTNET_PACKAGE_ID,
 		};
 		// Object ids pointing to ci key servers' urls

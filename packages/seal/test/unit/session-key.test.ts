@@ -10,7 +10,6 @@ import { UserError } from '../../src/error';
 describe('Session key tests', () => {
 	const TESTNET_PACKAGE_ID = '0x9709d4ee371488c2bc09f508e98e881bd1d5335e0805d7e6a99edd54a7027954';
 	const TESTNET_PACKAGE = {
-		mvr_name: null,
 		packageId: TESTNET_PACKAGE_ID,
 	};
 	it('import and export session key', async () => {

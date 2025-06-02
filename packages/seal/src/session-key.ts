@@ -27,7 +27,7 @@ export type Certificate = {
 	creation_time: number;
 	ttl_min: number;
 	signature: string;
-	mvr_name: string | null;
+	mvr_name?: string;
 };
 
 export type SessionKeyType = {
@@ -40,7 +40,7 @@ export type SessionKeyType = {
 };
 
 export type Package = {
-	mvr_name: string | null;
+	mvr_name?: string;
 	packageId: string;
 };
 
