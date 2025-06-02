@@ -29,7 +29,7 @@ describe('Session key tests', () => {
 		const restoredSessionKey = SessionKey.import(exportedSessionKey, suiClient);
 
 		expect(restoredSessionKey.getAddress()).toBe(kp.getPublicKey().toSuiAddress());
-		expect(restoredSessionKey.getPackageName()).toBe(TESTNET_PACKAGE_ID);
+		expect(restoredSessionKey.getPackageId()).toBe(TESTNET_PACKAGE_ID);
 		expect(restoredSessionKey.export().sessionKey).toBe(sessionKey.export().sessionKey);
 		expect(restoredSessionKey.getPersonalMessage()).toEqual(sessionKey.getPersonalMessage());
 
