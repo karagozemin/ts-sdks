@@ -1,17 +1,20 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-class GF256 {
+export class GF256 {
 	value: number;
 
 	constructor(value: number) {
-		if (value < 0 || value >= 255) {
+		if (value < 0 || value > 255) {
 			throw new Error('Invalid value');
 		}
 		this.value = value;
 	}
 
 	log(): number {
+		if (this.value === 0) {
+			throw new Error('Invalid value');
+		}
 		return LOG[this.value - 1];
 	}
 
@@ -36,6 +39,10 @@ class GF256 {
 
 	div(other: GF256): GF256 {
 		return this.mul(GF256.exp(255 - other.log()));
+	}
+
+	equals(other: GF256): boolean {
+		return this.value === other.value;
 	}
 }
 
@@ -79,7 +86,7 @@ const LOG: number[] = [
 	0x4a, 0xed, 0xde, 0xc5, 0x31, 0xfe, 0x18, 0x0d, 0x63, 0x8c, 0x80, 0xc0, 0xf7, 0x70, 0x07,
 ];
 
-class Polynomial {
+export class Polynomial {
 	coefficients: GF256[];
 
 	constructor(coefficients: GF256[]) {
@@ -99,7 +106,14 @@ class Polynomial {
 	}
 
 	add(other: Polynomial): Polynomial {
-		return new Polynomial(this.coefficients.map((c, i) => c.add(other.coefficients[i])));
+		const degree = Math.max(this.degree(), other.degree());
+		return new Polynomial(
+			Array.from({ length: degree + 1 }, (_, i) => {
+				const a = i <= this.degree() ? this.coefficients[i] : new GF256(0);
+				const b = i <= other.degree() ? other.coefficients[i] : new GF256(0);
+				return a.add(b);
+			}),
+		);
 	}
 
 	mul(other: Polynomial): Polynomial {
@@ -153,8 +167,15 @@ class Polynomial {
 
 	evaluate(x: GF256): GF256 {
 		return this.coefficients
-			.reverse()
-			.reduce((sum, coefficient) => coefficient.add(sum.mul(x)), new GF256(0));
+			.toReversed()
+			.reduce((sum, coefficient) => sum.mul(x).add(coefficient), new GF256(0));
+	}
+
+	equals(other: Polynomial): boolean {
+		if (this.degree() !== other.degree()) {
+			return false;
+		}
+		return this.coefficients.every((c, i) => c.equals(other.coefficients[i]));
 	}
 }
 
