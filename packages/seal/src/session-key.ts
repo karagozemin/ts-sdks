@@ -44,6 +44,13 @@ export type Package = {
 	address: string;
 };
 
+export function packageId(address: string): Package {
+	return {
+		mvr_name: null,
+		address,
+	};
+}
+
 export class SessionKey {
 	#address: string;
 	#pkg: Package;
