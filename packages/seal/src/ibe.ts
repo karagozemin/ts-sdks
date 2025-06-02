@@ -137,6 +137,19 @@ export class BonehFranklinBLS12381Services extends IBEServers {
 		return xor(ciphertext, kdf(gid_r.pairing(publicKey), nonce, id, objectId, index));
 	}
 
+	/**
+	 * Decrypt all shares and verify that the randomness was used to create the given nonce.
+	 *
+	 * @param encryptedRandomness - The encrypted randomness.
+	 * @param encryptedShares - The encrypted shares.
+	 * @param services - The services.
+	 * @param baseKey - The base key.
+	 * @param publicKeys - The public keys.
+	 * @param nonce - The nonce.
+	 * @param threshold - The threshold.
+	 * @param id - The id.
+	 * @returns All decrypted shares.
+	 */
 	static decryptAllShares(
 		encryptedRandomness: Uint8Array,
 		encryptedShares: Uint8Array[],
@@ -147,10 +160,11 @@ export class BonehFranklinBLS12381Services extends IBEServers {
 		threshold: number,
 		id: Uint8Array,
 	): { index: number; share: Uint8Array }[] {
-		if (publicKeys.length !== encryptedShares.length) {
-			throw new Error('The number of public keys and encrypted shares must be the same');
+		if (publicKeys.length !== encryptedShares.length || publicKeys.length !== services.length) {
+			throw new Error('The number of public keys, encrypted shares and services must be the same');
 		}
-		const r = decryptAndVerifyNonce(
+
+		const r = decryptRandomness(
 			encryptedRandomness,
 			deriveKey(
 				KeyPurpose.EncryptedRandomness,
@@ -159,15 +173,19 @@ export class BonehFranklinBLS12381Services extends IBEServers {
 				threshold,
 				services.map(([objectId, _]) => objectId),
 			),
-			nonce,
 		);
-		return publicKeys.map((publicKey, i) => {
+
+		if (!verifyNonce(r, nonce)) {
+			throw new Error('Invalid randomness');
+		}
+
+		return services.map(([_, index], i) => {
 			return {
-				index: services[i][1],
+				index,
 				share: BonehFranklinBLS12381Services.decryptDeterministic(
 					r,
 					encryptedShares[i],
-					publicKey,
+					publicKeys[i],
 					id,
 					services[i],
 				),
@@ -204,20 +222,24 @@ function decap(nonce: G2Element, usk: G1Element): GTElement {
 	return usk.pairing(nonce);
 }
 
-// Decrypt the Randomness using a key and verify that the randomness was used to create the given nonce.
-function decryptAndVerifyNonce(
-	encrypted_randomness: Uint8Array,
-	derived_key: Uint8Array,
-	nonce: G2Element,
-): Scalar {
-	const randomness = Scalar.fromBytes(xor(derived_key, encrypted_randomness));
-	if (!verifyNonce(randomness, nonce)) {
-		throw new Error('Invalid randomness');
-	}
-	return randomness;
+/**
+ * Decrypt the randomness using a key.
+ *
+ * @param encrypted_randomness - The encrypted randomness.
+ * @param derived_key - The derived key.
+ * @returns The randomness.
+ */
+function decryptRandomness(encrypted_randomness: Uint8Array, derived_key: Uint8Array): Scalar {
+	return Scalar.fromBytes(xor(derived_key, encrypted_randomness));
 }
 
-// Verify that the given randomness was used to crate the nonce.
+/**
+ * Verify that the given randomness was used to crate the nonce.
+ *
+ * @param randomness - The randomness.
+ * @param nonce - The nonce.
+ * @returns True if the randomness was used to create the nonce, false otherwise.
+ */
 function verifyNonce(randomness: Scalar, nonce: G2Element): boolean {
 	return G2Element.generator().multiply(randomness) === nonce;
 }

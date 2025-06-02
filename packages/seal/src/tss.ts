@@ -31,7 +31,7 @@ class GF256 {
 		if (this.value === 0 || other.value === 0) {
 			return new GF256(0);
 		}
-		return new GF256(EXP[this.log() + other.log()]);
+		return GF256.exp(this.log() + other.log());
 	}
 
 	div(other: GF256): GF256 {
