@@ -100,7 +100,7 @@ export class SessionKey {
 		return this.#address;
 	}
 
-	getPackageName(): string | null {
+	getPackageName(): string {
 		if (this.#pkg.mvr_name) {
 			return this.#pkg.mvr_name;
 		}
