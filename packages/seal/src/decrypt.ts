@@ -74,13 +74,11 @@ export async function decrypt({
 		return { index, share };
 	});
 
-	let baseKey: Uint8Array;
+	const polynomial = interpolate(shares);
+	const baseKey = polynomial(0);
 
 	// If public keys are provided, check consistency of the shares.
 	if (publicKeys) {
-		const polynomial = interpolate(shares);
-		baseKey = polynomial(0);
-
 		const allShares = BonehFranklinBLS12381Services.decryptAllShares(
 			encryptedObject.encryptedShares.BonehFranklinBLS12381.encryptedRandomness,
 			encryptedShares,
@@ -95,8 +93,6 @@ export async function decrypt({
 		if (allShares.some(({ index, share }) => !equals(polynomial(index), share))) {
 			throw new InvalidCiphertextError('Invalid shares');
 		}
-	} else {
-		baseKey = await combine(shares);
 	}
 
 	const demKey = deriveKey(
@@ -117,24 +113,4 @@ export async function decrypt({
 	} else {
 		throw new InvalidCiphertextError('Invalid ciphertext type');
 	}
-}
-
-/**
- * Helper function that combines the shares into the key.
- * @param shares - The shares to combine.
- * @returns - The combined key.
- */
-async function combine(shares: { index: number; share: Uint8Array }[]): Promise<Uint8Array> {
-	if (shares.length === 0) {
-		throw new Error('Invalid shares length');
-	} else if (shares.length === 1) {
-		// The Shamir secret sharing library expects at least two shares.
-		// If there is only one and the threshold is 1, the reconstructed secret is the same as the share.
-		return Promise.resolve(shares[0].share);
-	}
-
-	// The Shamir secret sharing library expects the index/x-coordinate to be at the end of the share
-	return externalCombine(
-		shares.map(({ index, share }) => flatten([share, new Uint8Array([index])])),
-	);
 }

@@ -1,6 +1,8 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { allDistinct } from './utils.js';
+
 export class GF256 {
 	value: number;
 
@@ -148,7 +150,12 @@ export class Polynomial {
 	}
 
 	static interpolate(x: GF256[], y: GF256[]): Polynomial {
-		if (x.length !== y.length) {
+		if (
+			x.length === 0 ||
+			x.length !== y.length ||
+			x.some((x) => x.value === 0) ||
+			!allDistinct(x.map((x) => x.value))
+		) {
 			throw new Error('x and y must have the same length');
 		}
 		const n = x.length;
