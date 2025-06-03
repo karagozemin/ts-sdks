@@ -67,7 +67,6 @@ export class SessionKey {
 		suiClient: ZkLoginCompatibleClient;
 	}) {
 		if (mvrName && !isValidNamedPackage(mvrName)) {
-			// TODO: Verify that the MVR name points to pkg.address.
 			throw new UserError(`Invalid package name ${mvrName}`);
 		}
 		if (!isValidSuiObjectId(packageId) || !isValidSuiAddress(address)) {
