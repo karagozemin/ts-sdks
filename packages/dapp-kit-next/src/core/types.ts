@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ClientWithCoreApi, Experimental_BaseClient } from '@mysten/sui/experimental';
+import type { Experimental_BaseClient } from '@mysten/sui/experimental';
 import type { Networks } from '../utils/networks.js';
 import type { StateStorage } from '../utils/storage.js';
 
