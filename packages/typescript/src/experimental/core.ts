@@ -71,6 +71,10 @@ export abstract class Experimental_CoreClient
 		options: Experimental_SuiClientTypes.GetDynamicFieldsOptions,
 	): Promise<Experimental_SuiClientTypes.GetDynamicFieldsResponse>;
 
+	abstract resolveNameServiceNames?(
+		options: Experimental_SuiClientTypes.ResolveNameServiceNamesOptions,
+	): Promise<Experimental_SuiClientTypes.ResolveNameServiceNamesResponse>;
+
 	abstract resolveTransactionPlugin(): TransactionPlugin;
 
 	async getDynamicField(
