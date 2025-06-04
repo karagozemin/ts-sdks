@@ -20,9 +20,9 @@ import {
 	isWalletStandardError,
 	WALLET_STANDARD_ERROR__USER__REQUEST_REJECTED,
 } from '@mysten/wallet-standard';
-import { IconButton } from './internal/buttons/icon-button.js';
 import { styles } from './dapp-kit-connect-modal.styles.js';
-import { Button } from './internal/buttons/button.js';
+import { Button } from './internal/button.js';
+import { iconButtonStyles } from './styles/icon-button.js';
 
 type ModalViewState =
 	| { view: 'wallet-selection' }
@@ -39,12 +39,11 @@ export class DAppKitConnectModal
 	extends ScopedRegistryHost(BaseModal)
 	implements DAppKitConnectModalOptions
 {
-	static override styles = styles;
+	static override styles = [styles, iconButtonStyles];
 
 	static elementDefinitions = {
 		'wallet-list': WalletList,
 		'internal-button': Button,
-		'icon-button': IconButton,
 		'connection-status': ConnectionStatus,
 	};
 
@@ -76,7 +75,7 @@ export class DAppKitConnectModal
 				<div class="connect-header">
 					${showBackButton
 						? html`<icon-button
-								class="back-button"
+								class="icon-button back-button"
 								aria-label="Go back"
 								@click=${this.#resetSelection}
 							>
@@ -84,9 +83,13 @@ export class DAppKitConnectModal
 							</icon-button>`
 						: nothing}
 					<h2 class="title">${this.#getModalTitle(wallets)}</h2>
-					<icon-button class="close-button" aria-label="Close" @click=${() => this.close('cancel')}>
+					<button
+						class="icon-button close-button"
+						aria-label="Close"
+						@click=${() => this.close('cancel')}
+					>
 						${closeIcon}
-					</icon-button>
+					</button>
 				</div>
 				${this.#renderModalView(wallets)}
 			</div>

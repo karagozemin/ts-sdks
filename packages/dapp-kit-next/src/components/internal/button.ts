@@ -4,7 +4,7 @@
 import { html, LitElement } from 'lit';
 import { property } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
-import { styles } from './button.styles.js';
+import { styles } from './buttons/button.styles.js';
 
 export class Button extends LitElement {
 	static override shadowRootOptions = {

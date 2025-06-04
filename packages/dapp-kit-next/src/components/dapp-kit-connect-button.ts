@@ -11,7 +11,7 @@ import type { DAppKit } from '../core/index.js';
 import type { DAppKitConnectModalOptions } from './dapp-kit-connect-modal.js';
 import { DAppKitConnectModal } from './dapp-kit-connect-modal.js';
 import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
-import { Button } from './internal/buttons/button.js';
+import { Button } from './internal/button.js';
 import { sharedStyles } from './styles/index.js';
 
 @customElement('mysten-dapp-kit-connect-button')
