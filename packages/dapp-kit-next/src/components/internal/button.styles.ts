@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { css } from 'lit';
-import { sharedStyles } from '../../styles/index.js';
+import { sharedStyles } from '../styles/index.js';
 
 export const styles = [
 	sharedStyles,

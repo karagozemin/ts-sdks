@@ -74,13 +74,13 @@ export class DAppKitConnectModal
 			<div class="content" @click=${this.handleContentClick}>
 				<div class="connect-header">
 					${showBackButton
-						? html`<icon-button
+						? html`<button
 								class="icon-button back-button"
 								aria-label="Go back"
 								@click=${this.#resetSelection}
 							>
 								${backIcon}
-							</icon-button>`
+							</button>`
 						: nothing}
 					<h2 class="title">${this.#getModalTitle(wallets)}</h2>
 					<button
