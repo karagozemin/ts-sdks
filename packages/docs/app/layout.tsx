@@ -5,6 +5,7 @@ import './global.css';
 import { RootProvider } from 'fumadocs-ui/provider';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 
 export const metadata: Metadata = {
 	title: {
@@ -39,6 +40,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 				<meta httpEquiv="Content-Language" content="en" />
 			</head>
 			<body className="flex flex-col min-h-screen">
+				<GoogleAnalytics />
 				<RootProvider>{children}</RootProvider>
 			</body>
 		</html>
