@@ -1,5 +1,8 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 import eslint from '@eslint/js';
-import reactApp from 'eslint-config-react-app';
+import tseslint from 'typescript-eslint';
 import queryPlugin from '@tanstack/eslint-plugin-query';
 
 import prettierPlugin from 'eslint-plugin-prettier';
@@ -9,22 +12,22 @@ import headerPlugin from 'eslint-plugin-header';
 import unusedImportsPlugin from 'eslint-plugin-unused-imports';
 import importExtensionsPlugin from 'eslint-plugin-import-extensions';
 import litPlugin from 'eslint-plugin-lit';
+import globals from 'globals';
 
 export default tseslint.config(
 	eslint.configs.recommended,
 	tseslint.configs.recommended,
-	reactApp,
-	litPlugin.configs.recommended,
-	queryPlugin.configs.recommended,
-	prettierConfig,
-	prettierPlugin.configs.recommended,
-	importPlugin.configs.typescript,
+	//litPlugin.configs['flat/recommended'],
+	//queryPlugin.configs.recommended,
+	//prettierConfig,
+	//prettierPlugin.configs.recommended,
+	//importPlugin.configs.typescript,
 	{
 		languageOptions: {
-			parser: tsParser,
-			parserOptions: {
-				ecmaVersion: 2020,
-				sourceType: 'module',
+			ecmaVersion: 2020,
+			sourceType: 'module',
+			globals: {
+				...globals.es2020,
 			},
 		},
 		settings: {
@@ -35,24 +38,21 @@ export default tseslint.config(
 				typescript: true,
 			},
 		},
-		env: {
-			es2020: true,
-		},
 		plugins: {
-			'@tanstack/query': queryPlugin,
-			'unused-imports': unusedImportsPlugin,
-			prettier: prettierPlugin,
+			// '@tanstack/query': queryPlugin,
+			// 'unused-imports': unusedImportsPlugin,
+			// prettier: prettierPlugin,
 			header: headerPlugin,
-			'import-extensions': importExtensionsPlugin,
-			lit: litPlugin,
-			import: importPlugin,
+			// '@typescript-eslint': tseslint.plugin,
+			// 'import-extensions': importExtensionsPlugin,
+			// lit: litPlugin,
+			// //import: importPlugin,
 		},
 		ignores: [
 			'node_modules',
 			'build',
 			'dist',
 			'coverage',
-			'apps/icons/src',
 			'next-env.d.ts',
 			'doc/book',
 			'external-crates',
@@ -69,14 +69,13 @@ export default tseslint.config(
 			'no-case-declarations': 'off',
 			'no-implicit-coercion': [2, { number: true, string: true, boolean: false }],
 			'@typescript-eslint/no-redeclare': 'off',
-			'@typescript-eslint/ban-types': [
+			'@typescript-eslint/no-restricted-types': [
 				'error',
 				{
 					types: {
 						Buffer:
 							'Buffer usage increases bundle size and is not consistently implemented on web.',
 					},
-					extendDefaults: true,
 				},
 			],
 			'no-restricted-globals': [
@@ -114,31 +113,6 @@ export default tseslint.config(
 		},
 	},
 	{
-		files: ['apps/wallet/**/*'],
-		rules: {
-			'react/display-name': 'off',
-			'import/no-duplicates': ['error'],
-			'@typescript-eslint/consistent-type-imports': [
-				'error',
-				{
-					prefer: 'type-imports',
-					disallowTypeAnnotations: true,
-					fixStyle: 'inline-type-imports',
-				},
-			],
-			'@typescript-eslint/unified-signatures': 'error',
-			'@typescript-eslint/parameter-properties': 'error',
-			'no-console': ['warn'],
-			'@typescript-eslint/no-non-null-assertion': 'off',
-		},
-	},
-	{
-		files: ['apps/wallet/src/**/*.test.*', 'apps/wallet/src/**/*.spec.*'],
-		rules: {
-			'@typescript-eslint/no-explicit-any': 'off',
-		},
-	},
-	{
 		files: ['dapps/kiosk/**/*'],
 		rules: {
 			'no-unused-vars': 'off',
@@ -170,12 +144,6 @@ export default tseslint.config(
 			'import/consistent-type-specifier-style': ['off'],
 			'no-restricted-globals': ['off'],
 			'@typescript-eslint/ban-types': ['error'],
-		},
-	},
-	{
-		files: ['*.stories.*'],
-		rules: {
-			'react-hooks/rules-of-hooks': 'off',
 		},
 	},
 	{
