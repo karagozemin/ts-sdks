@@ -11,3 +11,5 @@ export { DAppKitConnectButton } from './components/dapp-kit-connect-button.js';
 export { DAppKitConnectModal } from './components/dapp-kit-connect-modal.js';
 
 export type { StateStorage } from './utils/storage.js';
+
+export type { Register, ResolvedRegister } from './types.js';
