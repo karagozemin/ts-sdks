@@ -1,18 +1,10 @@
 {
 	"name": "@mysten/dapp-kit-next-root",
 	"author": "Mysten Labs <build@mystenlabs.com>",
-	"description": "Framework-agnostic toolkit for building decentralized applications on Sui.",
 	"homepage": "https://sdk.mystenlabs.com/typescript",
 	"version": "0.0.1",
 	"license": "Apache-2.0",
 	"private": true,
-	"files": [
-		"CHANGELOG.md",
-		"LICENSE",
-		"README.md",
-		"dist",
-		"src"
-	],
 	"type": "module",
 	"scripts": {
 		"clean": "rm -rf tsconfig.tsbuildinfo ./dist",
