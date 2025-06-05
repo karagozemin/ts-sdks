@@ -1,0 +1,39 @@
+{
+  "name": "@mysten/dapp-kit-react",
+  "author": "Mysten Labs <build@mystenlabs.com>",
+  "description": "React bindings for @mysten/dapp-kit-next web components",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "private": true,
+  "files": ["CHANGELOG.md", "LICENSE", "README.md", "dist", "src"],
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf tsconfig.tsbuildinfo ./dist",
+    "build": "build-package",
+    "prepublishOnly": "pnpm turbo build",
+    "prettier:check": "prettier -c --ignore-unknown .",
+    "prettier:fix": "prettier -w --ignore-unknown .",
+    "eslint:check": "eslint --max-warnings=0 .",
+    "eslint:fix": "pnpm run eslint:check --fix",
+    "lint": "pnpm run eslint:check && pnpm run prettier:check",
+    "lint:fix": "pnpm run eslint:fix && pnpm run prettier:fix"
+  },
+  "dependencies": {
+    "@lit/react": "^2.0.2",
+    "react": "^18.3.1",
+    "@mysten/dapp-kit-next": "workspace:*"
+  },
+  "devDependencies": {
+    "@mysten/build-scripts": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}

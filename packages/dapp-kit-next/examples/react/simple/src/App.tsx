@@ -3,6 +3,7 @@
 
 import { useStore } from '@nanostores/react';
 import { createDAppKit } from '@mysten/dapp-kit-next';
+import { ConnectButton } from '@mysten/dapp-kit-react';
 import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
 
 const dAppKit = createDAppKit({
@@ -16,20 +17,21 @@ const dAppKit = createDAppKit({
 function App() {
 	const wallets = useStore(dAppKit.stores.$wallets);
 
-	return (
-		<div>
-			<p>TODO: Flesh this out more / make it more use case specific ^.^</p>
-			{wallets.length > 0 ? (
-				<ul>
-					{wallets.map((wallet) => (
-						<li key={wallet.name}>{wallet.name}</li>
-					))}
-				</ul>
-			) : (
-				<p>No registered wallets</p>
-			)}
-		</div>
-	);
+       return (
+               <div>
+                       <ConnectButton />
+                       <p>TODO: Flesh this out more / make it more use case specific ^.^</p>
+                       {wallets.length > 0 ? (
+                               <ul>
+                                       {wallets.map((wallet) => (
+                                               <li key={wallet.name}>{wallet.name}</li>
+                                       ))}
+                               </ul>
+                       ) : (
+                               <p>No registered wallets</p>
+                       )}
+               </div>
+       );
 }
 
 export default App;
