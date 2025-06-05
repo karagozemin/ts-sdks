@@ -14,6 +14,6 @@ export function useCurrentNetwork<TDAppKit extends DAppKit<any> = ResolvedRegist
 }: InstanceOptions<TDAppKit> = {}): ReturnType<
 	typeof useStore<TDAppKit['stores']['$currentNetwork']>
 > {
-	const instance = dAppKit ?? (getDefaultInstance() as ResolvedRegister['dAppKit']);
+	const instance = dAppKit ?? getDefaultInstance();
 	return useStore(instance.stores.$currentNetwork);
 }

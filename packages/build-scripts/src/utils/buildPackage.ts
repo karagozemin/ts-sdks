@@ -168,7 +168,6 @@ async function buildImportDirectories({ exports, sideEffects }: PackageJSON) {
 		);
 	}
 
-	console.error(ignoredWorkspaces);
 	await addPackageFiles([...exportDirs]);
 	await addIgnoredWorkspaces(ignoredWorkspaces);
 }
