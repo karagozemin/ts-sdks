@@ -42,12 +42,11 @@
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.29.4",
+		"@eslint/js": "^9.28.0",
 		"@ianvs/prettier-plugin-sort-imports": "^4.4.2",
 		"@manypkg/cli": "^0.24.0",
 		"@tanstack/eslint-plugin-query": "^5.78.0",
 		"@testcontainers/postgresql": "^11.0.0",
-		"@typescript-eslint/eslint-plugin": "^8.33.1",
-		"@typescript-eslint/parser": "^8.33.1",
 		"concurrently": "^9.1.2",
         "eslint": "^9.28.0",
         "eslint-config-prettier": "^10.1.5",
@@ -66,7 +65,8 @@
 		"testcontainers": "^11.0.0",
 		"tsx": "^4.19.4",
 		"turbo": "^2.5.4",
-		"typescript": "^5.8.3"
+		"typescript": "^5.8.3",
+		"typescript-eslint": "^8.33.1"
 	},
 	"packageManager": "pnpm@9.1.1+sha512.14e915759c11f77eac07faba4d019c193ec8637229e62ec99eefb7cf3c3b75c64447882b7c485142451ee3a6b408059cdfb7b7fa0341b975f12d0f7629c71195"
 }

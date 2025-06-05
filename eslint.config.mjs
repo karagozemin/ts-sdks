@@ -1,8 +1,7 @@
-import js from '@eslint/js';
+import eslint from '@eslint/js';
 import reactApp from 'eslint-config-react-app';
 import queryPlugin from '@tanstack/eslint-plugin-query';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
+
 import prettierPlugin from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
@@ -11,8 +10,9 @@ import unusedImportsPlugin from 'eslint-plugin-unused-imports';
 import requireExtensionsPlugin from 'eslint-plugin-require-extensions';
 import litPlugin from 'eslint-plugin-lit';
 
-export default [
-	js.configs.recommended,
+export default tseslint.config(
+	eslint.configs.recommended,
+	tseslint.configs.recommended,
 	reactApp,
 	litPlugin.configs.recommended,
 	queryPlugin.configs.recommended,
@@ -40,7 +40,6 @@ export default [
 		},
 		plugins: {
 			'@tanstack/query': queryPlugin,
-			'@typescript-eslint': tsPlugin,
 			'unused-imports': unusedImportsPlugin,
 			prettier: prettierPlugin,
 			header: headerPlugin,
@@ -186,4 +185,4 @@ export default [
 			'require-extensions/require-extensions': 'off',
 		},
 	},
-];
+);
