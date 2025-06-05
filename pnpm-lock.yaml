@@ -58,15 +58,15 @@ importers:
       eslint-plugin-import:
         specifier: ^2.29.1
         version: 2.31.0(@typescript-eslint/parser@5.62.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@4.4.2(eslint-plugin-import@2.31.0)(eslint@9.28.0(jiti@2.4.2)))(eslint@9.28.0(jiti@2.4.2))
+      eslint-plugin-import-extensions:
+        specifier: ^0.1.5
+        version: 0.1.5(eslint@9.28.0(jiti@2.4.2))
       eslint-plugin-lit:
         specifier: ^2.1.1
         version: 2.1.1(eslint@9.28.0(jiti@2.4.2))
       eslint-plugin-prettier:
         specifier: ^5.4.1
         version: 5.4.1(eslint-config-prettier@10.1.5(eslint@9.28.0(jiti@2.4.2)))(eslint@9.28.0(jiti@2.4.2))(prettier@3.5.3)
-      eslint-plugin-require-extensions:
-        specifier: ^0.1.3
-        version: 0.1.3(eslint@9.28.0(jiti@2.4.2))
       eslint-plugin-tsdoc:
         specifier: ^0.2.17
         version: 0.2.17
@@ -6582,6 +6582,12 @@ packages:
     peerDependencies:
       eslint: '>=7.7.0'
 
+  eslint-plugin-import-extensions@0.1.5:
+    resolution: {integrity: sha512-0Q7gtSk9egNBPWCDBc3C5FWWYpBtATeLA/62VD+1mokNueuXdUMZyJLTB3vingtYKKfg18ChqUhQMOprbeWrVA==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      eslint: '*'
+
   eslint-plugin-import@2.31.0:
     resolution: {integrity: sha512-ixmkI62Rbc2/w8Vfxyh1jQRTdRTF52VxwRVHl/ykPAmqG+Nb7/kNn+byLP0LxPgI7zWA16Jt82SybJInmMia3A==}
     engines: {node: '>=4'}
@@ -6653,12 +6659,6 @@ packages:
     engines: {node: '>=4'}
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7
-
-  eslint-plugin-require-extensions@0.1.3:
-    resolution: {integrity: sha512-T3c1PZ9PIdI3hjV8LdunfYI8gj017UQjzAnCrxuo3wAjneDbTPHdE3oNWInOjMA+z/aBkUtlW5vC0YepYMZIug==}
-    engines: {node: '>=16'}
-    peerDependencies:
-      eslint: '*'
 
   eslint-plugin-testing-library@5.11.1:
     resolution: {integrity: sha512-5eX9e1Kc2PqVRed3taaLnAAqPZGEX75C+M/rXzUAI3wIg/ZxzUm1OVAwfe/O+vE+6YXOLetSe9g5GKD2ecXipw==}
@@ -15940,6 +15940,10 @@ snapshots:
     dependencies:
       eslint: 9.28.0(jiti@2.4.2)
 
+  eslint-plugin-import-extensions@0.1.5(eslint@9.28.0(jiti@2.4.2)):
+    dependencies:
+      eslint: 9.28.0(jiti@2.4.2)
+
   eslint-plugin-import@2.31.0(@typescript-eslint/parser@5.62.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-typescript@4.4.2(eslint-plugin-import@2.31.0)(eslint@9.28.0(jiti@2.4.2)))(eslint@9.28.0(jiti@2.4.2)):
     dependencies:
       '@rtsao/scc': 1.1.0
@@ -16046,10 +16050,6 @@ snapshots:
       semver: 7.7.2
       string.prototype.matchall: 4.0.12
       string.prototype.repeat: 1.0.0
-
-  eslint-plugin-require-extensions@0.1.3(eslint@9.28.0(jiti@2.4.2)):
-    dependencies:
-      eslint: 9.28.0(jiti@2.4.2)
 
   eslint-plugin-testing-library@5.11.1(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3):
     dependencies:

@@ -7,7 +7,7 @@ import prettierConfig from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import headerPlugin from 'eslint-plugin-header';
 import unusedImportsPlugin from 'eslint-plugin-unused-imports';
-import requireExtensionsPlugin from 'eslint-plugin-require-extensions';
+import importExtensionsPlugin from 'eslint-plugin-import-extensions';
 import litPlugin from 'eslint-plugin-lit';
 
 export default tseslint.config(
@@ -43,7 +43,7 @@ export default tseslint.config(
 			'unused-imports': unusedImportsPlugin,
 			prettier: prettierPlugin,
 			header: headerPlugin,
-			'require-extensions': requireExtensionsPlugin,
+			'import-extensions': importExtensionsPlugin,
 			lit: litPlugin,
 			import: importPlugin,
 		},
