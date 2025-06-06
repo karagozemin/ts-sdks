@@ -4,17 +4,36 @@
 import '@webcomponents/scoped-custom-element-registry';
 
 import { html, LitElement } from 'lit';
-import { customElement, query } from 'lit/decorators.js';
+import { customElement, property, query } from 'lit/decorators.js';
 import { storeProperty } from '../utils/lit.js';
-import type { DAppKit } from '../core/index.js';
 import { getDefaultInstance } from '../core/index.js';
-import type { DAppKitConnectModal } from './dapp-kit-connect-modal.js';
+import type { DAppKit } from '../core/index.js';
+import type { DAppKitConnectModalOptions } from './dapp-kit-connect-modal.js';
+import { DAppKitConnectModal } from './dapp-kit-connect-modal.js';
+import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
+import { Button } from './internal/button.js';
+import { sharedStyles } from './styles/index.js';
 import type { ResolvedRegister } from '../types.js';
 
 @customElement('mysten-dapp-kit-connect-button')
 export class DAppKitConnectButton<
 	TDAppKit extends DAppKit<any> = ResolvedRegister['dAppKit'],
-> extends LitElement {
+> extends ScopedRegistryHost(LitElement) {
+	static elementDefinitions = {
+		'internal-button': Button,
+		'mysten-dapp-kit-connect-modal': DAppKitConnectModal,
+	};
+
+	static override shadowRootOptions = {
+		...LitElement.shadowRootOptions,
+		delegatesFocus: true,
+	};
+
+	static override styles = sharedStyles;
+
+	@property({ type: Object })
+	modalOptions?: DAppKitConnectModalOptions;
+
 	@storeProperty()
 	instance?: TDAppKit | DAppKit;
 
@@ -27,10 +46,18 @@ export class DAppKitConnectButton<
 	}
 
 	override render() {
-		return html`
-			<button @click=${this.#openModal}>Connect</button>
-			<mysten-dapp-kit-connect-modal .instance=${this.instance}></mysten-dapp-kit-connect-modal>
-		`;
+		const connection = this.instance!.stores.$connection.get();
+
+		return connection.isConnected
+			? html`<div>TODO</div>`
+			: html`<internal-button @click=${this.#openModal}>
+						<slot>Connect Wallet</slot>
+					</internal-button>
+					<mysten-dapp-kit-connect-modal
+						.instance=${this.instance}
+						.filterFn=${this.modalOptions?.filterFn}
+						.sortFn=${this.modalOptions?.sortFn}
+					></mysten-dapp-kit-connect-modal>`;
 	}
 
 	#openModal() {
