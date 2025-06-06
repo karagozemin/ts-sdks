@@ -1,5 +1,34 @@
 # @mysten/slush-wallet
 
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies [5bd6ca3]
+  - @mysten/sui@1.30.5
+  - @mysten/wallet-standard@0.15.6
+
+## 0.1.8
+
+### Patch Changes
+
+- Updated dependencies [5dce590]
+- Updated dependencies [4a5aef6]
+  - @mysten/sui@1.30.4
+  - @mysten/wallet-standard@0.15.5
+
+## 0.1.7
+
+### Patch Changes
+
+- bb7c03a: Update dependencies
+- Updated dependencies [4457f10]
+- Updated dependencies [bb7c03a]
+  - @mysten/sui@1.30.3
+  - @mysten/window-wallet-core@0.0.4
+  - @mysten/wallet-standard@0.15.4
+  - @mysten/utils@0.0.1
+
 ## 0.1.6
 
 ### Patch Changes
