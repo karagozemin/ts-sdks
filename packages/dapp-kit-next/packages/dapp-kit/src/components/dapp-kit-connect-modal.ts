@@ -11,15 +11,18 @@ import { WalletList } from './internal/wallet-list.js';
 import { getDefaultInstance } from '../core/index.js';
 import type { DAppKit } from '../core/index.js';
 import { BaseModal } from './internal/base-modal.js';
+import type { ResolvedRegister } from '../types.js';
 
 @customElement('mysten-dapp-kit-connect-modal')
-export class DAppKitConnectModal extends ScopedRegistryHost(BaseModal) {
+export class DAppKitConnectModal<
+	TDAppKit extends DAppKit<any> = ResolvedRegister['dAppKit'],
+> extends ScopedRegistryHost(BaseModal) {
 	static elementDefinitions = {
 		'wallet-list': WalletList,
 	};
 
 	@storeProperty()
-	instance?: DAppKit;
+	instance?: TDAppKit | DAppKit;
 
 	override connectedCallback() {
 		super.connectedCallback();
