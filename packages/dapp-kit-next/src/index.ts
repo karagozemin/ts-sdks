@@ -12,3 +12,5 @@ export {
 	UnsafeBurnerWallet,
 	unsafeBurnerWalletInitializer,
 } from './utils/wallet-initializers/unsafe-burner.js';
+
+export { getWalletUniqueIdentifier } from './utils/wallets.js';

@@ -15,3 +15,5 @@ export const dAppKit = createDAppKit({
 		return new SuiClient({ network, url: getFullnodeUrl(network) });
 	},
 });
+
+console.log('ooooplz');

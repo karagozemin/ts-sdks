@@ -6,12 +6,16 @@ import { useStore } from '@nanostores/react';
 import { dAppKit } from './dApp-kit.js';
 import { cleanStores } from 'nanostores';
 import { useEffect } from 'react';
+import { getWalletUniqueIdentifier } from '../../../../dist/esm/index.js';
 
 function App() {
 	console.log('reoooooonder');
 
 	const wallets = useStore(dAppKit.stores.$wallets);
 	console.log(wallets);
+
+	const connection = useStore(dAppKit.stores.$connection);
+	console.log(connection);
 
 	useEffect(() => {
 		console.log('COmp mounted');
@@ -30,8 +34,16 @@ function App() {
 			) : (
 				<p>No registered wallets</p>
 			)}
-			<button onClick={() => cleanStores(dAppKit.stores.$wallets)}>conn</button>
-			<button onClick={() => dAppKit.stores.$wallets.listen(() => {})}>remount</button>
+			<button
+				onClick={() => {
+					const slush = wallets[wallets.length - 1];
+					console.log(slush, getWalletUniqueIdentifier(slush));
+					dAppKit.connectWallet({ wallet: slush });
+				}}
+			>
+				conn
+			</button>
+			<button onClick={() => console.log(dAppKit.stores.$wallets.get())}>remount</button>
 		</div>
 	);
 }

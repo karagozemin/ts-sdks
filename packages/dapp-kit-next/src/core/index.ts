@@ -20,11 +20,7 @@ import { disconnectWalletCreator } from './actions/disconnect-wallet.js';
 import { switchAccountCreator } from './actions/switch-account.js';
 import { createSignerActions } from './actions/signer.js';
 import { signPersonalMessageCreator } from './actions/sign-personal-message.js';
-import {
-	createSlushWebWalletInitializer,
-	registerSlushWebWallet,
-	slushWebWalletInitializer,
-} from '../utils/wallet-initializers/slush-web.js';
+import { registerSlushWebWallet } from '../utils/wallet-initializers/slush-web.js';
 import { registerAdditionalWallets } from '../utils/wallet-initializers/index.js';
 
 export type DAppKit<TNetworks extends Networks = Networks> = ReturnType<
@@ -72,9 +68,9 @@ export function createDAppKit<TNetworks extends Networks>({
 	syncRegisteredWallets(stores);
 	// manageWalletConnection(stores);
 
-	// if (autoConnect) {
-	// 	autoConnectWallet({ stores, storageKey, storage });
-	// }
+	if (autoConnect) {
+		autoConnectWallet({ stores, storageKey, storage });
+	}
 
 	return {
 		getClient,
