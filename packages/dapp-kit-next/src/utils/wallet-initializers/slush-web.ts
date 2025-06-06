@@ -1,5 +1,5 @@
 import { registerSlushWallet } from '@mysten/slush-wallet';
-import { SlushWalletConfig } from '../../core/types';
+import { SlushWalletConfig } from '../../core/types.js';
 
 export async function registerSlushWebWallet(slushWalletConfig: SlushWalletConfig) {
 	const appName = slushWalletConfig.name || getDefaultAppName();
@@ -9,7 +9,7 @@ export async function registerSlushWebWallet(slushWalletConfig: SlushWalletConfi
 	});
 
 	if (!result) throw new Error('Registration un-successful.');
-	return result;
+	return { wallets: [result.wallet], unregister: result.unregister };
 }
 
 function getDefaultAppName() {

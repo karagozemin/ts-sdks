@@ -6,7 +6,6 @@ import '@webcomponents/scoped-custom-element-registry';
 import { html, LitElement } from 'lit';
 import { customElement, query } from 'lit/decorators.js';
 import { storeProperty } from '../utils/lit.js';
-import { getDefaultInstance } from '../core/index.js';
 import type { DAppKit } from '../core/index.js';
 import type { DAppKitConnectModal } from './dapp-kit-connect-modal.js';
 
@@ -18,15 +17,10 @@ export class DAppKitConnectButton extends LitElement {
 	@query('mysten-dapp-kit-connect-modal')
 	private readonly _modal!: DAppKitConnectModal;
 
-	override connectedCallback() {
-		super.connectedCallback();
-		this.store ||= getDefaultInstance();
-	}
-
 	override render() {
 		return html`
 			<button @click=${this.#openModal}>Connect</button>
-			<!-- <mysten-dapp-kit-connect-modal .store=${this.store}></mysten-dapp-kit-connect-modal> -->
+			<mysten-dapp-kit-connect-modal .store=${this.store}></mysten-dapp-kit-connect-modal>
 		`;
 	}
 

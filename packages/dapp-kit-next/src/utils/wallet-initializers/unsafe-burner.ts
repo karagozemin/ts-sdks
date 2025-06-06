@@ -29,21 +29,20 @@ import { toBase64 } from '@mysten/utils';
 import type { ClientWithCoreApi } from '@mysten/sui/experimental';
 import type { Networks } from '../networks.js';
 import { getChain } from '../networks.js';
-import { WalletInitializerArgs } from './index.js';
+import { WalletInitializerArgs, WalletInitializerResult } from './index.js';
 
-export function registerUnsafeBurnerWallet<TNetworks extends Networks>({
+export function unsafeBurnerWalletInitializer<TNetworks extends Networks>({
 	networks,
 	getClient,
-}: WalletInitializerArgs<TNetworks>) {
+}: WalletInitializerArgs<TNetworks>): WalletInitializerResult {
 	const wallet = new UnsafeBurnerWallet({ clients: networks.map(getClient) });
 	const unregister = getWallets().register(wallet);
-	return { wallet, unregister };
+	return { wallets: [wallet], unregister };
 }
-
-const keypair = new Ed25519Keypair();
 
 export class UnsafeBurnerWallet implements Wallet {
 	#chainConfig: Record<IdentifierString, ClientWithCoreApi>;
+	#keypair = new Ed25519Keypair();
 	#account: ReadonlyWalletAccount;
 
 	constructor({ clients }: { clients: ClientWithCoreApi[] }) {
@@ -57,8 +56,8 @@ export class UnsafeBurnerWallet implements Wallet {
 		);
 
 		this.#account = new ReadonlyWalletAccount({
-			address: keypair.getPublicKey().toSuiAddress(),
-			publicKey: keypair.getPublicKey().toSuiBytes(),
+			address: this.#keypair.getPublicKey().toSuiAddress(),
+			publicKey: this.#keypair.getPublicKey().toSuiBytes(),
 			chains: this.chains,
 			features: [SuiSignTransaction, SuiSignAndExecuteTransaction, SuiSignPersonalMessage],
 		});
@@ -122,7 +121,7 @@ export class UnsafeBurnerWallet implements Wallet {
 	};
 
 	#signPersonalMessage: SuiSignPersonalMessageMethod = async (messageInput) => {
-		return await keypair.signPersonalMessage(messageInput.message);
+		return await this.#keypair.signPersonalMessage(messageInput.message);
 	};
 
 	#signTransaction: SuiSignTransactionMethod = async ({ transaction, signal, chain }) => {
@@ -133,7 +132,7 @@ export class UnsafeBurnerWallet implements Wallet {
 
 		const parsedTransaction = Transaction.from(await transaction.toJSON());
 		const builtTransaction = await parsedTransaction.build({ client });
-		return await keypair.signTransaction(builtTransaction);
+		return await this.#keypair.signTransaction(builtTransaction);
 	};
 
 	#signAndExecuteTransaction: SuiSignAndExecuteTransactionMethod = async ({
@@ -149,7 +148,7 @@ export class UnsafeBurnerWallet implements Wallet {
 		const parsedTransaction = Transaction.from(await transaction.toJSON());
 		const bytes = await parsedTransaction.build({ client });
 
-		const result = await keypair.signAndExecuteTransaction({
+		const result = await this.#keypair.signAndExecuteTransaction({
 			transaction: parsedTransaction,
 			client,
 		});

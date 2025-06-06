@@ -8,7 +8,6 @@ import { html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { storeProperty } from '../utils/lit.js';
 import { WalletList } from './internal/wallet-list.js';
-import { getDefaultInstance } from '../core/index.js';
 import type { DAppKit } from '../core/index.js';
 import { BaseModal } from './internal/base-modal.js';
 
@@ -20,11 +19,6 @@ export class DAppKitConnectModal extends ScopedRegistryHost(BaseModal) {
 
 	@storeProperty()
 	instance?: DAppKit;
-
-	override connectedCallback() {
-		super.connectedCallback();
-		this.instance ||= getDefaultInstance();
-	}
 
 	override render() {
 		return html`<dialog @click=${this.handleDialogClick}>

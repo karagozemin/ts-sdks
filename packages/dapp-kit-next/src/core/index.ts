@@ -1,5 +1,8 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
+
+// @ts-nocheck
+
 import { readonlyType } from 'nanostores';
 import { createStores } from './store.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
@@ -17,25 +20,18 @@ import { disconnectWalletCreator } from './actions/disconnect-wallet.js';
 import { switchAccountCreator } from './actions/switch-account.js';
 import { createSignerActions } from './actions/signer.js';
 import { signPersonalMessageCreator } from './actions/sign-personal-message.js';
-import { registerAdditionalWallets } from '../utils/wallet-initializers.js';
-import { registerSlushWebWallet } from '../utils/wallet-initializers/slush-web.js';
+import {
+	createSlushWebWalletInitializer,
+	registerSlushWebWallet,
+	slushWebWalletInitializer,
+} from '../utils/wallet-initializers/slush-web.js';
+import { registerAdditionalWallets } from '../utils/wallet-initializers/index.js';
 
 export type DAppKit<TNetworks extends Networks = Networks> = ReturnType<
-	typeof createDAppKitInstance<TNetworks>
+	typeof createDAppKit<TNetworks>
 >;
 
-let defaultInstance: DAppKit<any> | undefined;
-
-export function createDAppKit<TNetworks extends Networks>(
-	options: CreateDAppKitOptions<TNetworks>,
-) {
-	if (!defaultInstance) {
-		defaultInstance = createDAppKitInstance(options);
-	}
-	return defaultInstance;
-}
-
-function createDAppKitInstance<TNetworks extends Networks>({
+export function createDAppKit<TNetworks extends Networks>({
 	autoConnect = true,
 	networks,
 	createClient,
@@ -62,20 +58,23 @@ function createDAppKitInstance<TNetworks extends Networks>({
 
 	const stores = createStores({ defaultNetwork, getClient });
 
-	const slushInitializer = slushWalletConfig
-		? () => registerSlushWebWallet(slushWalletConfig)
-		: null;
-	registerAdditionalWallets();
+	registerAdditionalWallets(
+		[
+			...walletInitializers,
+			...(slushWalletConfig ? [() => registerSlushWebWallet(slushWalletConfig)] : []),
+		],
+		{ networks, getClient },
+	);
 
 	storage ||= createInMemoryStorage();
 	syncStateToStorage({ stores, storageKey, storage });
 
 	syncRegisteredWallets(stores);
-	manageWalletConnection(stores);
+	// manageWalletConnection(stores);
 
-	if (autoConnect) {
-		autoConnectWallet({ stores, storageKey, storage });
-	}
+	// if (autoConnect) {
+	// 	autoConnectWallet({ stores, storageKey, storage });
+	// }
 
 	return {
 		getClient,
@@ -95,5 +94,3 @@ function createDAppKitInstance<TNetworks extends Networks>({
 		},
 	};
 }
-
-export { defaultInstance };
