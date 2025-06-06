@@ -3,21 +3,30 @@
 
 import { useStore } from '@nanostores/react';
 
-import { dAppKit } from './dApp-kit.js';
-import { cleanStores } from 'nanostores';
+import { a, dAppKit } from './dApp-kit.js';
+import { atom, cleanStores, onMount } from 'nanostores';
+import { useEffect } from 'react';
 
-console.log('app');
-debugger;
+a.abc.listen((value) => {
+	console.log('count changed:', value);
+});
 
 function App() {
-	console.log('render');
-	debugger;
+	console.log('reoooooonder');
 
 	const wallets = useStore(dAppKit.stores.$wallets);
 
+	const b = useStore(a.abc);
+	console.log(wallets, b);
+
+	useEffect(() => {
+		console.log('COmp mounted');
+		return () => console.log('Comp unmounted');
+	}, []);
+
 	return (
 		<div>
-			<p>TooooODOoooooDEFDEFEDEF: Flesh this out more / make it more use case specific ^.^</p>
+			<p>TooooooODOoooooDEFDEFEDEF: Flesh this out more / make it more use case specific ^.^</p>
 			{wallets.length > 0 ? (
 				<ul>
 					{wallets.map((wallet) => (
@@ -34,12 +43,3 @@ function App() {
 }
 
 export default App;
-
-if (import.meta.hot) {
-	// 1) First, clean up stuff.js (already happened via its dispose handler)
-	// 2) Then this accept callback runs so you can e.g. re-import or re-render
-	import.meta.hot.accept('./dApp-kit.js', (newModule) => {
-		console.log('New mod');
-		import.meta.hot?.invalidate();
-	});
-}

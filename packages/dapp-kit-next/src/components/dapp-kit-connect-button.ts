@@ -26,7 +26,7 @@ export class DAppKitConnectButton extends LitElement {
 	override render() {
 		return html`
 			<button @click=${this.#openModal}>Connect</button>
-			<mysten-dapp-kit-connect-modal .store=${this.store}></mysten-dapp-kit-connect-modal>
+			<!-- <mysten-dapp-kit-connect-modal .store=${this.store}></mysten-dapp-kit-connect-modal> -->
 		`;
 	}
 

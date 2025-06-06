@@ -4,23 +4,14 @@
 import type { ClientWithCoreApi } from '@mysten/sui/experimental';
 import type { Networks } from '../utils/networks.js';
 import type { StateStorage } from '../utils/storage.js';
-
-export type UnregisterCallback = () => void;
-
-export type WalletInitializerArgs<TNetworks extends Networks> = {
-	networks: TNetworks;
-	getClient: (network: TNetworks[number]) => ClientWithCoreApi;
-};
-
-export type WalletInitializerCallback<TNetworks extends Networks> = (
-	input: WalletInitializerArgs<TNetworks>,
-) => Promise<UnregisterCallback> | UnregisterCallback;
+import { WalletInitializerCallback } from '../utils/wallet-initializers/index.js';
 
 export type SlushWalletConfig = {
 	/**
 	 * The name of your application, shown to the user when connecting to the wallet.
+	 * @defaultValue `document.title`
 	 */
-	name: string;
+	name?: string;
 
 	/**
 	 * The host origin of the wallet.
@@ -62,7 +53,7 @@ export type CreateDAppKitOptions<TNetworks extends Networks> = {
 	defaultNetwork?: TNetworks[number];
 
 	/**
-	 * Configuration options for the Slush web wallet. Set to `null` to disable the wallet.
+	 * Configuration options for the Slush web wallet. Set to `null` to disable the wallet entirely.
 	 */
 	slushWalletConfig: SlushWalletConfig | null;
 
@@ -79,12 +70,7 @@ export type CreateDAppKitOptions<TNetworks extends Networks> = {
 	storageKey?: string;
 
 	/**
-	 * A list of wallet initializer callbacks to invoke on initial page load.
-	 *
-	 * Each callback receives a `registerWallet` function and should call it
-	 * with a custom wallet descriptor to extend the set of available wallets.
-	 * Useful for plugging in third‑party or proprietary wallets alongside
-	 * standard wallets, enabling custom integrations.
+	 * A list of wallet initializers used for registering additional wallet standard wallets.
 	 */
 	walletInitializers?: WalletInitializerCallback<TNetworks>[];
 };
