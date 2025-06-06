@@ -423,67 +423,6 @@ importers:
         specifier: ^3.2.1
         version: 3.2.1(@types/debug@4.1.12)(@types/node@22.15.29)(happy-dom@17.6.1)(jiti@2.4.2)(jsdom@26.1.0)(lightningcss@1.30.1)(msw@2.9.0(@types/node@22.15.29)(typescript@5.8.3))(tsx@4.19.4)(yaml@2.8.0)
 
-<<<<<<< HEAD
-=======
-  packages/dapp-kit-next:
-    dependencies:
-      '@lit-labs/scoped-registry-mixin':
-        specifier: ^1.0.4
-        version: 1.0.4
-      '@lit/task':
-        specifier: ^1.0.2
-        version: 1.0.2
-      '@mysten/sui':
-        specifier: workspace:*
-        version: link:../typescript
-      '@mysten/utils':
-        specifier: workspace:*
-        version: link:../utils
-      '@mysten/wallet-standard':
-        specifier: workspace:*
-        version: link:../wallet-standard
-      '@nanostores/lit':
-        specifier: ^0.2.2
-        version: 0.2.2(lit@3.3.0)(nanostores@1.0.1)
-      '@wallet-standard/ui':
-        specifier: ^1.0.1
-        version: 1.0.1
-      '@wallet-standard/ui-registry':
-        specifier: ^1.0.1
-        version: 1.0.1
-      '@webcomponents/scoped-custom-element-registry':
-        specifier: ^0.0.10
-        version: 0.0.10
-      lit:
-        specifier: ^3.3.0
-        version: 3.3.0
-      nanostores:
-        specifier: ^1.0.1
-        version: 1.0.1
-    devDependencies:
-      '@mysten/build-scripts':
-        specifier: workspace:*
-        version: link:../build-scripts
-      '@storybook/addon-essentials':
-        specifier: ^8.6.14
-        version: 8.6.14(@types/react@18.3.18)(storybook@8.6.12(prettier@3.5.3))
-      '@storybook/blocks':
-        specifier: ^8.6.14
-        version: 8.6.14(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(storybook@8.6.12(prettier@3.5.3))
-      '@storybook/web-components':
-        specifier: ^8.6.12
-        version: 8.6.12(lit@3.3.0)(storybook@8.6.12(prettier@3.5.3))
-      '@storybook/web-components-vite':
-        specifier: ^8.6.12
-        version: 8.6.12(lit@3.3.0)(storybook@8.6.12(prettier@3.5.3))(vite@6.3.5(@types/node@22.15.29)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
-      storybook:
-        specifier: ^8.6.12
-        version: 8.6.12(prettier@3.5.3)
-      typescript:
-        specifier: ^5.8.3
-        version: 5.8.3
-
->>>>>>> origin/main
   packages/dapp-kit-next/examples/react/simple:
     dependencies:
       '@mysten/dapp-kit-react':
@@ -532,9 +471,6 @@ importers:
       '@mysten/wallet-standard':
         specifier: workspace:*
         version: link:../../../wallet-standard
-      '@mysten/zksend':
-        specifier: workspace:*
-        version: link:../../../zksend
       '@nanostores/lit':
         specifier: ^0.2.2
         version: 0.2.2(lit@3.3.0)(nanostores@1.0.1)
@@ -9015,13 +8951,8 @@ packages:
   sembear@0.7.0:
     resolution: {integrity: sha512-XyLTEich2D02FODCkfdto3mB9DetWPLuTzr4tvoofe9SvyM27h4nQSbV3+iVcYQz94AFyKtqBv5pcZbj3k2hdA==}
 
-<<<<<<< HEAD
-  semver@7.6.3:
-    resolution: {integrity: sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==}
-=======
   semver@7.7.1:
     resolution: {integrity: sha512-hlq8tAfn0m/61p4BVRcPzIGr6LKiMwo4VM6dGi6pt4qcRkmNzTcWq6eCEjEh+qXjkMDvPlOFFSGwQjoEa6gyMA==}
->>>>>>> origin/main
     engines: {node: '>=10'}
     hasBin: true
 
@@ -19084,11 +19015,7 @@ snapshots:
     dependencies:
       semver: 7.7.2
 
-<<<<<<< HEAD
-  semver@7.6.3: {}
-=======
   semver@7.7.1: {}
->>>>>>> origin/main
 
   semver@7.7.2: {}
 
