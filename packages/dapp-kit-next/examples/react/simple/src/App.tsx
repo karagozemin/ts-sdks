@@ -24,7 +24,7 @@ function App() {
 
 	return (
 		<div>
-			<ConnectButton store={dAppKit} />
+			<ConnectButton instance={dAppKit} />
 			<ConnectButton />
 		</div>
 	);
