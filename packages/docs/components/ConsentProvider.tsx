@@ -5,7 +5,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { GoogleAnalytics } from '@next/third-parties/google';
-import { getConsentCookie, setConsentCookie } from '@/lib/cookies';
+import { getConsentCookie, setConsentCookie, clearGoogleAnalyticsCookies } from '@/lib/cookies';
 import type { ConsentState } from '@/lib/cookies';
 
 interface ConsentContextValue {
@@ -39,6 +39,7 @@ export function ConsentProvider({ children }: ConsentProviderProps) {
 	const rejectConsent = () => {
 		setConsentCookie(false);
 		setConsent(false);
+		clearGoogleAnalyticsCookies();
 	};
 
 	// Don't render children until we've loaded the initial state
@@ -72,9 +73,7 @@ function ConsentPopup() {
 		<div data-comp="consent-popup-overlay">
 			<div>
 				<b>We use cookies</b>
-				<p>
-					Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.
-				</p>
+				<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.</p>
 				<div style={{ textAlign: 'center' }}>
 					<a href="/privacy" style={{ textAlign: 'center' }}>
 						Privacy Policy

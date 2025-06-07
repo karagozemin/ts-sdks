@@ -74,3 +74,30 @@ export function clearConsentCookie(): void {
 		console.warn('Error clearing consent cookie:', error);
 	}
 }
+
+/**
+ * Clear Google Analytics cookies when consent is rejected
+ */
+export function clearGoogleAnalyticsCookies(): void {
+	if (!isBrowser()) {
+		return;
+	}
+
+	try {
+		const gaCookies = ['_ga', '_ga_TVRSCWSQ8N'];
+
+		gaCookies.forEach((cookieName) => {
+			// Clear for current domain
+			document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`;
+			// Clear for root domain (in case of subdomain)
+			const rootDomain = window.location.hostname.split('.').slice(-2).join('.');
+			document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${rootDomain}`;
+			// Clear without domain (fallback)
+			document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+		});
+
+		console.log('Google Analytics cookies cleared');
+	} catch (error) {
+		console.warn('Error clearing Google Analytics cookies:', error);
+	}
+}
