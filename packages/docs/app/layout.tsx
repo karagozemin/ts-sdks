@@ -5,7 +5,7 @@ import './global.css';
 import { RootProvider } from 'fumadocs-ui/provider';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { GoogleAnalytics } from '@next/third-parties/google';
+import ClientProvider from '@/components/clientProvider';
 
 export const metadata: Metadata = {
 	title: {
@@ -40,8 +40,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 				<meta httpEquiv="Content-Language" content="en" />
 			</head>
 			<body className="flex flex-col min-h-screen">
-				<GoogleAnalytics gaId="G-TVRSCWSQ8N" />
-				<RootProvider>{children}</RootProvider>
+				<RootProvider>
+					<ClientProvider>{children}</ClientProvider>
+				</RootProvider>
 			</body>
 		</html>
 	);
