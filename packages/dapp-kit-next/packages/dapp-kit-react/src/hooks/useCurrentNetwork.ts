@@ -5,15 +5,13 @@ import type { DAppKit, ResolvedRegister } from '@mysten/dapp-kit-next';
 import { useStore } from '@nanostores/react';
 import { useDAppKit } from './useDAppKit.js';
 
-type InstanceOptions<TDAppKit extends DAppKit> = {
-	dAppKit?: TDAppKit | DAppKit | undefined;
+type UseCurrentNetworkOptions<TDAppKit extends DAppKit> = {
+	dAppKit?: TDAppKit | undefined;
 };
 
-export function useCurrentNetwork<TDAppKit extends DAppKit<any> = ResolvedRegister['dAppKit']>({
+export function useCurrentNetwork<TDAppKit extends DAppKit = ResolvedRegister['dAppKit']>({
 	dAppKit,
-}: InstanceOptions<TDAppKit> = {}): ReturnType<
-	typeof useStore<TDAppKit['stores']['$currentNetwork']>
-> {
+}: UseCurrentNetworkOptions<TDAppKit> = {}) {
 	const instance = useDAppKit(dAppKit);
-	return useStore(instance.stores.$currentNetwork);
+	return useStore<TDAppKit['stores']['$currentNetwork']>(instance.stores.$currentNetwork);
 }

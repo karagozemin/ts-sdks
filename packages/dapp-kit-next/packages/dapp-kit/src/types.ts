@@ -10,5 +10,5 @@ declare global {
 export interface Register {}
 
 export type ResolvedRegister = {
-	dAppKit: Register extends { dAppKit: infer _DAppKit extends DAppKit<any> } ? _DAppKit : DAppKit;
+	dAppKit: Register extends { dAppKit: infer _DAppKit extends DAppKit } ? _DAppKit : DAppKit;
 };
