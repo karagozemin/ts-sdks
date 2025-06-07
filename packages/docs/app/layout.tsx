@@ -5,7 +5,7 @@ import './global.css';
 import { RootProvider } from 'fumadocs-ui/provider';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import ClientProvider from '@/components/clientProvider';
+import { ConsentProvider } from '@/components/ConsentProvider';
 
 export const metadata: Metadata = {
 	title: {
@@ -41,7 +41,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="flex flex-col min-h-screen">
 				<RootProvider>
-					<ClientProvider>{children}</ClientProvider>
+					<ConsentProvider>{children}</ConsentProvider>
 				</RootProvider>
 			</body>
 		</html>

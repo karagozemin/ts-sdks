@@ -5,7 +5,7 @@
 @source '../node_modules/fumadocs-ui/dist/**/*.js';
 
 /* Consent Popup Overlay Styles */
-[data-comp='consent-nextjs-overlay'] {
+[data-comp='consent-popup-overlay'] {
 	position: fixed;
 	bottom: 0;
 	left: 0;
@@ -16,7 +16,7 @@
 	pointer-events: none;
 }
 
-[data-comp='consent-nextjs-overlay'] > * {
+[data-comp='consent-popup-overlay'] > * {
 	max-width: 600px;
 	margin: 0 auto;
 	background-color: var(--color-fd-popover);
@@ -28,7 +28,7 @@
 	border: 1px solid var(--color-fd-border);
 }
 
-[data-comp='consent-nextjs-overlay'] button {
+[data-comp='consent-popup-overlay'] button {
 	background-color: var(--color-fd-primary);
 	color: var(--color-fd-primary-foreground);
 	border: none;
@@ -40,17 +40,17 @@
 	transition: background-color 0.2s ease;
 }
 
-[data-comp='consent-nextjs-overlay'] button:hover {
+[data-comp='consent-popup-overlay'] button:hover {
 	background-color: color-mix(in srgb, var(--color-fd-primary) 70%, transparent);
 }
 
-[data-comp='consent-nextjs-overlay'] a {
+[data-comp='consent-popup-overlay'] a {
 	color: var(--color-fd-primary);
 	text-decoration: underline;
 	font-weight: 500;
 }
 
-[data-comp='consent-nextjs-overlay'] a:hover {
+[data-comp='consent-popup-overlay'] a:hover {
 	color: var(--color-fd-accent-foreground);
 }
 
