@@ -1,9 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { StoreValue } from 'nanostores';
-import type { ResolvedRegister } from './types.js';
-
 import './components/dapp-kit-connect-modal.js';
 import './components/dapp-kit-connect-button.js';
 
@@ -16,5 +13,3 @@ export { DAppKitConnectModal } from './components/dapp-kit-connect-modal.js';
 export type { StateStorage } from './utils/storage.js';
 
 export type { Register, ResolvedRegister } from './types.js';
-
-export type CurrentNetwork = StoreValue<ResolvedRegister['dAppKit']['stores']['$currentNetwork']>;
