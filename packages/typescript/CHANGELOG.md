@@ -1,5 +1,28 @@
 # @mysten/sui.js
 
+## 1.30.5
+
+### Patch Changes
+
+- 5bd6ca3: Fix graphql get object for package
+
+## 1.30.4
+
+### Patch Changes
+
+- 5dce590: fix epoch in experimental core api
+- 4a5aef6: Update thunk results after build
+
+## 1.30.3
+
+### Patch Changes
+
+- 4457f10: Fix adding references to existing results to Transaction restored from bytes or json
+- bb7c03a: Update dependencies
+- Updated dependencies [bb7c03a]
+  - @mysten/utils@0.0.1
+  - @mysten/bcs@1.6.2
+
 ## 1.30.2
 
 ### Patch Changes
