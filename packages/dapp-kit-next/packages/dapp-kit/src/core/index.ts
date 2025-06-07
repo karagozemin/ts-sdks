@@ -26,7 +26,7 @@ export type DAppKit<TNetworks extends Networks = Networks> = ReturnType<
 
 export function createDAppKit<TNetworks extends Networks>(
 	options: CreateDAppKitOptions<TNetworks>,
-) {
+): DAppKit<TNetworks> {
 	const instance = createDAppKitInstance(options);
 
 	globalThis.__DEFAULT_DAPP_KIT_INSTANCE__ ||= instance as DAppKit;
@@ -57,7 +57,7 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 	}
 
 	const networkConfig = new Map<TNetworks[number], Experimental_BaseClient>();
-	const getClient = (network: TNetworks[number]) => {
+	function getClient<TParam extends TNetworks[number]>(network: TParam | TNetworks[number]) {
 		if (networkConfig.has(network)) {
 			return networkConfig.get(network)!;
 		}
@@ -65,7 +65,7 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 		const client = createClient(network);
 		networkConfig.set(network, client);
 		return client;
-	};
+	}
 
 	const stores = createStores({ defaultNetwork, getClient });
 

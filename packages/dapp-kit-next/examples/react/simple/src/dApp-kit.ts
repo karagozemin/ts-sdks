@@ -12,8 +12,8 @@ export const dAppKit = createDAppKit({
 	},
 });
 
-// declare module '@mysten/dapp-kit-react' {
-// 	interface Register {
-// 		dAppKit: typeof dAppKit;
-// 	}
-// }
+declare module '@mysten/dapp-kit-react' {
+	interface Register {
+		dAppKit: typeof dAppKit;
+	}
+}

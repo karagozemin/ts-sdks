@@ -23,7 +23,7 @@ function App() {
 
 	return (
 		<div>
-			{/* <ConnectButton instance={dAppKit} /> */}
+			<ConnectButton instance={dAppKit} />
 			<ConnectButton />
 		</div>
 	);
