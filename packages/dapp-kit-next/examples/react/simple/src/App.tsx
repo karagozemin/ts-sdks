@@ -1,7 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ResolvedRegister } from '@mysten/dapp-kit-react';
 import { ConnectButton, useCurrentNetwork, useWallets } from '@mysten/dapp-kit-react';
 import { dAppKit } from './dApp-kit.js';
 
@@ -19,12 +18,12 @@ function App() {
 	console.log(currentNetwork);
 
 	// correct
-	const _correct = dAppKit.stores.$currentNetwork.get();
-	type _alsoCorrect = ResolvedRegister['dAppKit']['stores']['$currentNetwork'];
+	// const _correct = dAppKit.stores.$currentNetwork.get();
+	// type _alsoCorrect = ResolvedRegister['dAppKit']['stores']['$currentNetwork'];
 
 	return (
 		<div>
-			<ConnectButton instance={dAppKit} />
+			{/* <ConnectButton instance={dAppKit} /> */}
 			<ConnectButton />
 		</div>
 	);

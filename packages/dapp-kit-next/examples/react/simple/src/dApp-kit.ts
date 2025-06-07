@@ -11,3 +11,9 @@ export const dAppKit = createDAppKit({
 		return new SuiClient({ network, url: getFullnodeUrl(network) });
 	},
 });
+
+// declare module '@mysten/dapp-kit-react' {
+// 	interface Register {
+// 		dAppKit: typeof dAppKit;
+// 	}
+// }
