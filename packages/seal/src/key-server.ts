@@ -65,13 +65,12 @@ export async function retrieveKeyServers({
 				objectId,
 			});
 			const ks = KeyServerMove.parse(res.object.content);
-
 			if (
-				Number(ks.lastVersion) > EXPECTED_SERVER_VERSION ||
-				Number(ks.firstVersion) < EXPECTED_SERVER_VERSION
+				EXPECTED_SERVER_VERSION < Number(ks.firstVersion) ||
+				EXPECTED_SERVER_VERSION > Number(ks.lastVersion)
 			) {
 				throw new InvalidKeyServerVersionError(
-					`Key server ${objectId} supports versions between ${ks.firstVersion} and ${ks.lastVersion}, but SDK expects version ${EXPECTED_SERVER_VERSION}`,
+					`Key server ${objectId} supports versions between ${ks.firstVersion} and ${ks.lastVersion} (inclusive), but SDK expects version ${EXPECTED_SERVER_VERSION}`,
 				);
 			}
 

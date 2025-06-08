@@ -56,6 +56,6 @@ export const KeyServerMoveV1 = bcs.struct('KeyServerV1', {
  */
 export const KeyServerMove = bcs.struct('KeyServer', {
 	id: bcs.Address,
-	firstVersion: bcs.u64(),
-	lastVersion: bcs.u64(),
+	firstVersion: bcs.u64(), // latest version
+	lastVersion: bcs.u64(), // oldest version
 });
