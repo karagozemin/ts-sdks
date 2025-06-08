@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useStore } from '@nanostores/react';
-import { dAppKit } from './dApp-kit';
+import { dAppKit } from './dApp-kit.js';
 
 function App() {
 	const wallets = useStore(dAppKit.stores.$wallets);
