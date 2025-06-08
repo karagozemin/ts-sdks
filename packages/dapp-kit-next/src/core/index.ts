@@ -10,8 +10,7 @@ import { createInMemoryStorage, DEFAULT_STORAGE_KEY, getDefaultStorage } from '.
 import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
 import { manageWalletConnection } from './initializers/manage-connection.js';
 import type { Networks } from '../utils/networks.js';
-import type { CreateDAppKitOptions } from './types.js';
-import type { Experimental_BaseClient } from '@mysten/sui/experimental';
+import type { CreateDAppKitOptions, DAppKitCompatibleClient } from './types.js';
 import { switchNetworkCreator } from './actions/switch-network.js';
 import { connectWalletCreator } from './actions/connect-wallet.js';
 import { disconnectWalletCreator } from './actions/disconnect-wallet.js';
@@ -56,7 +55,7 @@ export function createDAppKitInstance<TNetworks extends Networks>({
 		throw new DAppKitError('You must specify at least one Sui network for your application.');
 	}
 
-	const networkConfig = new Map<TNetworks[number], Experimental_BaseClient>();
+	const networkConfig = new Map<TNetworks[number], DAppKitCompatibleClient>();
 	const getClient = (network: TNetworks[number]) => {
 		if (networkConfig.has(network)) {
 			return networkConfig.get(network)!;
