@@ -208,7 +208,7 @@ async function addPackageFiles(paths: string[]) {
 }
 
 async function addIgnoredWorkspaces(paths: string[]) {
-	const workspacePath = findUp('pnpm-workspace.yaml');
+	const workspacePath = await findUp('pnpm-workspace.yaml');
 	if (!workspacePath) {
 		throw new Error('Failed to find `pnpm-workspace.yaml`.');
 	}
