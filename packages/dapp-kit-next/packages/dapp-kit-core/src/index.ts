@@ -10,6 +10,7 @@ export { DAppKitConnectModal } from './components/dapp-kit-connect-modal.js';
 export { createDAppKit, getDefaultInstance } from './core/index.js';
 export type { DAppKit } from './core/index.js';
 
+export type { DAppKitCompatibleClient } from './core/types.js';
 export type { Register, ResolvedRegister, RegisteredDAppKit } from './types.js';
 export type { StateStorage } from './utils/storage.js';
 
