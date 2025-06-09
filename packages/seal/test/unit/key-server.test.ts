@@ -21,7 +21,7 @@ const pk = fromBase64(
 );
 const id = '0x73d05d62c18d9374e3ea529e8e0ed6161da1a141a94d3f76ae3fe4e99356db75';
 const keyType = 0;
-const url = 'https://seal-key-server-testnet-v1-1.mystenlabs.com';
+const url = 'https://seal-key-server-testnet-1.mystenlabs.com';
 const name = 'mysten-testnet-v1-1';
 
 describe('key-server tests', () => {
