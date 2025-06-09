@@ -33,6 +33,8 @@ export interface SerializedTransactionDataV2 {
 	commands: Command[];
 	/** Extra metadata for implementation specific use-cases */
 	extensions?: { [key: string]: unknown };
+	/** The digest of the transaction, may beset when the transaction is fully resolved */
+	digest: string | null | undefined;
 }
 
 /**
