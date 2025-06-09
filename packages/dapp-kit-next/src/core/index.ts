@@ -11,7 +11,7 @@ import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
 import { manageWalletConnection } from './initializers/manage-connection.js';
 import { createNetworkConfig } from '../utils/networks.js';
 import type { Networks } from '../utils/networks.js';
-import type { CreateDAppKitOptions, DAppKitCompatibleClient } from './types.js';
+import type { CreateDAppKitOptions } from './types.js';
 import { switchNetworkCreator } from './actions/switch-network.js';
 import { connectWalletCreator } from './actions/connect-wallet.js';
 import { disconnectWalletCreator } from './actions/disconnect-wallet.js';
