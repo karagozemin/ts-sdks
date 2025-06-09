@@ -12,3 +12,5 @@ export interface Register {}
 export type ResolvedRegister = {
 	dAppKit: Register extends { dAppKit: infer _DAppKit extends DAppKit } ? _DAppKit : DAppKit;
 };
+
+export type RegisteredDAppKit = ResolvedRegister['dAppKit'];
