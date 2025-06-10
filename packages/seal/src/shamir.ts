@@ -63,12 +63,6 @@ export class GF256 {
 	static one(): GF256 {
 		return new GF256(1);
 	}
-
-	static random(): GF256 {
-		const randomBytes = new Uint8Array(1);
-		crypto.getRandomValues(randomBytes);
-		return new GF256(randomBytes[0]);
-	}
 }
 
 /// Table of Eᵢ = gⁱ where g = 0x03 generates the multiplicative group of the field.
@@ -114,10 +108,10 @@ const LOG: number[] = [
 export class Polynomial {
 	coefficients: GF256[];
 
-	/**
+	/** 
 	 * Construct a new Polynomial over [GF256] from the given coefficients.
 	 * The first coefficient is the constant term.
-	 */
+	 */ 
 	constructor(coefficients: GF256[]) {
 		this.coefficients = coefficients;
 
@@ -197,8 +191,7 @@ export class Polynomial {
 					coordinates
 						.filter((_, i) => i !== j)
 						.reduce(
-							(product, { x: x_i }) =>
-								product.mul(Polynomial.monic_linear(x_i.neg()).div(x_j.sub(x_i))),
+							(product, { x: x_i }) => product.mul(Polynomial.monic_linear(x_i.neg()).div(x_j.sub(x_i))),
 							Polynomial.one(),
 						)
 						.scale(y_j),
@@ -217,15 +210,13 @@ export class Polynomial {
 		}
 
 		const quotient: GF256 = coordinates.reduce((sum, { x: x_j, y: y_j }, j) => {
-			const denominator = x_j.mul(
-				coordinates
-					.filter((_, i) => i !== j)
-					.reduce((product, { x: x_i }) => product.mul(x_i.sub(x_j)), GF256.one()),
-			);
+			const denominator = x_j.mul(coordinates
+				.filter((_, i) => i !== j)
+				.reduce((product, { x: x_i }) => product.mul(x_i.sub(x_j)), GF256.one()));
 			return sum.add(y_j.div(denominator));
 		}, GF256.zero());
-		const xProduct = coordinates.reduce((product, { x }) => product.mul(x), GF256.one());
 
+		const xProduct = coordinates.reduce((product, { x }) => product.mul(x), GF256.one());
 		return xProduct.mul(quotient);
 	}
 
@@ -276,10 +267,11 @@ function toShare(internalShare: InternalShare): Share {
  * @param degree The degree of the polynomial.
  * @returns A random polynomial with the given constant and degree.
  */
-function sample_polynomial(constant: GF256, degree: number): Polynomial {
-	return new Polynomial(
-		Array.from({ length: degree + 1 }, (_, i) => (i === 0 ? constant : GF256.random())),
-	);
+function samplePolynomial(constant: GF256, degree: number): Polynomial {
+	const coefficients = new Uint8Array(degree + 1);
+	crypto.getRandomValues(coefficients.slice(1));
+	coefficients[0] = constant.value;
+	return new Polynomial(Array.from(coefficients, (c) => new GF256(c)));
 }
 
 /**
@@ -302,18 +294,14 @@ export function combine(shares: Share[]): Uint8Array {
 		throw new Error('Shares must have unique indices');
 	}
 
-	return new Uint8Array(
-		Array.from(
-			{ length: shares[0].share.length },
-			(_, i) =>
-				Polynomial.combine(
-					shares.map(toInternalShare).map(({ index, share }) => ({
-						x: index,
-						y: share[i],
-					})),
-				).value,
-		),
-	);
+	return new Uint8Array(Array.from({ length: shares[0].share.length }, (_, i) =>
+		Polynomial.combine(
+			shares.map(toInternalShare).map(({ index, share }) => ({
+				x: index,
+				y: share[i],
+			})),
+		).value,
+	));
 }
 
 /**
@@ -329,7 +317,7 @@ export function split(secret: Uint8Array, threshold: number, total: number): Sha
 		throw new Error(`Invalid threshold ${threshold} or total ${total}`);
 	}
 
-	const polynomials = Array.from(secret, (s) => sample_polynomial(new GF256(s), threshold - 1));
+	const polynomials = Array.from(secret, (s) => samplePolynomial(new GF256(s), threshold - 1));
 	return Array.from({ length: total }, (_, i) => {
 		// Indexes start at 1 because 0 is reserved for the constant term (which is also the secret).
 		const index = new GF256(i + 1);
