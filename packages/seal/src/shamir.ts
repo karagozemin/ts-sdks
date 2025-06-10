@@ -114,10 +114,10 @@ const LOG: number[] = [
 export class Polynomial {
 	coefficients: GF256[];
 
-	/** 
+	/**
 	 * Construct a new Polynomial over [GF256] from the given coefficients.
 	 * The first coefficient is the constant term.
-	 */ 
+	 */
 	constructor(coefficients: GF256[]) {
 		this.coefficients = coefficients;
 
@@ -197,7 +197,8 @@ export class Polynomial {
 					coordinates
 						.filter((_, i) => i !== j)
 						.reduce(
-							(product, { x: x_i }) => product.mul(Polynomial.monic_linear(x_i.neg()).div(x_j.sub(x_i))),
+							(product, { x: x_i }) =>
+								product.mul(Polynomial.monic_linear(x_i.neg()).div(x_j.sub(x_i))),
 							Polynomial.one(),
 						)
 						.scale(y_j),
@@ -216,13 +217,15 @@ export class Polynomial {
 		}
 
 		const quotient: GF256 = coordinates.reduce((sum, { x: x_j, y: y_j }, j) => {
-			const denominator = x_j.mul(coordinates
-				.filter((_, i) => i !== j)
-				.reduce((product, { x: x_i }) => product.mul(x_i.sub(x_j)), GF256.one()));
+			const denominator = x_j.mul(
+				coordinates
+					.filter((_, i) => i !== j)
+					.reduce((product, { x: x_i }) => product.mul(x_i.sub(x_j)), GF256.one()),
+			);
 			return sum.add(y_j.div(denominator));
 		}, GF256.zero());
 		const xProduct = coordinates.reduce((product, { x }) => product.mul(x), GF256.one());
-		
+
 		return xProduct.mul(quotient);
 	}
 
@@ -299,14 +302,18 @@ export function combine(shares: Share[]): Uint8Array {
 		throw new Error('Shares must have unique indices');
 	}
 
-	return new Uint8Array(Array.from({ length: shares[0].share.length }, (_, i) =>
-		Polynomial.combine(
-			shares.map(toInternalShare).map(({ index, share }) => ({
-				x: index,
-				y: share[i],
-			})),
-		).value,
-	));
+	return new Uint8Array(
+		Array.from(
+			{ length: shares[0].share.length },
+			(_, i) =>
+				Polynomial.combine(
+					shares.map(toInternalShare).map(({ index, share }) => ({
+						x: index,
+						y: share[i],
+					})),
+				).value,
+		),
+	);
 }
 
 /**
