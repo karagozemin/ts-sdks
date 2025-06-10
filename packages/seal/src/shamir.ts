@@ -26,6 +26,9 @@ export class GF256 {
 	}
 
 	static exp(x: number): GF256 {
+		if (x < 0) {
+			throw new Error('Invalid value');
+		}
 		return new GF256(EXP[x % (GF256_SIZE - 1)]);
 	}
 
