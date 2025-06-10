@@ -692,13 +692,14 @@ export class Transaction {
 	 *  - All objects have been fully resolved to a specific version
 	 *  - All pure inputs have been serialized to bytes
 	 *  - All async thunks have been fully resolved
+	 *  - All transaction intents have been resolved
 	 * 	- The gas payment, budget, and price have been set
 	 *  - The transaction sender has been set
 	 *
 	 *  When true, the transaction will always be built to the same bytes and digest (unless the transaction is mutated)
 	 */
 	isFullyResolved() {
-		if (this.#data.sender) {
+		if (!this.#data.sender) {
 			return false;
 		}
 
