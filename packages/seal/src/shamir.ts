@@ -180,6 +180,7 @@ export class Polynomial {
 		return new Polynomial([GF256.one()]);
 	}
 
+	/** Given a set of coordinates, interpolate a polynomial. */
 	static interpolate(coordinates: { x: GF256; y: GF256 }[]): Polynomial {
 		if (coordinates.length < 1) {
 			throw new Error('At least one coefficient is required');
@@ -205,6 +206,7 @@ export class Polynomial {
 		);
 	}
 
+	/** Given a set of coordinates, interpolate a polynomial and evaluate it at x = 0. */
 	static combine(coordinates: { x: GF256; y: GF256 }[]): GF256 {
 		if (coordinates.length < 1) {
 			throw new Error('At least one coefficient is required');
@@ -227,6 +229,7 @@ export class Polynomial {
 		return xProduct.mul(quotient);
 	}
 
+	/** Evaluate the polynomial at x. */
 	evaluate(x: GF256): GF256 {
 		return this.coefficients
 			.toReversed()
@@ -304,14 +307,8 @@ export function split(secret: Uint8Array, threshold: number, total: number): Sha
 	});
 }
 
-/**
- * Combine shares into a secret. If fewer than the threshold number of shares are provided,
- * the result will be indistinguishable from random.
- *
- * @param shares The shares to combine.
- * @returns The secret.
- */
-export function combine(shares: Share[]): Uint8Array {
+/** Validate a set of shares and return them in internal shares representation along with the length of the shares. */
+function validateShares(shares: Share[]): { internalShares: InternalShare[]; length: number } {
 	if (shares.length < 1) {
 		throw new Error('At least one share is required');
 	}
@@ -324,12 +321,28 @@ export function combine(shares: Share[]): Uint8Array {
 		throw new Error('Shares must have unique indices');
 	}
 
+	const internalShares = shares.map(toInternalShare);
+	const length = internalShares[0].share.length;
+
+	return { internalShares, length };
+}
+
+/**
+ * Combine shares into a secret. If fewer than the threshold number of shares are provided,
+ * the result will be indistinguishable from random.
+ *
+ * @param shares The shares to combine.
+ * @returns The secret.
+ */
+export function combine(shares: Share[]): Uint8Array {
+	const { internalShares, length } = validateShares(shares);
+
 	return new Uint8Array(
 		Array.from(
-			{ length: shares[0].share.length },
+			{ length },
 			(_, i) =>
 				Polynomial.combine(
-					shares.map(toInternalShare).map(({ index, share }) => ({
+					internalShares.map(({ index, share }) => ({
 						x: index,
 						y: share[i],
 					})),
@@ -345,27 +358,13 @@ export function combine(shares: Share[]): Uint8Array {
  * @returns A function that evaluates the polynomial at a given x.
  */
 export function interpolate(shares: Share[]): (x: number) => Uint8Array {
-	if (shares.length < 1) {
-		throw new Error('At least one share is required');
-	}
-
-	if (!allEqual(shares.map(({ share }) => share.length))) {
-		throw new Error('All shares must have the same length');
-	}
-
-	if (hasDuplicates(shares.map(({ index }) => index))) {
-		throw new Error('Shares must have unique indices');
-	}
-
-	const internalShares = shares.map(toInternalShare);
-	const length = internalShares[0].share.length;
+	const { internalShares, length } = validateShares(shares);
 
 	const polynomials = Array.from({ length }, (_, i) =>
 		Polynomial.interpolate(internalShares.map(({ index, share }) => ({ x: index, y: share[i] }))),
 	);
 
 	return (x: number) => {
-		const index = new GF256(x);
-		return new Uint8Array(polynomials.map((p) => p.evaluate(index).value));
+		return new Uint8Array(polynomials.map((p) => p.evaluate(new GF256(x)).value));
 	};
 }
