@@ -27,7 +27,11 @@ describe("Shamir's secret sharing", () => {
 
 	it('test edge cases', () => {
 		expect(combine(split(DEFAULT_SECRET, 1, 1))).toEqual(DEFAULT_SECRET);
-		//expect(combine(split(DEFAULT_SECRET, 0, 1))).toThrowError();
+		expect(combine(split(DEFAULT_SECRET, 2, 2))).toEqual(DEFAULT_SECRET);
+		expect(() => combine(split(DEFAULT_SECRET, 0, 0))).toThrow();
+		expect(() => combine(split(DEFAULT_SECRET, 0, 1))).toThrow();
+		expect(() => combine(split(DEFAULT_SECRET, 1, 0))).toThrow();
+		expect(() => combine(split(DEFAULT_SECRET, 2, 1))).toThrow();
 	});
 
 	it('test polynomial interpolation', () => {
@@ -52,5 +56,29 @@ describe("Shamir's secret sharing", () => {
 		];
 		const combined = combine(shares);
 		expect(combined).toEqual(new TextEncoder().encode('My super secret message'));
+	});
+
+	it('polynomial arithmetic', () => {
+		const p1 = new Polynomial([new GF256(1), new GF256(2), new GF256(3)]);
+		const p2 = new Polynomial([new GF256(4), new GF256(5)]);
+		const p3 = new Polynomial([new GF256(2)]);
+		expect(p1.add(p2)).toEqual(new Polynomial([new GF256(5), new GF256(7), new GF256(3)]));
+		expect(p1.mul(p3)).toEqual(new Polynomial([new GF256(2), new GF256(4), new GF256(6)]));
+
+		const x = new GF256(2);
+		const result = p1.evaluate(x);
+		const expected = new GF256(1).add(new GF256(2).mul(x)).add(new GF256(3).mul(x).mul(x));
+		expect(result).toEqual(expected);
+	});
+
+	it('GF256 test vector', () => {
+		// Test vector, partly from https://en.wikipedia.org/wiki/Finite_field_arithmetic#Rijndael's_(AES)_finite_field
+		const a = new GF256(0x53);
+		const b = new GF256(0xca);
+
+		expect(a.add(b)).toEqual(new GF256(0x99));
+		expect(a.sub(b)).toEqual(new GF256(0x99));
+		expect(a.mul(b)).toEqual(new GF256(0x01));
+		expect(a.div(b)).toEqual(new GF256(0xb5));
 	});
 });
