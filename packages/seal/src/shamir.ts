@@ -163,9 +163,9 @@ export class Polynomial {
 		return this.scale(new GF256(1).div(s));
 	}
 
-	/** The polynomial x - c. */
+	/** The polynomial x + c. */
 	static monic_linear(c: GF256): Polynomial {
-		return new Polynomial([c.neg(), GF256.one()]);
+		return new Polynomial([c, GF256.one()]);
 	}
 
 	static zero(): Polynomial {
@@ -186,15 +186,15 @@ export class Polynomial {
 		}
 
 		return coefficients.reduce(
-			(sum, { x: x_j, y }, j) =>
+			(sum, { x: x_j, y: y_j }, j) =>
 				sum.add(
 					coefficients
 						.filter((_, i) => i !== j)
 						.reduce(
-							(product, { x: x_i }) => product.mul(Polynomial.monic_linear(x_i).div(x_j.sub(x_i))),
+							(product, { x: x_i }) => product.mul(Polynomial.monic_linear(x_i.neg()).div(x_j.sub(x_i))),
 							Polynomial.one(),
 						)
-						.scale(y),
+						.scale(y_j),
 				),
 			Polynomial.zero(),
 		);
@@ -299,7 +299,7 @@ export function split(secret: Uint8Array, threshold: number, total: number): Sha
 		throw new Error('Threshold must be between 1 and total');
 	}
 
-	const polynomials = Array.from(secret, (s) => sample_polynomial(new GF256(s), threshold + 1));
+	const polynomials = Array.from(secret, (s) => sample_polynomial(new GF256(s), threshold - 1));
 	return Array.from({ length: total }, (_, i) => {
 		const index = new GF256(i + 1);
 		const share = Array.from({ length: secret.length }, (_, j) => polynomials[j].evaluate(index));
