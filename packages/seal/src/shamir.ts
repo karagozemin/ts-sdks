@@ -3,6 +3,8 @@
 
 import { allEqual, hasDuplicates } from './utils.js';
 
+const GF256_SIZE = 256;
+
 /**
  * A field element in the Rijndael finite field GF(2⁸) with a fixed generator g = 0x03.
  */
@@ -10,8 +12,8 @@ export class GF256 {
 	value: number;
 
 	constructor(value: number) {
-		if (value < 0 || value > 255) {
-			throw new Error('Invalid value');
+		if (value < 0 || value >= GF256_SIZE) {
+			throw new Error(`Invalid value ${value} for GF256`);
 		}
 		this.value = value;
 	}
@@ -24,7 +26,7 @@ export class GF256 {
 	}
 
 	static exp(x: number): GF256 {
-		return new GF256(EXP[x % 255]);
+		return new GF256(EXP[x % (GF256_SIZE - 1)]);
 	}
 
 	add(other: GF256): GF256 {
@@ -47,7 +49,7 @@ export class GF256 {
 	}
 
 	div(other: GF256): GF256 {
-		return this.mul(GF256.exp(255 - other.log()));
+		return this.mul(GF256.exp(GF256_SIZE - other.log() - 1));
 	}
 
 	equals(other: GF256): boolean {
@@ -112,6 +114,10 @@ const LOG: number[] = [
 export class Polynomial {
 	coefficients: GF256[];
 
+	/** 
+	 * Construct a new Polynomial over [GF256] from the given coefficients.
+	 * The first coefficient is the constant term.
+	 */ 
 	constructor(coefficients: GF256[]) {
 		this.coefficients = coefficients;
 
@@ -295,14 +301,15 @@ export function combine(shares: Share[]): Uint8Array {
  * @returns The shares.
  */
 export function split(secret: Uint8Array, threshold: number, total: number): Share[] {
-	if (threshold > total || threshold < 1) {
-		throw new Error('Threshold must be between 1 and total');
+	if (threshold > total || threshold < 1 || total > GF256_SIZE) {
+		throw new Error(`Invalid threshold ${threshold} or total ${total}`);
 	}
 
 	const polynomials = Array.from(secret, (s) => sample_polynomial(new GF256(s), threshold - 1));
 	return Array.from({ length: total }, (_, i) => {
+		// Indexes start at 1 because 0 is reserved for the constant term (which is also the secret).
 		const index = new GF256(i + 1);
-		const share = Array.from({ length: secret.length }, (_, j) => polynomials[j].evaluate(index));
+		const share = polynomials.map((p) => p.evaluate(index));
 		return toShare({ index, share });
 	});
 }
@@ -334,9 +341,7 @@ export function interpolate(shares: Share[]): (x: number) => Uint8Array {
 	);
 
 	return (x: number) => {
-		if (x < 0 || x > 255) {
-			throw new Error('Invalid input to polynomial: x must be between 0 and 255');
-		}
-		return new Uint8Array(polynomials.map((p) => p.evaluate(new GF256(x)).value));
+		const index = new GF256(x);
+		return new Uint8Array(polynomials.map((p) => p.evaluate(index).value));
 	};
 }

@@ -52,10 +52,12 @@ export function count<T>(array: T[], value: T): number {
 	return array.reduce((count, item) => (item === value ? count + 1 : count), 0);
 }
 
+/** Check if the array has any duplicate elements. */
 export function hasDuplicates(array: number[]): boolean {
 	return new Set(array).size !== array.length;
 }
 
+/** Check if all elements in the array are equal. */
 export function allEqual(array: number[]): boolean {
 	if (array.length === 0) {
 		return true;
