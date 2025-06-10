@@ -26,9 +26,6 @@ export class GF256 {
 	}
 
 	static exp(x: number): GF256 {
-		if (x < 0) {
-			throw new Error('Invalid value');
-		}
 		return new GF256(EXP[x % (GF256_SIZE - 1)]);
 	}
 
@@ -140,14 +137,19 @@ export class Polynomial {
 		return this.coefficients.length - 1;
 	}
 
+	getCoefficient(index: number): GF256 {
+		if (index >= this.coefficients.length) {
+			return GF256.zero();
+		}
+		return this.coefficients[index];
+	}
+
 	add(other: Polynomial): Polynomial {
 		const degree = Math.max(this.degree(), other.degree());
 		return new Polynomial(
-			Array.from({ length: degree + 1 }, (_, i) => {
-				const a = i <= this.degree() ? this.coefficients[i] : GF256.zero();
-				const b = i <= other.degree() ? other.coefficients[i] : GF256.zero();
-				return a.add(b);
-			}),
+			Array.from({ length: degree + 1 }, (_, i) =>
+				this.getCoefficient(i).add(other.getCoefficient(i)),
+			),
 		);
 	}
 

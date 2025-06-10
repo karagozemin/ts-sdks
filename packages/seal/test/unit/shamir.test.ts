@@ -6,22 +6,28 @@ import { describe, expect, it } from 'vitest';
 import { combine, GF256, interpolate, Polynomial, split } from '../../src/shamir';
 import { fromHex } from '@mysten/bcs';
 
+const DEFAULT_SECRET = new Uint8Array([
+	54, 73, 146, 97, 76, 123, 231, 6, 176, 180, 101, 228, 201, 216, 14, 65, 60, 155, 160, 238, 132,
+	92, 76, 35, 11, 197, 34, 172, 114, 81, 94, 42,
+]);
+
 describe("Shamir's secret sharing", () => {
 	it('secret sharing roundtrip', () => {
-		const secret = new Uint8Array([
-			54, 73, 146, 97, 76, 123, 231, 6, 176, 180, 101, 228, 201, 216, 14, 65, 60, 155, 160, 238,
-			132, 92, 76, 35, 11, 197, 34, 172, 114, 81, 94, 42,
-		]);
-		const shares = split(secret, 3, 4);
+		const shares = split(DEFAULT_SECRET, 3, 4);
 
-		expect(combine(shares)).toEqual(secret);
-		expect(combine(shares.slice(0, 3))).toEqual(secret);
-		expect(combine(shares.slice(0, 2))).not.toEqual(secret);
+		expect(combine(shares)).toEqual(DEFAULT_SECRET);
+		expect(combine(shares.slice(0, 3))).toEqual(DEFAULT_SECRET);
+		expect(combine(shares.slice(0, 2))).not.toEqual(DEFAULT_SECRET);
 
 		const interpolated = interpolate(shares);
 		shares.forEach((share) => {
 			expect(interpolated(share.index)).toEqual(share.share);
 		});
+	});
+
+	it('test edge cases', () => {
+		expect(combine(split(DEFAULT_SECRET, 1, 1))).toEqual(DEFAULT_SECRET);
+		//expect(combine(split(DEFAULT_SECRET, 0, 1))).toThrowError();
 	});
 
 	it('test polynomial interpolation', () => {
