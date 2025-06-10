@@ -22,6 +22,7 @@ export const styles = [
 			max-width: fit-content;
 			min-width: 240px;
 			padding: 4px;
+			position: absolute;
 			background-color: var(--dapp-kit-popover);
 			color: var(--dapp-kit-popover-foreground);
 			border-radius: var(--dapp-kit-radius-lg);

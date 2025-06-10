@@ -13,12 +13,15 @@ import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 import { Button } from './internal/button.js';
 import { sharedStyles } from './styles/index.js';
 import type { RegisteredDAppKit } from '../types.js';
+import { ConnectedAccountMenu } from './internal/connected-account-menu.js';
+import type { AccountSelectedEvent } from './internal/connected-account-menu.js';
 
 @customElement('mysten-dapp-kit-connect-button')
 export class DAppKitConnectButton extends ScopedRegistryHost(LitElement) {
 	static elementDefinitions = {
 		'internal-button': Button,
 		'mysten-dapp-kit-connect-modal': DAppKitConnectModal,
+		'connected-account-menu': ConnectedAccountMenu,
 	};
 
 	static override shadowRootOptions = {
@@ -44,6 +47,7 @@ export class DAppKitConnectButton extends ScopedRegistryHost(LitElement) {
 
 	override render() {
 		const connection = this.instance!.stores.$connection.get();
+		const client = this.instance!.stores.$currentClient.get();
 
 		return connection.isConnected
 			? html`<connected-account-menu

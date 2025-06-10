@@ -9,16 +9,16 @@ import { sharedStyles } from '../styles/index.js';
 import { Button } from './button.js';
 import { formatAddress } from '@mysten/sui/utils';
 import { Task } from '@lit/task';
-import { property, state } from 'lit/decorators.js';
+import { property, query, state } from 'lit/decorators.js';
 import type { DAppKit } from '../../core/index.js';
 import type { StoreValue } from 'nanostores';
-import type { Experimental_BaseClient } from '@mysten/sui/experimental';
 import { disconnectIcon } from './icons/disconnect-icon.js';
 import { copyIcon } from './icons/copy-icon.js';
 import type { UiWalletAccount } from '@wallet-standard/ui';
 import { checkIcon } from './icons/check-icon.js';
 import { styles } from './connected-account-menu.styles.js';
-import { DAppKitCompatibleClient } from '../../core/types.js';
+import type { DAppKitCompatibleClient } from '../../core/types.js';
+import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 type ConnectedState = Extract<
 	StoreValue<DAppKit['stores']['$connection']>,
@@ -67,14 +67,14 @@ class AccountMenuItem extends LitElement {
 	selected = false;
 
 	override render() {
-		return html`<button
+		return html`<li
 			role="menuitemradio"
 			tabindex=${-1}
 			aria-checked="${this.selected}"
 			@click=${this.#itemClicked}
 		>
 			${formatAddress(this.account.address)} ${when(this.selected, () => checkIcon)}
-		</button>`;
+		</li>`;
 	}
 
 	#itemClicked() {
@@ -115,6 +115,31 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	@state()
 	private _open = false;
 
+	get open() {
+		return this._open;
+	}
+
+	set open(open: boolean) {
+		if (open === this._open) {
+			return;
+		}
+
+		this._open = open;
+		if (this._open) {
+			this.#startPositioning();
+		} else {
+			this.#stopPositioning();
+		}
+	}
+
+	#unsubscribeFromAutoUpdate?: () => void;
+
+	@query('#menubutton')
+	private _trigger!: HTMLElement;
+
+	@query('#menu')
+	private _menu!: HTMLElement;
+
 	connectedCallback() {
 		super.connectedCallback();
 		document.addEventListener('click', this.#onDocumentClick);
@@ -122,6 +147,8 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 	disconnectedCallback() {
 		super.disconnectedCallback();
+		this.#stopPositioning();
+
 		document.removeEventListener('click', this.#onDocumentClick);
 	}
 
@@ -130,9 +157,9 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				id="menubutton"
 				aria-haspopup="true"
 				aria-controls="menu"
-				aria-expanded="${this._open}"
+				aria-expanded="${this.open}"
 				@click=${() => {
-					this._open = true;
+					this.open = true;
 				}}
 			>
 				<div class="trigger-content">
@@ -171,27 +198,30 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					<div class="accounts-label">Accounts</div>
 					<ul class="accounts-list">
 						${this.connection.wallet.accounts.map(
-							(account) =>
-								html`<li role="presentation">
-									<account-menu-item
-										.account=${account}
-										.selected=${account.address === this.connection.account.address}
-										@account-selected=${() => {
-											this._open = false;
-										}}
-									></account-menu-item>
-								</li>`,
+							(account) => html`
+								<account-menu-item
+									.account=${account}
+									.selected=${account.address === this.connection.account.address}
+									@account-selected=${() => {
+										this._open = false;
+									}}
+								></account-menu-item>
+							`,
 						)}
 					</ul>
 				</div>
 				<div role="separator" aria-orientation="horizontal"></div>
-				<div
-					class="disconnect-button"
-					role="menuitem"
-					tabindex=${-1}
-					@click=${this.#onDisconnectClick}
-				>
-					${disconnectIcon} Disconnect Wallet
+				<div class="menu-group" role="group">
+					<div class="disconnect-button" role="menuitem" @click=${this.#onDisconnectClick}>
+						${disconnectIcon} Disconnect Wallet
+					</div>
+					<div
+						class="manage-connection-button"
+						role="menuitem"
+						@click=${this.#onManageConnectionClick}
+					>
+						${disconnectIcon} Manage Connection
+					</div>
 				</div>
 			</div>`;
 	}
@@ -199,6 +229,15 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	#onDisconnectClick() {
 		this.dispatchEvent(
 			new CustomEvent('disconnect-click', {
+				bubbles: true,
+				composed: true,
+			}),
+		);
+	}
+
+	#onManageConnectionClick() {
+		this.dispatchEvent(
+			new CustomEvent('manage-connection-click', {
 				bubbles: true,
 				composed: true,
 			}),
@@ -219,4 +258,25 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 			this._open = false;
 		}
 	};
+
+	#startPositioning() {
+		this.#unsubscribeFromAutoUpdate = autoUpdate(this._trigger, this._menu, async () => {
+			const result = await computePosition(this._trigger, this._menu, {
+				placement: 'bottom-end',
+				middleware: [offset(8), flip(), shift()],
+			});
+
+			Object.assign(this._menu.style, {
+				left: `${result.x}px`,
+				top: `${result.y}px`,
+			});
+		});
+	}
+
+	#stopPositioning() {
+		if (this.#unsubscribeFromAutoUpdate) {
+			this.#unsubscribeFromAutoUpdate();
+			this.#unsubscribeFromAutoUpdate = undefined;
+		}
+	}
 }
