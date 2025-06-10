@@ -135,7 +135,7 @@ export class GraphQLTransport extends Experimental_CoreClient {
 				owner: mapOwner(obj.owner!),
 				type: obj.contents?.type?.repr!,
 				content: Promise.resolve(
-					obj.contents?.bcs ? fromBase64(obj.contents?.bcs) : new Uint8Array(),
+					obj.contents?.bcs ? fromBase64(obj.contents.bcs) : new Uint8Array(),
 				),
 			})),
 			hasNextPage: objects.pageInfo.hasNextPage,
@@ -169,7 +169,7 @@ export class GraphQLTransport extends Experimental_CoreClient {
 				type: coin.contents?.type?.repr!,
 				balance: coin.coinBalance,
 				content: Promise.resolve(
-					coin.contents?.bcs ? fromBase64(coin.contents?.bcs) : new Uint8Array(),
+					coin.contents?.bcs ? fromBase64(coin.contents.bcs) : new Uint8Array(),
 				),
 			})),
 		};
