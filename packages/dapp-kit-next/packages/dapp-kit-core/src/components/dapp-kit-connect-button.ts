@@ -46,7 +46,14 @@ export class DAppKitConnectButton extends ScopedRegistryHost(LitElement) {
 		const connection = this.instance!.stores.$connection.get();
 
 		return connection.isConnected
-			? html`<div>TODO</div>`
+			? html`<connected-account-menu
+					.connection=${connection}
+					.client=${client}
+					@account-selected=${(event: AccountSelectedEvent) => {
+						this.instance!.switchAccount({ account: event.detail.account });
+					}}
+					@disconnect-click=${this.instance!.disconnectWallet}
+				></connected-account-menu>`
 			: html`<internal-button @click=${this.#openModal}>
 						<slot>Connect Wallet</slot>
 					</internal-button>
