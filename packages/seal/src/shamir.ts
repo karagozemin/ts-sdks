@@ -34,11 +34,13 @@ export class GF256 {
 	}
 
 	sub(other: GF256): GF256 {
+		// Addition is the same as subtraction in a binary field.
 		return this.add(other);
 	}
 
 	neg(): GF256 {
-		return GF256.zero().sub(this);
+		// Negation doesn't change the value in a binary field.
+		return this;
 	}
 
 	mul(other: GF256): GF256 {
@@ -313,7 +315,7 @@ function validateShares(shares: Share[]): { internalShares: InternalShare[]; len
 		throw new Error('At least one share is required');
 	}
 
-	if (shares.some(({ share }) => share.length !== shares[0].share.length)) {
+	if (!allEqual(shares.map(({ share }) => share.length))) {
 		throw new Error('All shares must have the same length');
 	}
 
