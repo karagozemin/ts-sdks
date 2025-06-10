@@ -115,7 +115,7 @@ export class Polynomial {
 	 * The first coefficient is the constant term.
 	 */
 	constructor(coefficients: GF256[]) {
-		this.coefficients = coefficients;
+		this.coefficients = coefficients.slice();
 
 		// The highest degree coefficient is always non-zero.
 		while (
@@ -131,6 +131,9 @@ export class Polynomial {
 	}
 
 	degree(): number {
+		if (this.coefficients.length === 0) {
+			return 0;
+		}
 		return this.coefficients.length - 1;
 	}
 
