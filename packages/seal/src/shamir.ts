@@ -108,10 +108,10 @@ const LOG: number[] = [
 export class Polynomial {
 	coefficients: GF256[];
 
-	/** 
+	/**
 	 * Construct a new Polynomial over [GF256] from the given coefficients.
 	 * The first coefficient is the constant term.
-	 */ 
+	 */
 	constructor(coefficients: GF256[]) {
 		this.coefficients = coefficients;
 
@@ -122,6 +122,10 @@ export class Polynomial {
 		) {
 			this.coefficients.pop();
 		}
+	}
+
+	static fromBytes(bytes: Uint8Array): Polynomial {
+		return new Polynomial(Array.from(bytes, (b) => new GF256(b)));
 	}
 
 	degree(): number {
@@ -191,7 +195,8 @@ export class Polynomial {
 					coordinates
 						.filter((_, i) => i !== j)
 						.reduce(
-							(product, { x: x_i }) => product.mul(Polynomial.monic_linear(x_i.neg()).div(x_j.sub(x_i))),
+							(product, { x: x_i }) =>
+								product.mul(Polynomial.monic_linear(x_i.neg()).div(x_j.sub(x_i))),
 							Polynomial.one(),
 						)
 						.scale(y_j),
@@ -210,9 +215,11 @@ export class Polynomial {
 		}
 
 		const quotient: GF256 = coordinates.reduce((sum, { x: x_j, y: y_j }, j) => {
-			const denominator = x_j.mul(coordinates
-				.filter((_, i) => i !== j)
-				.reduce((product, { x: x_i }) => product.mul(x_i.sub(x_j)), GF256.one()));
+			const denominator = x_j.mul(
+				coordinates
+					.filter((_, i) => i !== j)
+					.reduce((product, { x: x_i }) => product.mul(x_i.sub(x_j)), GF256.one()),
+			);
 			return sum.add(y_j.div(denominator));
 		}, GF256.zero());
 
@@ -268,40 +275,11 @@ function toShare(internalShare: InternalShare): Share {
  * @returns A random polynomial with the given constant and degree.
  */
 function samplePolynomial(constant: GF256, degree: number): Polynomial {
-	const coefficients = new Uint8Array(degree + 1);
-	crypto.getRandomValues(coefficients.slice(1));
-	coefficients[0] = constant.value;
-	return new Polynomial(Array.from(coefficients, (c) => new GF256(c)));
-}
+	const randomCoefficients = new Uint8Array(degree);
+	crypto.getRandomValues(randomCoefficients);
 
-/**
- * Combine shares into a secret. If fewer than the threshold number of shares are provided,
- * the result will be indistinguishable from random.
- *
- * @param shares The shares to combine.
- * @returns The secret.
- */
-export function combine(shares: Share[]): Uint8Array {
-	if (shares.length < 1) {
-		throw new Error('At least one share is required');
-	}
-
-	if (shares.some(({ share }) => share.length !== shares[0].share.length)) {
-		throw new Error('All shares must have the same length');
-	}
-
-	if (hasDuplicates(shares.map(({ index }) => index))) {
-		throw new Error('Shares must have unique indices');
-	}
-
-	return new Uint8Array(Array.from({ length: shares[0].share.length }, (_, i) =>
-		Polynomial.combine(
-			shares.map(toInternalShare).map(({ index, share }) => ({
-				x: index,
-				y: share[i],
-			})),
-		).value,
-	));
+	// The resulting polynomial has degree + 1 coefficients.
+	return Polynomial.fromBytes(new Uint8Array([constant.value, ...randomCoefficients]));
 }
 
 /**
@@ -324,6 +302,40 @@ export function split(secret: Uint8Array, threshold: number, total: number): Sha
 		const share = polynomials.map((p) => p.evaluate(index));
 		return toShare({ index, share });
 	});
+}
+
+/**
+ * Combine shares into a secret. If fewer than the threshold number of shares are provided,
+ * the result will be indistinguishable from random.
+ *
+ * @param shares The shares to combine.
+ * @returns The secret.
+ */
+export function combine(shares: Share[]): Uint8Array {
+	if (shares.length < 1) {
+		throw new Error('At least one share is required');
+	}
+
+	if (shares.some(({ share }) => share.length !== shares[0].share.length)) {
+		throw new Error('All shares must have the same length');
+	}
+
+	if (hasDuplicates(shares.map(({ index }) => index))) {
+		throw new Error('Shares must have unique indices');
+	}
+
+	return new Uint8Array(
+		Array.from(
+			{ length: shares[0].share.length },
+			(_, i) =>
+				Polynomial.combine(
+					shares.map(toInternalShare).map(({ index, share }) => ({
+						x: index,
+						y: share[i],
+					})),
+				).value,
+		),
+	);
 }
 
 /**
