@@ -12,13 +12,13 @@ describe("Shamir's secret sharing", () => {
 			54, 73, 146, 97, 76, 123, 231, 6, 176, 180, 101, 228, 201, 216, 14, 65, 60, 155, 160, 238,
 			132, 92, 76, 35, 11, 197, 34, 172, 114, 81, 94, 42,
 		]);
-		const shares = split(secret, 3, 3);
+		const shares = split(secret, 3, 4);
 
-		const combined = combine(shares);
-		expect(combined).toEqual(secret);
+		expect(combine(shares)).toEqual(secret);
+		expect(combine(shares.slice(0, 3))).toEqual(secret);
+		expect(combine(shares.slice(0, 2))).not.toEqual(secret);
 
 		const interpolated = interpolate(shares);
-
 		shares.forEach((share) => {
 			expect(interpolated(share.index)).toEqual(share.share);
 		});
