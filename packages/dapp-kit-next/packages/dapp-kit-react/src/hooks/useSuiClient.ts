@@ -6,7 +6,7 @@ import { useStore } from '@nanostores/react';
 import { useDAppKit } from './useDAppKit.js';
 
 export type UseSuiClientOptions<TDAppKit extends DAppKit> = {
-	dAppKit?: TDAppKit | undefined;
+	dAppKit?: TDAppKit;
 };
 
 export function useSuiClient<TDAppKit extends DAppKit = RegisteredDAppKit>({

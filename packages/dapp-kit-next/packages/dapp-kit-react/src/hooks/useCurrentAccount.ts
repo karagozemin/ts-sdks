@@ -5,7 +5,7 @@ import type { DAppKit, RegisteredDAppKit } from '@mysten/dapp-kit-core';
 import { useConnection } from './useConnection.js';
 
 export type UseCurrentAccountOptions<TDAppKit extends DAppKit> = {
-	dAppKit?: TDAppKit | undefined;
+	dAppKit?: TDAppKit;
 };
 
 export function useCurrentAccount<TDAppKit extends DAppKit = RegisteredDAppKit>({

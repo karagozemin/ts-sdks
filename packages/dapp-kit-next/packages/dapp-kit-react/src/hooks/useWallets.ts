@@ -6,7 +6,7 @@ import { useStore } from '@nanostores/react';
 import { useDAppKit } from './useDAppKit.js';
 
 export type UseWalletsOptions<TDAppKit extends DAppKit> = {
-	dAppKit?: TDAppKit | undefined;
+	dAppKit?: TDAppKit;
 };
 
 export function useWallets<TDAppKit extends DAppKit = RegisteredDAppKit>({

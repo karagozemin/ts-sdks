@@ -6,7 +6,7 @@ import { useStore } from '@nanostores/react';
 import { useDAppKit } from './useDAppKit.js';
 
 export type UseConnectionOptions<TDAppKit extends DAppKit> = {
-	dAppKit?: TDAppKit | undefined;
+	dAppKit?: TDAppKit;
 };
 
 export function useConnection<TDAppKit extends DAppKit = RegisteredDAppKit>({

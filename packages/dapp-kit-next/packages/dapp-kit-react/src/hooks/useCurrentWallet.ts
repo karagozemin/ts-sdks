@@ -5,7 +5,7 @@ import type { DAppKit, RegisteredDAppKit } from '@mysten/dapp-kit-core';
 import { useConnection } from './useConnection.js';
 
 export type UseCurrentWalletOptions<TDAppKit extends DAppKit> = {
-	dAppKit?: TDAppKit | undefined;
+	dAppKit?: TDAppKit;
 };
 
 export function useCurrentWallet<TDAppKit extends DAppKit = RegisteredDAppKit>({
