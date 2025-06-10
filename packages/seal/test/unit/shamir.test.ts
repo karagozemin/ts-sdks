@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { combine, GF256, interpolate, Polynomial, split } from '../../src/shamir';
 import { fromHex } from '@mysten/bcs';
 
-describe('Shamir\'s secret sharing', () => {
+describe("Shamir's·secret·sharing", () => {
 	it('secret sharing roundtrip', () => {
 		const secret = new Uint8Array([ 54,  73, 146,  97,  76, 123, 231,  6,
 			176, 180, 101, 228, 201, 216,  14, 65,

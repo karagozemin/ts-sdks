@@ -182,19 +182,19 @@ export class Polynomial {
 		return new Polynomial([GF256.one()]);
 	}
 
-	static interpolate(coefficients: { x: GF256; y: GF256 }[]): Polynomial {
-		if (coefficients.length < 1) {
+	static interpolate(coordinates: { x: GF256; y: GF256 }[]): Polynomial {
+		if (coordinates.length < 1) {
 			throw new Error('At least one coefficient is required');
 		}
 
-		if (hasDuplicates(coefficients.map(({ x }) => x.value))) {
+		if (hasDuplicates(coordinates.map(({ x }) => x.value))) {
 			throw new Error('Coefficients must have unique x values');
 		}
 
-		return coefficients.reduce(
+		return coordinates.reduce(
 			(sum, { x: x_j, y: y_j }, j) =>
 				sum.add(
-					coefficients
+					coordinates
 						.filter((_, i) => i !== j)
 						.reduce(
 							(product, { x: x_i }) => product.mul(Polynomial.monic_linear(x_i.neg()).div(x_j.sub(x_i))),
@@ -204,6 +204,26 @@ export class Polynomial {
 				),
 			Polynomial.zero(),
 		);
+	}
+
+	static combine(coordinates: { x: GF256; y: GF256 }[]): GF256 {
+		if (coordinates.length < 1) {
+			throw new Error('At least one coefficient is required');
+		}
+
+		if (hasDuplicates(coordinates.map(({ x }) => x.value))) {
+			throw new Error('Coefficients must have unique x values');
+		}
+
+		const quotient: GF256 = coordinates.reduce((sum, { x: x_j, y: y_j }, j) => {
+			const denominator = x_j.mul(coordinates
+				.filter((_, i) => i !== j)
+				.reduce((product, { x: x_i }) => product.mul(x_i.sub(x_j)), GF256.one()));
+			return sum.add(y_j.div(denominator));
+		}, GF256.zero());
+		const xProduct = coordinates.reduce((product, { x }) => product.mul(x), GF256.one());
+		
+		return xProduct.mul(quotient);
 	}
 
 	evaluate(x: GF256): GF256 {
@@ -279,17 +299,14 @@ export function combine(shares: Share[]): Uint8Array {
 		throw new Error('Shares must have unique indices');
 	}
 
-	// TODO: Only compute the constant term of the polynomial.
-	const polynomials = Array.from({ length: shares[0].share.length }, (_, i) =>
-		Polynomial.interpolate(
+	return new Uint8Array(Array.from({ length: shares[0].share.length }, (_, i) =>
+		Polynomial.combine(
 			shares.map(toInternalShare).map(({ index, share }) => ({
 				x: index,
 				y: share[i],
 			})),
-		),
-	);
-
-	return new Uint8Array(polynomials.map((p) => p.evaluate(new GF256(0)).value));
+		).value,
+	));
 }
 
 /**
