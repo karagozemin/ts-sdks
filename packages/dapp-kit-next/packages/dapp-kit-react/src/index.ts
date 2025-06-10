@@ -18,3 +18,4 @@ export { useConnection } from './hooks/useConnection.js';
 export { useCurrentAccount } from './hooks/useCurrentAccount.js';
 export { useCurrentWallet } from './hooks/useCurrentWallet.js';
 export { useSuiClient } from './hooks/useSuiClient.js';
+export { useCurrentNetwork } from './hooks/useCurrentNetwork.js';
