@@ -39,7 +39,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	connection!: ConnectedState;
 
 	@property({ type: Object })
-	currentClient!: DAppKitCompatibleClient;
+	client!: DAppKitCompatibleClient;
 
 	@query('#menu-button')
 	private _trigger!: HTMLElement;
@@ -58,17 +58,6 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 	@state()
 	private _focusedIndex = -1;
-
-	#getNameTask = new Task(this, {
-		args: () => [this.connection.account],
-		task: async ([currentAccount], { signal }) => {
-			const result = await this.currentClient.core.resolveNameServiceNames?.({
-				address: currentAccount.address,
-				signal,
-			});
-			return result?.data.at(0);
-		},
-	});
 
 	#unsubscribeFromAutoUpdate?: () => void;
 
@@ -93,12 +82,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 			>
 				<div class="trigger-content">
 					<img src=${this.connection.account.icon ?? this.connection.wallet.icon} alt="" />
-					${this.#getNameTask.render({
-						initial: this.#getDisplayAddress,
-						pending: this.#getDisplayAddress,
-						error: this.#getDisplayAddress,
-						complete: (value) => value ?? this.#getDisplayAddress(),
-					})}
+					${this.#getDisplayAddress()}
 					<div class="chevron">${chevronDownIcon}</div>
 				</div>
 			</internal-button>
@@ -117,7 +101,6 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					</div>
 					<button
 						class="copy-address-button icon-button"
-						role="menuitem"
 						aria-label="Copy address"
 						@click=${this.#copyAddressToClipboard}
 					>
@@ -128,7 +111,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				<div class="accounts-container" role="group">
 					<div class="accounts-label">Accounts</div>
 					<ul class="accounts-list">
-						${[...this.connection.wallet.accounts, ...this.connection.wallet.accounts].map(
+						${this.connection.wallet.accounts.map(
 							(account) => html`
 								<account-menu-item
 									.account=${account}
@@ -143,9 +126,9 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				<div role="separator" aria-orientation="horizontal"></div>
 				<div class="actions-container" role="group">
 					${when(
-						// NOTE: No compatible wallets implement `connect` that
-						// conforms with the standard in a way to allow selecting
-						// other accounts. For now, we'll just hardcode this.
+						// NOTE: No compatible wallets conform with the standard
+						// in a way to allow selecting other accounts besides Slush
+						// so we'll just hardcode this for now.
 						this.connection.wallet.name === SLUSH_WALLET_NAME,
 						() =>
 							html`<div
@@ -238,12 +221,11 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				this.#focusMenuItem(this._menuItems.length - 1);
 				break;
 			case 'Enter':
-				event.preventDefault();
-				this._menuItems.item(this._focusedIndex).click();
-				break;
-			case ' ':
-				event.preventDefault();
-				//this.activateCurrentItem();
+				if (this._focusedIndex > 0 && this._focusedIndex < this._menuItems.length) {
+					event.preventDefault();
+					this._menuItems.item(this._focusedIndex).click();
+					this.#closeMenu();
+				}
 				break;
 		}
 	}
@@ -255,8 +237,8 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 		}
 
 		this._focusedIndex = index;
-
 		const itemToFocus = this._menuItems.item(this._focusedIndex);
+
 		itemToFocus.setAttribute('tabindex', '0');
 		itemToFocus.focus();
 	}

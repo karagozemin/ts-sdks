@@ -42,8 +42,8 @@ export const styles = [
 
 		[role='separator'] {
 			height: 1px;
-			margin-left: -8px;
-			margin-right: -8px;
+			margin-left: -4px;
+			margin-right: -4px;
 			margin-top: 4px;
 			margin-bottom: 4px;
 			background-color: var(--dapp-kit-border);
@@ -70,6 +70,20 @@ export const styles = [
 			font-size: 12px;
 		}
 
+		[aria-expanded='true'] .chevron {
+			transition: transform 0.3s ease;
+			transform: rotate(180deg);
+		}
+
+		.chevron {
+			display: flex;
+		}
+
+		.chevron svg {
+			width: 16px;
+			height: 16px;
+		}
+
 		.copy-address-button {
 			margin-left: auto;
 		}
@@ -84,20 +98,6 @@ export const styles = [
 			align-items: center;
 			font-weight: var(--dapp-kit-font-weight-semibold);
 			gap: 8px;
-		}
-
-		#menu-button[aria-expanded='true'] .chevron {
-			transition: transform 0.3s ease;
-			transform: rotate(180deg);
-		}
-
-		.chevron {
-			display: flex;
-		}
-
-		.chevron svg {
-			width: 16px;
-			height: 16px;
 		}
 
 		.accounts-container {

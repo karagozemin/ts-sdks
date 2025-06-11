@@ -9,7 +9,7 @@ import '../src/components/dapp-kit-connect-button.js';
 import '../src/components/dapp-kit-connect-modal.js';
 
 createDAppKit({
-	networks: ['testnet'],
+	networks: ['mainnet'],
 	createClient(network) {
 		return new SuiClient({ network, url: getFullnodeUrl(network) });
 	},
