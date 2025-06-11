@@ -3,7 +3,6 @@
 
 import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 
-import { when } from 'lit/directives/when.js';
 import { html, LitElement } from 'lit';
 import { Button } from './button.js';
 import { formatAddress } from '@mysten/sui/utils';
@@ -116,6 +115,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					</div>
 					<button
 						class="copy-address-button icon-button"
+						role="menuitem"
 						aria-label="Copy address"
 						@click=${this.#copyAddressToClipboard}
 					>
@@ -127,11 +127,11 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					<div class="accounts-label">Accounts</div>
 					<ul class="accounts-list">
 						${this.connection.wallet.accounts.map(
-							(account, index) => html`
+							(account) => html`
 								<account-menu-item
 									.account=${account}
 									.selected=${account.address === this.connection.account.address}
-									tabIndex=${this._focusedIndex === index ? 0 : -1}
+									tabIndex="-1"
 									@account-selected=${this.#closeMenu}
 								></account-menu-item>
 							`,
@@ -143,7 +143,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					<div
 						class="action-menu-item"
 						role="menuitem"
-						tabindex=${this._focusedIndex === this.connection.wallet.accounts.length + 1 ? 0 : -1}
+						tabindex="-1"
 						@click=${this.#onManageConnectionClick}
 					>
 						${connectIcon} Manage Connection
@@ -151,7 +151,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					<div
 						class="action-menu-item"
 						role="menuitem"
-						tabindex=${this._focusedIndex === this.connection.wallet.accounts.length + 2 ? 0 : -1}
+						tabindex="-1"
 						@click=${this.#onDisconnectClick}
 					>
 						${disconnectIcon} Disconnect Wallet
@@ -196,9 +196,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	}
 
 	#onDocumentClick = (event: MouseEvent) => {
-		if (!this._open) {
-			return;
-		}
+		if (!this._open) return;
 
 		const path = event.composedPath();
 		if (!path.includes(this)) {
@@ -216,33 +214,39 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				break;
 			case 'ArrowDown':
 				event.preventDefault();
-				this._focusedIndex = Math.min(this._focusedIndex + 1, this._menuItems.length - 1);
-				this._menuItems.item(this._focusedIndex).focus();
+				this.#focusMenuItem(Math.min(this._focusedIndex + 1, this._menuItems.length - 1));
 				break;
 			case 'ArrowUp':
 				event.preventDefault();
-				this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
-				this._menuItems.item(this._focusedIndex).focus();
+				this.#focusMenuItem(Math.max(this._focusedIndex - 1, 0));
 				break;
 			case 'Home':
 				event.preventDefault();
-				this._focusedIndex = 0;
-				this._menuItems.item(0).focus();
+				this.#focusMenuItem(0);
 				break;
 			case 'End':
 				event.preventDefault();
-				this._focusedIndex = this._menuItems.length - 1;
-				this._menuItems.item(this._focusedIndex).focus();
+				this.#focusMenuItem(this._menuItems.length - 1);
 				break;
 			case 'Enter':
 			case ' ':
 				event.preventDefault();
 				//this.activateCurrentItem();
 				break;
-			case 'Tab':
-				this.#closeMenu();
-				break;
 		}
+	}
+
+	#focusMenuItem(index: number) {
+		const currentItem = this._focusedIndex > 0 ? this._menuItems.item(this._focusedIndex) : null;
+		if (currentItem) {
+			currentItem.setAttribute('tabindex', '-1');
+		}
+
+		this._focusedIndex = index;
+
+		const itemToFocus = this._menuItems.item(this._focusedIndex);
+		itemToFocus.setAttribute('tabindex', '0');
+		itemToFocus.focus();
 	}
 
 	#toggleMenu() {
@@ -255,9 +259,9 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 	async #openMenu() {
 		this._open = true;
-		await this.updateComplete;
-
 		this._focusedIndex = -1;
+
+		await this.updateComplete;
 		this._menu.focus();
 		this.#startPositioning();
 	}
