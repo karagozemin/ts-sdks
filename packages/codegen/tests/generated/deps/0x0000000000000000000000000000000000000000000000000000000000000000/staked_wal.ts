@@ -4,12 +4,13 @@
 import { bcs } from '@mysten/sui/bcs';
 import * as object from '../0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
 import * as balance from '../0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
+import * as wal from '../../wal.js';
 export function StakedWal() {
 	return bcs.struct('StakedWal', {
 		id: object.UID(),
 		state: StakedWalState(),
 		node_id: bcs.Address,
-		principal: balance.Balance(),
+		principal: balance.Balance(wal.WAL()),
 		activation_epoch: bcs.u32(),
 	});
 }

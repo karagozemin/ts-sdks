@@ -5,11 +5,12 @@ import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from './utils/index.js';
 import * as balance from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
+import * as wal from './wal.js';
 export function FutureAccounting() {
 	return bcs.struct('FutureAccounting', {
 		epoch: bcs.u32(),
 		used_capacity: bcs.u64(),
-		rewards_to_distribute: balance.Balance(),
+		rewards_to_distribute: balance.Balance(wal.WAL()),
 	});
 }
 export function FutureAccountingRingBuffer() {

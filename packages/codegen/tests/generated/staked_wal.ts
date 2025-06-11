@@ -6,12 +6,13 @@ import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from './utils/index.js';
 import * as object from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
 import * as balance from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
+import * as wal from './wal.js';
 export function StakedWal() {
 	return bcs.struct('StakedWal', {
 		id: object.UID(),
 		state: StakedWalState(),
 		node_id: bcs.Address,
-		principal: balance.Balance(),
+		principal: balance.Balance(wal.WAL()),
 		activation_epoch: bcs.u32(),
 	});
 }

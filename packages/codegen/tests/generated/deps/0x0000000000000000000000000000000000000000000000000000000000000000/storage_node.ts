@@ -3,7 +3,9 @@
 
 import { bcs } from '@mysten/sui/bcs';
 import * as group_ops from '../0x0000000000000000000000000000000000000000000000000000000000000002/group_ops.js';
+import * as bls12381 from '../0x0000000000000000000000000000000000000000000000000000000000000002/bls12381.js';
 import * as extended_field from '../../extended_field.js';
+import * as node_metadata from '../../node_metadata.js';
 import * as object from '../0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
 import * as event_blob from '../../event_blob.js';
 export function StorageNodeInfo() {
@@ -11,10 +13,10 @@ export function StorageNodeInfo() {
 		name: bcs.string(),
 		node_id: bcs.Address,
 		network_address: bcs.string(),
-		public_key: group_ops.Element(),
-		next_epoch_public_key: bcs.option(group_ops.Element()),
+		public_key: group_ops.Element(bls12381.UncompressedG1()),
+		next_epoch_public_key: bcs.option(group_ops.Element(bls12381.UncompressedG1())),
 		network_public_key: bcs.vector(bcs.u8()),
-		metadata: extended_field.ExtendedField(),
+		metadata: extended_field.ExtendedField(node_metadata.NodeMetadata()),
 	});
 }
 export function StorageNodeCap() {

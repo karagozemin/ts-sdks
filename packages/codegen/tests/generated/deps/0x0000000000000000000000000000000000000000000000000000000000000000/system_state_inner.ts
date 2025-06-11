@@ -6,6 +6,7 @@ import * as bls_aggregate from '../../bls_aggregate.js';
 import * as storage_accounting from '../../storage_accounting.js';
 import * as event_blob from '../../event_blob.js';
 import * as extended_field from '../../extended_field.js';
+import * as vec_map from '../0x0000000000000000000000000000000000000000000000000000000000000002/vec_map.js';
 export function SystemStateInnerV1() {
 	return bcs.struct('SystemStateInnerV1', {
 		committee: bls_aggregate.BlsCommittee(),
@@ -15,6 +16,6 @@ export function SystemStateInnerV1() {
 		write_price_per_unit_size: bcs.u64(),
 		future_accounting: storage_accounting.FutureAccountingRingBuffer(),
 		event_blob_certification_state: event_blob.EventBlobCertificationState(),
-		deny_list_sizes: extended_field.ExtendedField(),
+		deny_list_sizes: extended_field.ExtendedField(vec_map.VecMap(bcs.Address, bcs.u64())),
 	});
 }

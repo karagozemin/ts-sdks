@@ -28,11 +28,11 @@ export async function generatePackage({
 
 		builder.renderBCSTypes();
 		builder.renderFunctions();
-		const module = builder.moduleDef.module_handles[builder.moduleDef.self_module_handle_idx];
+
 		await mkdir(destination, { recursive: true });
 		await writeFile(
-			join(destination, `${builder.moduleDef.identifiers[module.name]}.ts`),
-			builder.toString('./', `./${builder.moduleDef.identifiers[module.name]}.ts`),
+			join(destination, `${builder.module}.ts`),
+			builder.toString('./', `./${builder.module}.ts`),
 		);
 	}
 
@@ -49,16 +49,12 @@ export async function generatePackage({
 				continue;
 			}
 
-			const module = builder.moduleDef.module_handles[builder.moduleDef.self_module_handle_idx];
-			const moduleName = builder.moduleDef.identifiers[module.name];
-			const moduleAddress = normalizeSuiAddress(
-				builder.moduleDef.address_identifiers[module.address],
-			);
+			const moduleAddress = normalizeSuiAddress(builder.address);
 			builder.renderBCSTypes();
 			await mkdir(join(destination, 'deps', moduleAddress), { recursive: true });
 			await writeFile(
-				join(destination, 'deps', moduleAddress, `${moduleName}.ts`),
-				builder.toString('./', `./deps/${moduleAddress}/${moduleName}.ts`),
+				join(destination, 'deps', moduleAddress, `${builder.module}.ts`),
+				builder.toString('./', `./deps/${moduleAddress}/${builder.module}.ts`),
 			);
 		}
 	}

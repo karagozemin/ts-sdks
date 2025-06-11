@@ -51,7 +51,7 @@ export interface EnumSummary {
 	doc?: string | null;
 	attributes?: Attribute[];
 	abilities: Ability[];
-	type_parameters: TypeParameter[];
+	type_parameters: DatatypeParameter[];
 	variants: Record<string, Variant>;
 }
 
@@ -100,11 +100,7 @@ export type Type =
 	| 'signer'
 	| '_'
 	| {
-			Datatype: {
-				module: ModuleId;
-				name: string;
-				type_arguments: Type[];
-			};
+			Datatype: Datatype;
 	  }
 	| {
 			vector: Type;
@@ -124,6 +120,12 @@ export type Type =
 	| {
 			fun: [Type[], Type];
 	  };
+
+export interface Datatype {
+	module: ModuleId;
+	name: string;
+	type_arguments: Type[];
+}
 
 export interface ModuleId {
 	address: string;

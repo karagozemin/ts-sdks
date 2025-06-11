@@ -3,7 +3,7 @@
 
 import { normalizeSuiAddress } from '@mysten/sui/utils';
 
-import type { DeserializedModule, TypeSignature } from './types/deserialized.js';
+import type { Datatype, ModuleSummary, Type } from './types/summary.js';
 
 const MOVE_STDLIB_ADDRESS = normalizeSuiAddress('0x1');
 const SUI_FRAMEWORK_ADDRESS = normalizeSuiAddress('0x2');
@@ -11,17 +11,16 @@ const SUI_FRAMEWORK_ADDRESS = normalizeSuiAddress('0x2');
 type TypeSignatureFormat = 'typescriptArg' | 'bcs' | 'typeTag';
 interface RenderTypeSignatureOptions {
 	format: TypeSignatureFormat;
-	moduleDef: DeserializedModule;
+	summary: ModuleSummary;
+	module: string;
+	address: string;
 	onDependency?: (address: string, name: string) => void;
 	onTypeParameter?: (typeParameter: number) => void;
 }
 
-export function renderTypeSignature(
-	type: TypeSignature,
-	options: RenderTypeSignatureOptions,
-): string {
+export function renderTypeSignature(type: Type, options: RenderTypeSignatureOptions): string {
 	switch (type) {
-		case 'Address':
+		case 'address':
 			switch (options.format) {
 				case 'typescriptArg':
 					return 'string';
@@ -32,7 +31,7 @@ export function renderTypeSignature(
 				default:
 					throw new Error(`Unknown format: ${options.format}`);
 			}
-		case 'Bool':
+		case 'bool':
 			switch (options.format) {
 				case 'typescriptArg':
 					return 'boolean';
@@ -43,9 +42,9 @@ export function renderTypeSignature(
 				default:
 					throw new Error(`Unknown format: ${options.format}`);
 			}
-		case 'U8':
-		case 'U16':
-		case 'U32':
+		case 'u8':
+		case 'u16':
+		case 'u32':
 			switch (options.format) {
 				case 'typescriptArg':
 					return 'number';
@@ -56,9 +55,9 @@ export function renderTypeSignature(
 				default:
 					throw new Error(`Unknown format: ${options.format}`);
 			}
-		case 'U64':
-		case 'U128':
-		case 'U256':
+		case 'u64':
+		case 'u128':
+		case 'u256':
 			switch (options.format) {
 				case 'typescriptArg':
 					return `number | bigint`;
@@ -69,33 +68,28 @@ export function renderTypeSignature(
 				default:
 					throw new Error(`Unknown format: ${options.format}`);
 			}
+		case 'signer':
+			throw new Error('Signer is not supported');
+		case '_':
+			throw new Error('Macro placeholder is not supported');
 	}
 
 	if ('Datatype' in type) {
 		return renderDataType(type.Datatype, options);
 	}
 
-	if ('DatatypeInstantiation' in type) {
-		const [datatype, typeParameters] = type.DatatypeInstantiation;
-		return renderDataType(datatype, options, typeParameters);
-	}
-
 	if ('Reference' in type) {
-		return renderTypeSignature(type.Reference, options);
+		return renderTypeSignature(type.Reference[1], options);
 	}
 
-	if ('MutableReference' in type) {
-		return renderTypeSignature(type.MutableReference, options);
-	}
-
-	if ('Vector' in type) {
+	if ('vector' in type) {
 		switch (options.format) {
 			case 'typescriptArg':
-				return `${renderTypeSignature(type.Vector, options)}[]`;
+				return `${renderTypeSignature(type.vector, options)}[]`;
 			case 'typeTag':
-				return `vector<${renderTypeSignature(type.Vector, options)}>`;
+				return `vector<${renderTypeSignature(type.vector, options)}>`;
 			case 'bcs':
-				return `bcs.vector(${renderTypeSignature(type.Vector, options)})`;
+				return `bcs.vector(${renderTypeSignature(type.vector, options)})`;
 			default:
 				throw new Error(`Unknown format: ${options.format}`);
 		}
@@ -118,29 +112,21 @@ export function renderTypeSignature(
 	throw new Error(`Unknown type signature: ${JSON.stringify(type, null, 2)}`);
 }
 
-export function isPureSignature(type: TypeSignature, options: RenderTypeSignatureOptions): boolean {
+export function isPureSignature(type: Type): boolean {
 	if (typeof type === 'string') {
 		return true;
 	}
 
 	if ('Reference' in type) {
-		return isPureSignature(type.Reference, options);
-	}
-
-	if ('MutableReference' in type) {
-		return isPureSignature(type.MutableReference, options);
+		return isPureSignature(type.Reference[1]);
 	}
 
 	if ('Datatype' in type) {
-		return isPureDataType(type.Datatype, options);
+		return isPureDataType(type.Datatype);
 	}
 
-	if ('DatatypeInstantiation' in type) {
-		return isPureDataType(type.DatatypeInstantiation[0], options);
-	}
-
-	if ('Vector' in type) {
-		return isPureSignature(type.Vector, options);
+	if ('vector' in type) {
+		return isPureSignature(type.vector);
 	}
 
 	if ('TypeParameter' in type) {
@@ -150,28 +136,19 @@ export function isPureSignature(type: TypeSignature, options: RenderTypeSignatur
 	throw new Error(`Unknown type signature: ${JSON.stringify(type, null, 2)}`);
 }
 
-function isPureDataType(type: number, options: RenderTypeSignatureOptions) {
-	const handle = options.moduleDef.datatype_handles[type];
-	const typeName = options.moduleDef.identifiers[handle.name];
-
-	const moduleHandle = options.moduleDef.module_handles[handle.module];
-	const moduleAddress = normalizeSuiAddress(
-		options.moduleDef.address_identifiers[moduleHandle.address],
-	);
-	const moduleName = options.moduleDef.identifiers[moduleHandle.name];
-
-	if (moduleAddress === MOVE_STDLIB_ADDRESS) {
-		if ((moduleName === 'ascii' || moduleName === 'string') && typeName === 'String') {
+function isPureDataType(type: Datatype) {
+	if (normalizeSuiAddress(type.module.address) === MOVE_STDLIB_ADDRESS) {
+		if ((type.module.name === 'ascii' || type.module.name === 'string') && type.name === 'String') {
 			return true;
 		}
 
-		if (moduleName === 'option' && typeName === 'Option') {
+		if (type.module.name === 'option' && type.name === 'Option') {
 			return true;
 		}
 	}
 
-	if (moduleAddress === SUI_FRAMEWORK_ADDRESS) {
-		if (moduleName === 'object' && typeName === 'ID') {
+	if (normalizeSuiAddress(type.module.address) === SUI_FRAMEWORK_ADDRESS) {
+		if (type.module.name === 'object' && type.name === 'ID') {
 			return true;
 		}
 	}
@@ -179,32 +156,19 @@ function isPureDataType(type: number, options: RenderTypeSignatureOptions) {
 	return false;
 }
 
-function renderDataType(
-	type: number,
-	options: RenderTypeSignatureOptions,
-	typeParameters: TypeSignature[] = [],
-): string {
-	const handle = options.moduleDef.datatype_handles[type];
-	const typeName = options.moduleDef.identifiers[handle.name];
-
-	const moduleHandle = options.moduleDef.module_handles[handle.module];
-	const moduleAddress = normalizeSuiAddress(
-		options.moduleDef.address_identifiers[moduleHandle.address],
-	);
-	const moduleName = options.moduleDef.identifiers[moduleHandle.name];
-
+function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): string {
 	if (options.format === 'typeTag') {
-		if (typeParameters.length === 0) {
+		if (type.type_arguments.length === 0) {
 			// eslint-disable-next-line no-template-curly-in-string
-			return `${moduleAddress === normalizeSuiAddress('0x0') ? '${packageAddress}' : moduleAddress}::${moduleName}::${typeName}`;
+			return `${normalizeSuiAddress(type.module.address) === normalizeSuiAddress('0x0') ? '${packageAddress}' : normalizeSuiAddress(type.module.address)}::${type.module.name}::${type.name}`;
 		}
 
 		// eslint-disable-next-line no-template-curly-in-string
-		return `${moduleAddress === normalizeSuiAddress('0x0') ? '${packageAddress}' : moduleAddress}::${moduleName}::${typeName}<${typeParameters.map((type) => renderTypeSignature(type, options)).join(', ')}>`;
+		return `${normalizeSuiAddress(type.module.address) === normalizeSuiAddress('0x0') ? '${packageAddress}' : normalizeSuiAddress(type.module.address)}::${type.module.name}::${type.name}<${type.type_arguments.map((type) => renderTypeSignature(type, options)).join(', ')}>`;
 	}
 
-	if (moduleAddress === MOVE_STDLIB_ADDRESS) {
-		if ((moduleName === 'ascii' || moduleName === 'string') && typeName === 'String') {
+	if (normalizeSuiAddress(type.module.address) === MOVE_STDLIB_ADDRESS) {
+		if ((type.module.name === 'ascii' || type.module.name === 'string') && type.name === 'String') {
 			switch (options.format) {
 				case 'typescriptArg':
 					return 'string';
@@ -215,23 +179,23 @@ function renderDataType(
 			}
 		}
 
-		if (moduleName === 'option' && typeName === 'Option') {
+		if (type.module.name === 'option' && type.name === 'Option') {
 			switch (options.format) {
 				case 'typescriptArg':
-					if (isPureDataType(type, options)) {
-						return `${renderTypeSignature(typeParameters[0], options)} | null`;
+					if (isPureDataType(type)) {
+						return `${renderTypeSignature(type.type_arguments[0], options)} | null`;
 					}
 					break;
 				case 'bcs':
-					return `bcs.option(${renderTypeSignature(typeParameters[0], options)})`;
+					return `bcs.option(${renderTypeSignature(type.type_arguments[0], options)})`;
 				default:
 					throw new Error(`Unknown format: ${options.format}`);
 			}
 		}
 	}
 
-	if (moduleAddress === SUI_FRAMEWORK_ADDRESS) {
-		if (moduleName === 'object' && typeName === 'ID') {
+	if (normalizeSuiAddress(type.module.address) === SUI_FRAMEWORK_ADDRESS) {
+		if (type.module.name === 'object' && type.name === 'ID') {
 			switch (options.format) {
 				case 'typescriptArg':
 					return 'string';
@@ -243,25 +207,24 @@ function renderDataType(
 		}
 	}
 
-	const typeNameRef =
-		handle.module === options.moduleDef.self_module_handle_idx
-			? typeName
-			: `${getSafeName(moduleName)}.${typeName}`;
+	const isCurrentModule =
+		normalizeSuiAddress(type.module.address) === normalizeSuiAddress(options.address) &&
+		type.module.name === options.module;
 
-	if (handle.module !== options.moduleDef.self_module_handle_idx) {
-		options.onDependency?.(moduleAddress, moduleName);
+	const typeNameRef = isCurrentModule
+		? type.name
+		: `${getSafeName(type.module.name)}.${getSafeName(type.name)}`;
+
+	if (!isCurrentModule) {
+		options.onDependency?.(type.module.address, type.module.name);
 	}
-
-	const filteredTypeParameters = typeParameters.filter(
-		(_type, i) => !handle.type_parameters[i].is_phantom,
-	);
 
 	switch (options.format) {
 		case 'typescriptArg':
 			return 'string';
 		case 'bcs':
 			return `${typeNameRef}(
-                ${filteredTypeParameters.map((type) => renderTypeSignature(type, options)).join(', ')})`;
+                ${type.type_arguments.map((type) => renderTypeSignature(type, options)).join(', ')})`;
 		default:
 			throw new Error(`Unknown format: ${options.format}`);
 	}

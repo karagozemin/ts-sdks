@@ -10,7 +10,7 @@ import * as type_name from '../0x00000000000000000000000000000000000000000000000
 export function Token() {
 	return bcs.struct('Token', {
 		id: object.UID(),
-		balance: balance.Balance(),
+		balance: balance.Balance(typeParameters[0]),
 	});
 }
 export function TokenPolicyCap() {
@@ -22,7 +22,7 @@ export function TokenPolicyCap() {
 export function TokenPolicy() {
 	return bcs.struct('TokenPolicy', {
 		id: object.UID(),
-		spent_balance: balance.Balance(),
+		spent_balance: balance.Balance(typeParameters[0]),
 		rules: vec_map.VecMap(bcs.string(), vec_set.VecSet(type_name.TypeName())),
 	});
 }
@@ -32,7 +32,7 @@ export function ActionRequest() {
 		amount: bcs.u64(),
 		sender: bcs.Address,
 		recipient: bcs.option(bcs.Address),
-		spent_balance: bcs.option(balance.Balance()),
+		spent_balance: bcs.option(balance.Balance(typeParameters[0])),
 		approvals: vec_set.VecSet(type_name.TypeName()),
 	});
 }

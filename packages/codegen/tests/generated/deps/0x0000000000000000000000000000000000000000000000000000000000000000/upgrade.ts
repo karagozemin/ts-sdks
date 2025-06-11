@@ -24,7 +24,7 @@ export function UpgradeManager() {
 	return bcs.struct('UpgradeManager', {
 		id: object.UID(),
 		cap: _package.UpgradeCap(),
-		upgrade_proposals: table.Table(),
+		upgrade_proposals: table.Table(PackageDigest(), UpgradeProposal()),
 	});
 }
 export function EmergencyUpgradeCap() {

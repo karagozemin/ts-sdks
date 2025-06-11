@@ -6,6 +6,7 @@ import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from './utils/index.js';
 import * as object from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
 import * as balance from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
+import * as wal from './wal.js';
 export function AdminCap() {
 	return bcs.struct('AdminCap', {
 		id: object.UID(),
@@ -17,7 +18,7 @@ export function Subsidies() {
 		id: object.UID(),
 		buyer_subsidy_rate: bcs.u16(),
 		system_subsidy_rate: bcs.u16(),
-		subsidy_pool: balance.Balance(),
+		subsidy_pool: balance.Balance(wal.WAL()),
 		package_id: bcs.Address,
 		version: bcs.u64(),
 	});
