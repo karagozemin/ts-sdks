@@ -20,8 +20,7 @@ export const styles = [
 		}
 
 		li:hover,
-		li:focus,
-		li:focus-visible {
+		li:focus {
 			background-color: var(--dapp-kit-accent);
 			outline: 2px solid transparent;
 			outline-offset: 2px;
