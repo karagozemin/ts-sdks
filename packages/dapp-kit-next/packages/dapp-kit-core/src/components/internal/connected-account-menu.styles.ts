@@ -3,9 +3,11 @@
 
 import { css } from 'lit';
 import { sharedStyles } from '../styles/index.js';
+import { iconButtonStyles } from '../styles/icon-button.js';
 
 export const styles = [
 	sharedStyles,
+	iconButtonStyles,
 	css`
 		:host {
 			display: block;
@@ -27,6 +29,8 @@ export const styles = [
 			color: var(--dapp-kit-popover-foreground);
 			border-radius: var(--dapp-kit-radius-lg);
 			border: 1px solid var(--dapp-kit-border);
+			outline: 2px solid transparent;
+			outline-offset: 2px;
 		}
 
 		[role='menuitem'],
@@ -51,6 +55,7 @@ export const styles = [
 
 		.current-account-container {
 			display: flex;
+			align-items: center;
 			padding-left: 8px;
 			padding-right: 8px;
 			padding-top: 6px;
@@ -58,19 +63,13 @@ export const styles = [
 			gap: 8px;
 		}
 
-		.copy-address-button {
-			display: flex;
-			align-items: center;
-			font-weight: var(--dapp-kit-font-weight-medium);
-			gap: 8px;
-		}
-
-		.copy-address-button svg {
+		.connected-text {
 			color: var(--dapp-kit-muted-foreground);
+			font-size: 12px;
 		}
 
-		.copy-address-button:hover svg {
-			color: var(--dapp-kit-accent-foreground);
+		.copy-address-button {
+			margin-left: auto;
 		}
 
 		.trigger-content {
@@ -78,6 +77,20 @@ export const styles = [
 			align-items: center;
 			font-weight: var(--dapp-kit-font-weight-semibold);
 			gap: 8px;
+		}
+
+		#menu-button[aria-expanded='true'] .chevron {
+			transition: transform 0.3s ease;
+			transform: rotate(180deg);
+		}
+
+		.chevron {
+			display: flex;
+		}
+
+		.chevron svg {
+			width: 16px;
+			height: 16px;
 		}
 
 		.accounts-container {

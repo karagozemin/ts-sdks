@@ -18,6 +18,7 @@ import type { DAppKitCompatibleClient } from '../../core/types.js';
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 import { connectIcon } from './icons/connect-icon.js';
 import { AccountMenuItem } from './connected-account-menu-item.js';
+import { chevronDownIcon } from './icons/chevron-down-icon.js';
 
 type ConnectedState = Extract<
 	StoreValue<DAppKit['stores']['$connection']>,
@@ -38,6 +39,24 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	@property({ type: Object })
 	currentClient!: DAppKitCompatibleClient;
 
+	@query('#menu-button')
+	private _trigger!: HTMLElement;
+
+	@query('#menu')
+	private _menu!: HTMLElement;
+
+	@queryAll('[role="menuitem"], [role="menuitemradio"]')
+	private _menuItems!: NodeListOf<HTMLElement>;
+
+	@state()
+	private _open = false;
+
+	@state()
+	private _wasCopySuccessful = false;
+
+	@state()
+	private _focusedIndex = -1;
+
 	#getNameTask = new Task(this, {
 		args: () => [this.connection.account],
 		task: async ([currentAccount], { signal }) => {
@@ -49,22 +68,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 		},
 	});
 
-	@state()
-	private _open = false;
-
-	@state()
-	private _focusedIndex = -1;
-
 	#unsubscribeFromAutoUpdate?: () => void;
-
-	@query('#menubutton')
-	private _trigger!: HTMLElement;
-
-	@query('#menu')
-	private _menu!: HTMLElement;
-
-	@queryAll('[role="menuitem"], [role="menuitemradio"]')
-	private _menuItems!: NodeListOf<HTMLElement>;
 
 	connectedCallback() {
 		super.connectedCallback();
@@ -79,7 +83,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 	override render() {
 		return html`<internal-button
-				id="menubutton"
+				id="menu-button"
 				aria-haspopup="true"
 				aria-controls="menu"
 				aria-expanded="${this._open}"
@@ -93,67 +97,41 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 						error: this.#getDisplayAddress,
 						complete: (value) => value ?? this.#getDisplayAddress(),
 					})}
+					<div class="chevron">${chevronDownIcon}</div>
 				</div>
 			</internal-button>
-			<div id="menu" role="menu" aria-labelledby="menubutton" @keydown="${this.#onMenuKeydown}">
-				<div role="group">
-					<div class="current-account-container">
-						<img src=${this.connection.account.icon ?? this.connection.wallet.icon} alt="" />
-						${when(this.connection.account.label, (label) => html`<h2>${label}</h2>`)}
-						<h3>
-							<button
-								class="copy-address-button"
-								aria-label="Copy address to clipboard"
-								@click=${async () => {
-									try {
-										await navigator.clipboard.writeText(this.connection.account.address);
-									} catch (err) {
-										// Do nothing here
-									}
-								}}
-							>
-								${formatAddress(this.connection.account.address)} ${copyIcon}
-							</button>
-						</h3>
+			<div
+				id="menu"
+				role="menu"
+				tabindex="-1"
+				aria-labelledby="menu-button"
+				@keydown="${this.#onMenuKeydown}"
+			>
+				<div class="current-account-container">
+					<img src=${this.connection.account.icon ?? this.connection.wallet.icon} alt="" />
+					<div>
+						<div>${formatAddress(this.connection.account.address)}</div>
+						<div class="connected-text">Connected</div>
 					</div>
+					<button
+						class="copy-address-button icon-button"
+						aria-label="Copy address"
+						@click=${this.#copyAddressToClipboard}
+					>
+						${copyIcon}
+					</button>
 				</div>
 				<div role="separator" aria-orientation="horizontal"></div>
 				<div class="accounts-container" role="group">
 					<div class="accounts-label">Accounts</div>
 					<ul class="accounts-list">
-						${[
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-							...this.connection.wallet.accounts,
-						].map(
-							(account) => html`
+						${this.connection.wallet.accounts.map(
+							(account, index) => html`
 								<account-menu-item
 									.account=${account}
 									.selected=${account.address === this.connection.account.address}
-									@account-selected=${() => {
-										this._open = false;
-									}}
+									tabIndex=${this._focusedIndex === index ? 0 : -1}
+									@account-selected=${this.#closeMenu}
 								></account-menu-item>
 							`,
 						)}
@@ -164,7 +142,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					<div
 						class="action-menu-item"
 						role="menuitem"
-						tabindex="-1"
+						tabindex=${this._focusedIndex === this.connection.wallet.accounts.length + 1 ? 0 : -1}
 						@click=${this.#onManageConnectionClick}
 					>
 						${connectIcon} Manage Connection
@@ -172,7 +150,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					<div
 						class="action-menu-item"
 						role="menuitem"
-						tabindex="-1"
+						tabindex=${this._focusedIndex === this.connection.wallet.accounts.length + 2 ? 0 : -1}
 						@click=${this.#onDisconnectClick}
 					>
 						${disconnectIcon} Disconnect Wallet
@@ -203,6 +181,19 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 		return this.connection.account.label || formatAddress(this.connection.account.address);
 	};
 
+	async #copyAddressToClipboard() {
+		try {
+			await navigator.clipboard.writeText(this.connection.account.address);
+			this._wasCopySuccessful = true;
+
+			setTimeout(() => {
+				this._wasCopySuccessful = false;
+			}, 2000);
+		} catch (error) {
+			// Do nothing here
+		}
+	}
+
 	#onDocumentClick = (event: MouseEvent) => {
 		if (!this._open) {
 			return;
@@ -216,8 +207,6 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 	#onMenuKeydown(event: KeyboardEvent) {
 		if (!this._open) return;
-
-		console.log(event.key);
 
 		switch (event.key) {
 			case 'Escape':
@@ -265,12 +254,11 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 	async #openMenu() {
 		this._open = true;
-		this._focusedIndex = -1;
-		this.#startPositioning();
-
 		await this.updateComplete;
-		this._focusedIndex = 0;
-		this._menuItems.item(0).focus();
+
+		this._focusedIndex = -1;
+		this._menu.focus();
+		this.#startPositioning();
 	}
 
 	#closeMenu() {

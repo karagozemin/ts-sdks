@@ -14,6 +14,7 @@ export const styles = [
 			padding-right: 12px;
 			display: flex;
 			align-items: center;
+			justify-content: space-between;
 			gap: 8px;
 			width: 100%;
 			border-radius: var(--dapp-kit-radius-sm);

@@ -3,7 +3,7 @@
 
 import { html } from 'lit';
 
-export const checkIcon = html`<svg
+export const chevronDownIcon = html`<svg
 	xmlns="http://www.w3.org/2000/svg"
 	width="24"
 	height="24"
@@ -14,5 +14,5 @@ export const checkIcon = html`<svg
 	stroke-linecap="round"
 	stroke-linejoin="round"
 >
-	<path d="M20 6 9 17l-5-5" />
+	<path d="m6 9 6 6 6-6" />
 </svg>`;
