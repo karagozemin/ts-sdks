@@ -25,12 +25,14 @@ export const styles = [
 			min-width: 240px;
 			padding: 4px;
 			position: absolute;
+			outline: none;
 			background-color: var(--dapp-kit-popover);
 			color: var(--dapp-kit-popover-foreground);
 			border-radius: var(--dapp-kit-radius-lg);
 			border: 1px solid var(--dapp-kit-border);
-			outline: 2px solid transparent;
-			outline-offset: 2px;
+			box-shadow:
+				0 4px 6px -1px rgba(0, 0, 0, 0.1),
+				0 2px 4px -2px rgba(0, 0, 0, 0.1);
 		}
 
 		[role='menuitem'],
@@ -68,8 +70,13 @@ export const styles = [
 			font-size: 12px;
 		}
 
-		.copy-address-button {
+		.copy-address-container {
 			margin-left: auto;
+		}
+
+		.copy-address-success {
+			width: 24px;
+			height: 24px;
 		}
 
 		.trigger-content {
@@ -113,13 +120,10 @@ export const styles = [
 
 		.action-menu-item {
 			border-radius: var(--dapp-kit-radius-sm);
-			padding-top: 6px;
-			padding-bottom: 6px;
-			padding-left: 8px;
-			padding-right: 8px;
 			display: flex;
-			font-size: 14px;
 			align-items: center;
+			font-size: 14px;
+			padding: 8px;
 			gap: 8px;
 			width: 100%;
 		}
@@ -129,6 +133,12 @@ export const styles = [
 			background-color: var(--dapp-kit-accent);
 			outline: 2px solid transparent;
 			outline-offset: 2px;
+		}
+
+		.action-menu-item svg {
+			color: var(--dapp-kit-muted-foreground);
+			width: 16px;
+			height: 16px;
 		}
 	`,
 ];

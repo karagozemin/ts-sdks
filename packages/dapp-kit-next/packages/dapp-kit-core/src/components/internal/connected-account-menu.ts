@@ -3,7 +3,6 @@
 
 import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 
-import { when } from 'lit/directives/when.js';
 import { html, LitElement } from 'lit';
 import { Button } from './button.js';
 import { formatAddress } from '@mysten/sui/utils';
@@ -19,6 +18,7 @@ import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/d
 import { connectIcon } from './icons/connect-icon.js';
 import { AccountMenuItem } from './connected-account-menu-item.js';
 import { chevronDownIcon } from './icons/chevron-down-icon.js';
+import { circleCheckIcon } from './icons/circle-check-icon.js';
 
 type ConnectedState = Extract<
 	StoreValue<DAppKit['stores']['$connection']>,
@@ -113,13 +113,17 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 						<div>${formatAddress(this.connection.account.address)}</div>
 						<div class="connected-text">Connected</div>
 					</div>
-					<button
-						class="copy-address-button icon-button"
-						aria-label="Copy address"
-						@click=${this.#copyAddressToClipboard}
-					>
-						${copyIcon}
-					</button>
+					<div class="copy-address-container">
+						${this._wasCopySuccessful
+							? html`<div class="copy-address-success">${circleCheckIcon}</div>`
+							: html`<button
+									class="icon-button"
+									aria-label="Copy address"
+									@click=${this.#copyAddressToClipboard}
+								>
+									${copyIcon}
+								</button>`}
+					</div>
 				</div>
 				<div role="separator" aria-orientation="horizontal"></div>
 				<div class="accounts-container" role="group">
