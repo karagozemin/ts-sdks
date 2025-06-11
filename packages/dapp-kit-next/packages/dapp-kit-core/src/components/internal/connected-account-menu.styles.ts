@@ -70,7 +70,7 @@ export const styles = [
 			font-size: 12px;
 		}
 
-		.copy-address-container {
+		.copy-address-button {
 			margin-left: auto;
 		}
 

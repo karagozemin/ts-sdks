@@ -3,6 +3,7 @@
 
 import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 
+import { when } from 'lit/directives/when.js';
 import { html, LitElement } from 'lit';
 import { Button } from './button.js';
 import { formatAddress } from '@mysten/sui/utils';
@@ -113,17 +114,13 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 						<div>${formatAddress(this.connection.account.address)}</div>
 						<div class="connected-text">Connected</div>
 					</div>
-					<div class="copy-address-container">
-						${this._wasCopySuccessful
-							? html`<div class="copy-address-success">${circleCheckIcon}</div>`
-							: html`<button
-									class="icon-button"
-									aria-label="Copy address"
-									@click=${this.#copyAddressToClipboard}
-								>
-									${copyIcon}
-								</button>`}
-					</div>
+					<button
+						class="copy-address-button icon-button"
+						aria-label="Copy address"
+						@click=${this.#copyAddressToClipboard}
+					>
+						${this._wasCopySuccessful ? circleCheckIcon : copyIcon}
+					</button>
 				</div>
 				<div role="separator" aria-orientation="horizontal"></div>
 				<div class="accounts-container" role="group">
