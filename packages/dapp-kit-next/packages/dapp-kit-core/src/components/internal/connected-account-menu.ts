@@ -6,10 +6,7 @@ import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 import { html, LitElement } from 'lit';
 import { Button } from './button.js';
 import { formatAddress } from '@mysten/sui/utils';
-import { Task } from '@lit/task';
 import { property, query, queryAll, state } from 'lit/decorators.js';
-import type { DAppKit } from '../../core/index.js';
-import type { StoreValue } from 'nanostores';
 import { disconnectIcon } from './icons/disconnect-icon.js';
 import { copyIcon } from './icons/copy-icon.js';
 import { styles } from './connected-account-menu.styles.js';
@@ -21,11 +18,7 @@ import { chevronDownIcon } from './icons/chevron-down-icon.js';
 import { circleCheckIcon } from './icons/circle-check-icon.js';
 import { when } from 'lit/directives/when.js';
 import { SLUSH_WALLET_NAME } from '@mysten/slush-wallet';
-
-type ConnectedState = Extract<
-	StoreValue<DAppKit['stores']['$connection']>,
-	{ status: 'connected' }
->;
+import type { WalletConnection } from '../../core/store.js';
 
 export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	static elementDefinitions = {
@@ -36,7 +29,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	static override styles = styles;
 
 	@property({ type: Object })
-	connection!: ConnectedState;
+	connection!: Extract<WalletConnection, { status: 'connected' }>;
 
 	@property({ type: Object })
 	client!: DAppKitCompatibleClient;
@@ -61,12 +54,12 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 	#unsubscribeFromAutoUpdate?: () => void;
 
-	connectedCallback() {
+	override connectedCallback() {
 		super.connectedCallback();
 		document.addEventListener('click', this.#onDocumentClick);
 	}
 
-	disconnectedCallback() {
+	override disconnectedCallback() {
 		super.disconnectedCallback();
 		this.#stopPositioning();
 		document.removeEventListener('click', this.#onDocumentClick);
