@@ -18,6 +18,7 @@ describe("Shamir's secret sharing", () => {
 		expect(combine(shares)).toEqual(DEFAULT_SECRET);
 		expect(combine(shares.slice(0, 3))).toEqual(DEFAULT_SECRET);
 		expect(combine(shares.slice(0, 2))).not.toEqual(DEFAULT_SECRET);
+		expect(combine(shares.slice(0, 1))).not.toEqual(DEFAULT_SECRET);
 
 		const interpolated = interpolate(shares);
 		shares.forEach((share) => {
@@ -28,6 +29,7 @@ describe("Shamir's secret sharing", () => {
 	it('test edge cases', () => {
 		expect(combine(split(DEFAULT_SECRET, 1, 1))).toEqual(DEFAULT_SECRET);
 		expect(combine(split(DEFAULT_SECRET, 2, 2))).toEqual(DEFAULT_SECRET);
+		expect(combine(split(DEFAULT_SECRET, 3, 3))).toEqual(DEFAULT_SECRET);
 		expect(() => combine(split(DEFAULT_SECRET, 0, 0))).toThrow();
 		expect(() => combine(split(DEFAULT_SECRET, 0, 1))).toThrow();
 		expect(() => combine(split(DEFAULT_SECRET, 1, 0))).toThrow();
@@ -62,13 +64,31 @@ describe("Shamir's secret sharing", () => {
 		const p1 = new Polynomial([new GF256(1), new GF256(2), new GF256(3)]);
 		const p2 = new Polynomial([new GF256(4), new GF256(5)]);
 		const p3 = new Polynomial([new GF256(2)]);
+
 		expect(p1.add(p2)).toEqual(new Polynomial([new GF256(5), new GF256(7), new GF256(3)]));
+		expect(p1.div(new GF256(2))).toEqual(
+			new Polynomial([new GF256(141), new GF256(1), new GF256(140)]),
+		);
+
 		expect(p1.mul(p3)).toEqual(new Polynomial([new GF256(2), new GF256(4), new GF256(6)]));
+		expect(p1.scale(new GF256(2))).toEqual(
+			new Polynomial([new GF256(2), new GF256(4), new GF256(6)]),
+		);
 
 		const x = new GF256(2);
 		const result = p1.evaluate(x);
 		const expected = new GF256(1).add(new GF256(2).mul(x)).add(new GF256(3).mul(x).mul(x));
 		expect(result).toEqual(expected);
+	});
+
+	it('GF256 arithmetic sanity check', () => {
+		const a = new GF256(117);
+		expect(a.mul(GF256.one())).toEqual(a);
+		expect(a.mul(GF256.zero())).toEqual(GF256.zero());
+		expect(a.add(GF256.zero())).toEqual(a);
+		expect(a.sub(GF256.zero())).toEqual(a);
+		expect(a.div(GF256.one())).toEqual(a);
+		expect(() => a.div(GF256.zero())).toThrow();
 	});
 
 	it('GF256 test vector', () => {
