@@ -29,6 +29,11 @@ export const styles = [
 			border: 1px solid var(--dapp-kit-border);
 		}
 
+		[role='menuitem'],
+		[role='menuitemradio'] {
+			cursor: default;
+		}
+
 		[role='separator'] {
 			height: 1px;
 			margin-left: -8px;
@@ -44,15 +49,12 @@ export const styles = [
 			border-radius: 96px;
 		}
 
-		.menu-group {
-			padding-left: 6px;
-			padding-right: 6px;
-			padding-top: 6px;
-			padding-bottom: 6px;
-		}
-
 		.current-account-container {
 			display: flex;
+			padding-left: 8px;
+			padding-right: 8px;
+			padding-top: 6px;
+			padding-bottom: 6px;
 			gap: 8px;
 		}
 
@@ -78,12 +80,17 @@ export const styles = [
 			gap: 8px;
 		}
 
+		.accounts-container {
+			padding-left: 8px;
+			padding-right: 8px;
+		}
+
 		.accounts-label {
 			color: var(--dapp-kit-muted-foreground);
 			font-weight: var(--dapp-kit-font-weight-medium);
 			padding-top: 4px;
 			padding-bottom: 4px;
-			font-size: 12px;
+			font-size: 13px;
 		}
 
 		.accounts-list {
@@ -91,22 +98,24 @@ export const styles = [
 			overflow-y: auto;
 		}
 
-		.disconnect-button {
+		.action-menu-item {
+			border-radius: var(--dapp-kit-radius-sm);
 			padding-top: 6px;
 			padding-bottom: 6px;
 			padding-left: 8px;
 			padding-right: 8px;
 			display: flex;
-			font-size: 12px;
+			font-size: 14px;
 			align-items: center;
 			gap: 8px;
 			width: 100%;
 		}
 
-		.disconnect-button:hover,
-		.disconnect-button:focus {
-			border-radius: var(--dapp-kit-radius-sm);
+		.action-menu-item:hover,
+		.action-menu-item:focus {
 			background-color: var(--dapp-kit-accent);
+			outline: 2px solid transparent;
+			outline-offset: 2px;
 		}
 	`,
 ];

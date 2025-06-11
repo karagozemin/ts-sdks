@@ -4,89 +4,25 @@
 import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
 
 import { when } from 'lit/directives/when.js';
-import { css, html, LitElement } from 'lit';
-import { sharedStyles } from '../styles/index.js';
+import { html, LitElement } from 'lit';
 import { Button } from './button.js';
 import { formatAddress } from '@mysten/sui/utils';
 import { Task } from '@lit/task';
-import { property, query, state } from 'lit/decorators.js';
+import { property, query, queryAll, state } from 'lit/decorators.js';
 import type { DAppKit } from '../../core/index.js';
 import type { StoreValue } from 'nanostores';
 import { disconnectIcon } from './icons/disconnect-icon.js';
 import { copyIcon } from './icons/copy-icon.js';
-import type { UiWalletAccount } from '@wallet-standard/ui';
-import { checkIcon } from './icons/check-icon.js';
 import { styles } from './connected-account-menu.styles.js';
 import type { DAppKitCompatibleClient } from '../../core/types.js';
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { connectIcon } from './icons/connect-icon.js';
+import { AccountMenuItem } from './connected-account-menu-item.js';
 
 type ConnectedState = Extract<
 	StoreValue<DAppKit['stores']['$connection']>,
 	{ status: 'connected' }
 >;
-
-export type AccountSelectedEvent = CustomEvent<{ account: UiWalletAccount }>;
-
-class AccountMenuItem extends LitElement {
-	static override styles = [
-		sharedStyles,
-		css`
-			button {
-				padding-top: 8px;
-				padding-bottom: 8px;
-				padding-left: 12px;
-				padding-right: 12px;
-				display: flex;
-				align-items: center;
-				gap: 8px;
-				width: 100%;
-			}
-
-			button:hover,
-			button:focus {
-				border-radius: var(--dapp-kit-radius-sm);
-				background-color: var(--dapp-kit-accent);
-			}
-
-			svg {
-				width: 16px;
-				height: 16px;
-			}
-		`,
-	];
-
-	static shadowRootOptions = {
-		...LitElement.shadowRootOptions,
-		delegatesFocus: true,
-	};
-
-	@property({ type: Object })
-	account!: UiWalletAccount;
-
-	@property({ type: Boolean })
-	selected = false;
-
-	override render() {
-		return html`<li
-			role="menuitemradio"
-			tabindex=${-1}
-			aria-checked="${this.selected}"
-			@click=${this.#itemClicked}
-		>
-			${formatAddress(this.account.address)} ${when(this.selected, () => checkIcon)}
-		</li>`;
-	}
-
-	#itemClicked() {
-		this.dispatchEvent(
-			new CustomEvent<AccountSelectedEvent['detail']>('account-selected', {
-				detail: { account: this.account },
-				bubbles: true,
-				composed: true,
-			}),
-		);
-	}
-}
 
 export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	static elementDefinitions = {
@@ -104,33 +40,20 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 	#getNameTask = new Task(this, {
 		args: () => [this.connection.account],
-		task: async ([currentAccount]) => {
-			// TODO: Do data fetching to resolve the SuiNS name.
-			// This will be in a follow-up PR since I need to make adjustments to the client
-			// types and normalize the client method
-			return formatAddress(currentAccount.address);
+		task: async ([currentAccount], { signal }) => {
+			const result = await this.currentClient.core.resolveNameServiceNames?.({
+				address: currentAccount.address,
+				signal,
+			});
+			return result?.data.at(0);
 		},
 	});
 
 	@state()
 	private _open = false;
 
-	get open() {
-		return this._open;
-	}
-
-	set open(open: boolean) {
-		if (open === this._open) {
-			return;
-		}
-
-		this._open = open;
-		if (this._open) {
-			this.#startPositioning();
-		} else {
-			this.#stopPositioning();
-		}
-	}
+	@state()
+	private _focusedIndex = -1;
 
 	#unsubscribeFromAutoUpdate?: () => void;
 
@@ -140,6 +63,9 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	@query('#menu')
 	private _menu!: HTMLElement;
 
+	@queryAll('[role="menuitem"], [role="menuitemradio"]')
+	private _menuItems!: NodeListOf<HTMLElement>;
+
 	connectedCallback() {
 		super.connectedCallback();
 		document.addEventListener('click', this.#onDocumentClick);
@@ -148,7 +74,6 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	disconnectedCallback() {
 		super.disconnectedCallback();
 		this.#stopPositioning();
-
 		document.removeEventListener('click', this.#onDocumentClick);
 	}
 
@@ -157,22 +82,21 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				id="menubutton"
 				aria-haspopup="true"
 				aria-controls="menu"
-				aria-expanded="${this.open}"
-				@click=${() => {
-					this.open = true;
-				}}
+				aria-expanded="${this._open}"
+				@click=${this.#toggleMenu}
 			>
 				<div class="trigger-content">
 					<img src=${this.connection.account.icon ?? this.connection.wallet.icon} alt="" />
 					${this.#getNameTask.render({
+						initial: this.#getDisplayAddress,
 						pending: this.#getDisplayAddress,
 						error: this.#getDisplayAddress,
-						complete: (value) => value,
+						complete: (value) => value ?? this.#getDisplayAddress(),
 					})}
 				</div>
 			</internal-button>
-			<div id="menu" role="menu" aria-labelledby="menubutton">
-				<div class="menu-group" role="group">
+			<div id="menu" role="menu" aria-labelledby="menubutton" @keydown="${this.#onMenuKeydown}">
+				<div role="group">
 					<div class="current-account-container">
 						<img src=${this.connection.account.icon ?? this.connection.wallet.icon} alt="" />
 						${when(this.connection.account.label, (label) => html`<h2>${label}</h2>`)}
@@ -194,10 +118,35 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					</div>
 				</div>
 				<div role="separator" aria-orientation="horizontal"></div>
-				<div class="menu-group" role="group">
+				<div class="accounts-container" role="group">
 					<div class="accounts-label">Accounts</div>
 					<ul class="accounts-list">
-						${this.connection.wallet.accounts.map(
+						${[
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+							...this.connection.wallet.accounts,
+						].map(
 							(account) => html`
 								<account-menu-item
 									.account=${account}
@@ -211,16 +160,22 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					</ul>
 				</div>
 				<div role="separator" aria-orientation="horizontal"></div>
-				<div class="menu-group" role="group">
-					<div class="disconnect-button" role="menuitem" @click=${this.#onDisconnectClick}>
-						${disconnectIcon} Disconnect Wallet
-					</div>
+				<div role="group">
 					<div
-						class="manage-connection-button"
+						class="action-menu-item"
 						role="menuitem"
+						tabindex="-1"
 						@click=${this.#onManageConnectionClick}
 					>
-						${disconnectIcon} Manage Connection
+						${connectIcon} Manage Connection
+					</div>
+					<div
+						class="action-menu-item"
+						role="menuitem"
+						tabindex="-1"
+						@click=${this.#onDisconnectClick}
+					>
+						${disconnectIcon} Disconnect Wallet
 					</div>
 				</div>
 			</div>`;
@@ -255,9 +210,74 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 		const path = event.composedPath();
 		if (!path.includes(this)) {
-			this._open = false;
+			this.#closeMenu();
 		}
 	};
+
+	#onMenuKeydown(event: KeyboardEvent) {
+		if (!this._open) return;
+
+		console.log(event.key);
+
+		switch (event.key) {
+			case 'Escape':
+				this.#closeMenu();
+				this._trigger.focus();
+				break;
+			case 'ArrowDown':
+				event.preventDefault();
+				this._focusedIndex = Math.min(this._focusedIndex + 1, this._menuItems.length - 1);
+				this._menuItems.item(this._focusedIndex).focus();
+				break;
+			case 'ArrowUp':
+				event.preventDefault();
+				this._focusedIndex = Math.max(this._focusedIndex - 1, 0);
+				this._menuItems.item(this._focusedIndex).focus();
+				break;
+			case 'Home':
+				event.preventDefault();
+				this._focusedIndex = 0;
+				this._menuItems.item(0).focus();
+				break;
+			case 'End':
+				event.preventDefault();
+				this._focusedIndex = this._menuItems.length - 1;
+				this._menuItems.item(this._focusedIndex).focus();
+				break;
+			case 'Enter':
+			case ' ':
+				event.preventDefault();
+				//this.activateCurrentItem();
+				break;
+			case 'Tab':
+				this.#closeMenu();
+				break;
+		}
+	}
+
+	#toggleMenu() {
+		if (this._open) {
+			this.#closeMenu();
+		} else {
+			this.#openMenu();
+		}
+	}
+
+	async #openMenu() {
+		this._open = true;
+		this._focusedIndex = -1;
+		this.#startPositioning();
+
+		await this.updateComplete;
+		this._focusedIndex = 0;
+		this._menuItems.item(0).focus();
+	}
+
+	#closeMenu() {
+		this._open = false;
+		this._focusedIndex = -1;
+		this.#stopPositioning();
+	}
 
 	#startPositioning() {
 		this.#unsubscribeFromAutoUpdate = autoUpdate(this._trigger, this._menu, async () => {
