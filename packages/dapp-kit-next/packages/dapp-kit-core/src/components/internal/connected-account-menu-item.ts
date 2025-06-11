@@ -22,16 +22,29 @@ export class AccountMenuItem extends LitElement {
 	@property({ type: String, reflect: true })
 	role = 'menuitemradio' as const;
 
+	@property({ type: Number, reflect: true })
+	tabIndex = -1;
+
 	@property({ type: Object })
 	account!: UiWalletAccount;
 
 	@property({ type: Boolean })
 	selected = false;
 
+	connectedCallback() {
+		super.connectedCallback();
+		this.addEventListener('click', this.#accountClicked);
+	}
+
+	disconnectedCallback() {
+		super.disconnectedCallback();
+		this.removeEventListener('click', this.#accountClicked);
+	}
+
 	override render() {
 		return html`<li
 			role=${this.role}
-			tabindex=${-1}
+			tabindex=${this.tabIndex}
 			aria-checked="${this.selected}"
 			@click=${this.#accountClicked}
 		>

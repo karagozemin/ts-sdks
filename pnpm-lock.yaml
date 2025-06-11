@@ -471,6 +471,9 @@ importers:
       '@lit/task':
         specifier: ^1.0.2
         version: 1.0.2
+      '@mysten/slush-wallet':
+        specifier: workspace:*
+        version: link:../../../slush-wallet
       '@mysten/sui':
         specifier: workspace:*
         version: link:../../../typescript

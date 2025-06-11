@@ -19,6 +19,8 @@ import { connectIcon } from './icons/connect-icon.js';
 import { AccountMenuItem } from './connected-account-menu-item.js';
 import { chevronDownIcon } from './icons/chevron-down-icon.js';
 import { circleCheckIcon } from './icons/circle-check-icon.js';
+import { when } from 'lit/directives/when.js';
+import { SLUSH_WALLET_NAME } from '@mysten/slush-wallet';
 
 type ConnectedState = Extract<
 	StoreValue<DAppKit['stores']['$connection']>,
@@ -126,7 +128,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				<div class="accounts-container" role="group">
 					<div class="accounts-label">Accounts</div>
 					<ul class="accounts-list">
-						${this.connection.wallet.accounts.map(
+						${[...this.connection.wallet.accounts, ...this.connection.wallet.accounts].map(
 							(account) => html`
 								<account-menu-item
 									.account=${account}
@@ -139,15 +141,22 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					</ul>
 				</div>
 				<div role="separator" aria-orientation="horizontal"></div>
-				<div role="group">
-					<div
-						class="action-menu-item"
-						role="menuitem"
-						tabindex="-1"
-						@click=${this.#onManageConnectionClick}
-					>
-						${connectIcon} Manage Connection
-					</div>
+				<div class="actions-container" role="group">
+					${when(
+						// NOTE: No compatible wallets implement `connect` that
+						// conforms with the standard in a way to allow selecting
+						// other accounts. For now, we'll just hardcode this.
+						this.connection.wallet.name === SLUSH_WALLET_NAME,
+						() =>
+							html`<div
+								class="action-menu-item"
+								role="menuitem"
+								tabindex="-1"
+								@click=${this.#onManageConnectionClick}
+							>
+								${connectIcon} Manage Connection
+							</div>`,
+					)}
 					<div
 						class="action-menu-item"
 						role="menuitem"
@@ -229,6 +238,9 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				this.#focusMenuItem(this._menuItems.length - 1);
 				break;
 			case 'Enter':
+				event.preventDefault();
+				this._menuItems.item(this._focusedIndex).click();
+				break;
 			case ' ':
 				event.preventDefault();
 				//this.activateCurrentItem();

@@ -114,8 +114,17 @@ export const styles = [
 		}
 
 		.accounts-list {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
 			max-height: 240px;
 			overflow-y: auto;
+		}
+
+		.actions-container {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
 		}
 
 		.action-menu-item {
