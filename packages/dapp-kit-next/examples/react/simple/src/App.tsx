@@ -9,6 +9,7 @@ function App() {
 
 	return (
 		<div>
+			<mysten-dapp-kit-connect-button></mysten-dapp-kit-connect-button>
 			<p>TODO: Flesh this out more / make it more use case specific ^.^</p>
 			{wallets.length > 0 ? (
 				<ul>

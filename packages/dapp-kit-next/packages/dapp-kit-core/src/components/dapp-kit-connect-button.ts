@@ -14,7 +14,7 @@ import { Button } from './internal/button.js';
 import { sharedStyles } from './styles/index.js';
 import type { RegisteredDAppKit } from '../types.js';
 import { ConnectedAccountMenu } from './internal/connected-account-menu.js';
-import type { AccountSelectedEvent } from './internal/connected-account-menu.js';
+import type { AccountSelectedEvent } from './internal/connected-account-menu-item.js';
 
 @customElement('mysten-dapp-kit-connect-button')
 export class DAppKitConnectButton extends ScopedRegistryHost(LitElement) {

@@ -110,7 +110,6 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 									.account=${account}
 									.selected=${account.address === this.connection.account.address}
 									tabIndex="-1"
-									@account-selected=${this.#closeMenu}
 								></account-menu-item>
 							`,
 						)}
@@ -214,7 +213,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				this.#focusMenuItem(this._menuItems.length - 1);
 				break;
 			case 'Enter':
-				if (this._focusedIndex > 0 && this._focusedIndex < this._menuItems.length) {
+				if (this._focusedIndex !== -1) {
 					event.preventDefault();
 					this._menuItems.item(this._focusedIndex).click();
 					this.#closeMenu();

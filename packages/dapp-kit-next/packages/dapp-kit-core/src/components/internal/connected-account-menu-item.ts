@@ -42,12 +42,7 @@ export class AccountMenuItem extends LitElement {
 	}
 
 	override render() {
-		return html`<li
-			role=${this.role}
-			tabindex=${this.tabIndex}
-			aria-checked="${this.selected}"
-			@click=${this.#accountClicked}
-		>
+		return html`<li role=${this.role} tabindex=${this.tabIndex} aria-checked="${this.selected}">
 			${formatAddress(this.account.address)} ${when(this.selected, () => checkIcon)}
 		</li>`;
 	}
