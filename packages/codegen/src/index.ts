@@ -29,10 +29,10 @@ export async function generatePackage({
 		builder.renderBCSTypes();
 		builder.renderFunctions();
 
-		await mkdir(destination, { recursive: true });
+		await mkdir(join(destination, name), { recursive: true });
 		await writeFile(
-			join(destination, `${builder.module}.ts`),
-			builder.toString('./', `./${builder.module}.ts`),
+			join(destination, `${name}/${builder.module}.ts`),
+			builder.toString('./', `./${name}/${builder.module}.ts`),
 		);
 	}
 
