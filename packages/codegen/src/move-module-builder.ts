@@ -71,13 +71,11 @@ export class MoveModuleBuilder extends FileBuilder {
 				renderTypeSignature(field.type_, {
 					format: 'bcs',
 					summary: this.summary,
-					module: this.module,
-					address: this.address,
 					onDependency: (address, mod) =>
 						this.addStarImport(
-							normalizeSuiAddress(address) === normalizeSuiAddress('0x0')
+							address === this.summary.id.address
 								? `./${mod}.js`
-								: `./deps/${normalizeSuiAddress(address)}/${mod}.js`,
+								: `~root/deps/${address}/${mod}.js`,
 							mod,
 						),
 				}),
@@ -117,9 +115,13 @@ export class MoveModuleBuilder extends FileBuilder {
 					signature: renderTypeSignature(field.type_, {
 						format: 'bcs',
 						summary: this.summary,
-						module: this.module,
-						address: this.address,
-						onDependency: (address, mod) => this.addStarImport(`./deps/${address}/${mod}.js`, mod),
+						onDependency: (address, mod) =>
+							this.addStarImport(
+								address === this.summary.id.address
+									? `./${mod}.js`
+									: `~root/deps/${address}/${mod}.js`,
+								mod,
+							),
 					}),
 				})),
 			}));
@@ -170,8 +172,8 @@ export class MoveModuleBuilder extends FileBuilder {
 			const parameters = func.parameters.filter((param) => !this.isContextReference(param.type_));
 			const fnName = getSafeName(name);
 
-			this.addImport('./utils/index.js', 'normalizeMoveArguments');
-			this.addImport('./utils/index.js', 'type RawTransactionArgument');
+			this.addImport('~root/utils/index.js', 'normalizeMoveArguments');
+			this.addImport('~root/utils/index.js', 'type RawTransactionArgument');
 
 			names.push(fnName);
 
@@ -181,8 +183,6 @@ export class MoveModuleBuilder extends FileBuilder {
 					renderTypeSignature(param.type_, {
 						format: 'typescriptArg',
 						summary: this.summary,
-						module: this.module,
-						address: this.address,
 						onTypeParameter: (typeParameter) => usedTypeParameters.add(typeParameter),
 					}),
 				)
@@ -219,8 +219,6 @@ export class MoveModuleBuilder extends FileBuilder {
 								renderTypeSignature(param.type_, {
 									format: 'typeTag',
 									summary: this.summary,
-									module: this.module,
-									address: this.address,
 								}),
 							)
 							.map((tag) => (tag.includes('{') ? `\`${tag}\`` : `'${tag}'`))

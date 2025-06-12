@@ -5,7 +5,6 @@ import { bcs } from '@mysten/sui/bcs';
 import * as object from './object.js';
 import * as bag from './bag.js';
 import * as table from './table.js';
-import * as vec_set from './vec_set.js';
 export function DenyList() {
 	return bcs.struct('DenyList', {
 		id: object.UID(),
@@ -42,7 +41,7 @@ export function PerTypeConfigCreated() {
 export function PerTypeList() {
 	return bcs.struct('PerTypeList', {
 		id: object.UID(),
-		denied_count: table.Table(bcs.Address, bcs.u64()),
-		denied_addresses: table.Table(bcs.vector(bcs.u8()), vec_set.VecSet(bcs.Address)),
+		denied_count: table.Table(),
+		denied_addresses: table.Table(),
 	});
 }

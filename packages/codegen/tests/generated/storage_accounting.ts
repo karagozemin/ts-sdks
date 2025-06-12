@@ -5,12 +5,11 @@ import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from './utils/index.js';
 import * as balance from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
-import * as wal from './wal.js';
 export function FutureAccounting() {
 	return bcs.struct('FutureAccounting', {
 		epoch: bcs.u32(),
 		used_capacity: bcs.u64(),
-		rewards_to_distribute: balance.Balance(wal.WAL()),
+		rewards_to_distribute: balance.Balance(),
 	});
 }
 export function FutureAccountingRingBuffer() {
@@ -31,7 +30,7 @@ export function init(packageAddress: string) {
 		const argumentsTypes = [
 			'u32',
 			'u64',
-			`0x0000000000000000000000000000000000000000000000000000000000000002::balance::Balance<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::balance::Balance<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({

@@ -3,7 +3,7 @@
 
 import { bcs } from '@mysten/sui/bcs';
 import * as object from '../0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
-import * as storage_resource from '../../storage_resource.js';
+import * as storage_resource from './storage_resource.js';
 export function Blob() {
 	return bcs.struct('Blob', {
 		id: object.UID(),

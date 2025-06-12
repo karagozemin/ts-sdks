@@ -3,12 +3,11 @@
 
 import { bcs } from '@mysten/sui/bcs';
 import * as balance from '../0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
-import * as wal from '../../wal.js';
 export function FutureAccounting() {
 	return bcs.struct('FutureAccounting', {
 		epoch: bcs.u32(),
 		used_capacity: bcs.u64(),
-		rewards_to_distribute: balance.Balance(wal.WAL()),
+		rewards_to_distribute: balance.Balance(),
 	});
 }
 export function FutureAccountingRingBuffer() {

@@ -6,13 +6,11 @@ import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from './utils/index.js';
 import * as object from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
 import * as balance from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
-import * as wal from './wal.js';
-import * as sui from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/sui.js';
 export function Exchange() {
 	return bcs.struct('Exchange', {
 		id: object.UID(),
-		wal: balance.Balance(wal.WAL()),
-		sui: balance.Balance(sui.SUI()),
+		wal: balance.Balance(),
+		sui: balance.Balance(),
 		rate: ExchangeRate(),
 		admin: bcs.Address,
 	});

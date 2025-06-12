@@ -8,7 +8,6 @@ import * as bls_aggregate from './bls_aggregate.js';
 import * as storage_accounting from './storage_accounting.js';
 import * as event_blob from './event_blob.js';
 import * as extended_field from './extended_field.js';
-import * as vec_map from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/vec_map.js';
 export function SystemStateInnerV1() {
 	return bcs.struct('SystemStateInnerV1', {
 		committee: bls_aggregate.BlsCommittee(),
@@ -18,7 +17,7 @@ export function SystemStateInnerV1() {
 		write_price_per_unit_size: bcs.u64(),
 		future_accounting: storage_accounting.FutureAccountingRingBuffer(),
 		event_blob_certification_state: event_blob.EventBlobCertificationState(),
-		deny_list_sizes: extended_field.ExtendedField(vec_map.VecMap(bcs.Address, bcs.u64())),
+		deny_list_sizes: extended_field.ExtendedField(),
 	});
 }
 export function init(packageAddress: string) {
@@ -64,7 +63,7 @@ export function init(packageAddress: string) {
 			`${packageAddress}::system_state_inner::SystemStateInnerV1`,
 			'u64',
 			'u32',
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -138,7 +137,7 @@ export function init(packageAddress: string) {
 			'u64',
 			'u8',
 			'bool',
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -219,7 +218,7 @@ export function init(packageAddress: string) {
 			`${packageAddress}::system_state_inner::SystemStateInnerV1`,
 			`${packageAddress}::blob::Blob`,
 			'u32',
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -243,7 +242,7 @@ export function init(packageAddress: string) {
 			'u64',
 			'u32',
 			'u32',
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -292,7 +291,7 @@ export function init(packageAddress: string) {
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::system_state_inner::SystemStateInnerV1`,
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 			'u32',
 		];
 		return (tx: Transaction) =>

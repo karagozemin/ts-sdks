@@ -4,11 +4,10 @@
 import { bcs } from '@mysten/sui/bcs';
 import * as object from './object.js';
 import * as balance from './balance.js';
-import * as sui from './sui.js';
 export function Kiosk() {
 	return bcs.struct('Kiosk', {
 		id: object.UID(),
-		profits: balance.Balance(sui.SUI()),
+		profits: balance.Balance(),
 		owner: bcs.Address,
 		item_count: bcs.u32(),
 		allow_extensions: bcs.bool(),

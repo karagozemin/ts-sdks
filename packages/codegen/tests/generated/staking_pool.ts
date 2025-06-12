@@ -8,9 +8,7 @@ import * as object from './deps/0x0000000000000000000000000000000000000000000000
 import * as storage_node from './storage_node.js';
 import * as pending_values from './pending_values.js';
 import * as table from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/table.js';
-import * as pool_exchange_rate from './pool_exchange_rate.js';
 import * as balance from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
-import * as wal from './wal.js';
 import * as auth from './auth.js';
 import * as bag from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/bag.js';
 export function VotingParams() {
@@ -34,10 +32,10 @@ export function StakingPool() {
 		pre_active_withdrawals: pending_values.PendingValues(),
 		pending_commission_rate: pending_values.PendingValues(),
 		commission_rate: bcs.u16(),
-		exchange_rates: table.Table(bcs.u32(), pool_exchange_rate.PoolExchangeRate()),
+		exchange_rates: table.Table(),
 		pending_stake: pending_values.PendingValues(),
-		rewards_pool: balance.Balance(wal.WAL()),
-		commission: balance.Balance(wal.WAL()),
+		rewards_pool: balance.Balance(),
+		commission: balance.Balance(),
 		commission_receiver: auth.Authorized(),
 		governance_authorized: auth.Authorized(),
 		extra_fields: bag.Bag(),
@@ -111,7 +109,7 @@ export function init(packageAddress: string) {
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::staking_pool::StakingPool`,
-			`0x0000000000000000000000000000000000000000000000000000000000000002::balance::Balance<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::balance::Balance<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 			`${packageAddress}::walrus_context::WalrusContext`,
 		];
 		return (tx: Transaction) =>
@@ -179,7 +177,7 @@ export function init(packageAddress: string) {
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::staking_pool::StakingPool`,
-			`0x0000000000000000000000000000000000000000000000000000000000000002::balance::Balance<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::balance::Balance<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 			`${packageAddress}::walrus_context::WalrusContext`,
 		];
 		return (tx: Transaction) =>

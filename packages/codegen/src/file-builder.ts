@@ -38,15 +38,15 @@ export class FileBuilder {
 		return `${header}${printStatements([...importStatements, ...starImportStatements, ...this.statements])}`;
 
 		function modulePath(mod: string) {
-			const sourcePath = resolve(modDir, filePath);
-			const destPath = resolve(modDir, mod);
-			const sourceDirectory = sourcePath.split('/').slice(0, -1).join('/');
-			const relativePath = relative(sourceDirectory, destPath);
-			if (mod.startsWith('./')) {
-				return relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
+			if (!mod.startsWith('~root/')) {
+				return mod;
 			}
 
-			return mod;
+			const sourcePath = resolve(modDir, filePath);
+			const destPath = resolve(modDir, mod.replace('~root/', './'));
+			const sourceDirectory = sourcePath.split('/').slice(0, -1).join('/');
+			const relativePath = relative(sourceDirectory, destPath);
+			return relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
 		}
 	}
 }

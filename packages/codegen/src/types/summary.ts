@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export interface ModuleSummary {
+	id: {
+		address: string;
+		module: string;
+	};
 	doc?: string | null;
 	immediate_dependencies: {
 		address: string;
@@ -124,7 +128,12 @@ export type Type =
 export interface Datatype {
 	module: ModuleId;
 	name: string;
-	type_arguments: Type[];
+	type_arguments: TypeArgument[];
+}
+
+export interface TypeArgument {
+	is_phantom: boolean;
+	argument: Type;
 }
 
 export interface ModuleId {

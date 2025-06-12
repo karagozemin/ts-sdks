@@ -12,8 +12,6 @@ type TypeSignatureFormat = 'typescriptArg' | 'bcs' | 'typeTag';
 interface RenderTypeSignatureOptions {
 	format: TypeSignatureFormat;
 	summary: ModuleSummary;
-	module: string;
-	address: string;
 	onDependency?: (address: string, name: string) => void;
 	onTypeParameter?: (typeParameter: number) => void;
 }
@@ -137,7 +135,7 @@ export function isPureSignature(type: Type): boolean {
 }
 
 function isPureDataType(type: Datatype) {
-	if (normalizeSuiAddress(type.module.address) === MOVE_STDLIB_ADDRESS) {
+	if (type.module.address === MOVE_STDLIB_ADDRESS) {
 		if ((type.module.name === 'ascii' || type.module.name === 'string') && type.name === 'String') {
 			return true;
 		}
@@ -147,7 +145,7 @@ function isPureDataType(type: Datatype) {
 		}
 	}
 
-	if (normalizeSuiAddress(type.module.address) === SUI_FRAMEWORK_ADDRESS) {
+	if (type.module.address === SUI_FRAMEWORK_ADDRESS) {
 		if (type.module.name === 'object' && type.name === 'ID') {
 			return true;
 		}
@@ -158,16 +156,18 @@ function isPureDataType(type: Datatype) {
 
 function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): string {
 	if (options.format === 'typeTag') {
-		if (type.type_arguments.length === 0) {
+		const typeArgs = type.type_arguments.map((type) => renderTypeSignature(type.argument, options));
+
+		if (typeArgs.length === 0) {
 			// eslint-disable-next-line no-template-curly-in-string
-			return `${normalizeSuiAddress(type.module.address) === normalizeSuiAddress('0x0') ? '${packageAddress}' : normalizeSuiAddress(type.module.address)}::${type.module.name}::${type.name}`;
+			return `${type.module.address === options.summary.id.address ? '${packageAddress}' : type.module.address}::${type.module.name}::${type.name}`;
 		}
 
 		// eslint-disable-next-line no-template-curly-in-string
-		return `${normalizeSuiAddress(type.module.address) === normalizeSuiAddress('0x0') ? '${packageAddress}' : normalizeSuiAddress(type.module.address)}::${type.module.name}::${type.name}<${type.type_arguments.map((type) => renderTypeSignature(type, options)).join(', ')}>`;
+		return `${type.module.address === options.summary.id.address ? '${packageAddress}' : type.module.address}::${type.module.name}::${type.name}<${typeArgs.join(', ')}>`;
 	}
 
-	if (normalizeSuiAddress(type.module.address) === MOVE_STDLIB_ADDRESS) {
+	if (type.module.address === MOVE_STDLIB_ADDRESS) {
 		if ((type.module.name === 'ascii' || type.module.name === 'string') && type.name === 'String') {
 			switch (options.format) {
 				case 'typescriptArg':
@@ -183,18 +183,18 @@ function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): st
 			switch (options.format) {
 				case 'typescriptArg':
 					if (isPureDataType(type)) {
-						return `${renderTypeSignature(type.type_arguments[0], options)} | null`;
+						return `${renderTypeSignature(type.type_arguments[0].argument, options)} | null`;
 					}
 					break;
 				case 'bcs':
-					return `bcs.option(${renderTypeSignature(type.type_arguments[0], options)})`;
+					return `bcs.option(${renderTypeSignature(type.type_arguments[0].argument, options)})`;
 				default:
 					throw new Error(`Unknown format: ${options.format}`);
 			}
 		}
 	}
 
-	if (normalizeSuiAddress(type.module.address) === SUI_FRAMEWORK_ADDRESS) {
+	if (type.module.address === SUI_FRAMEWORK_ADDRESS) {
 		if (type.module.name === 'object' && type.name === 'ID') {
 			switch (options.format) {
 				case 'typescriptArg':
@@ -208,8 +208,8 @@ function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): st
 	}
 
 	const isCurrentModule =
-		normalizeSuiAddress(type.module.address) === normalizeSuiAddress(options.address) &&
-		type.module.name === options.module;
+		type.module.address === options.summary.id.address &&
+		type.module.name === options.summary.id.module;
 
 	const typeNameRef = isCurrentModule
 		? type.name
@@ -224,7 +224,10 @@ function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): st
 			return 'string';
 		case 'bcs':
 			return `${typeNameRef}(
-                ${type.type_arguments.map((type) => renderTypeSignature(type, options)).join(', ')})`;
+                ${type.type_arguments
+									.filter((arg) => !arg.is_phantom)
+									.map((type) => renderTypeSignature(type.argument, options))
+									.join(', ')})`;
 		default:
 			throw new Error(`Unknown format: ${options.format}`);
 	}

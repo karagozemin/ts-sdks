@@ -8,7 +8,7 @@ import * as url from './url.js';
 export function Coin() {
 	return bcs.struct('Coin', {
 		id: object.UID(),
-		balance: balance.Balance(typeParameters[0]),
+		balance: balance.Balance(),
 	});
 }
 export function CoinMetadata() {
@@ -31,7 +31,7 @@ export function RegulatedCoinMetadata() {
 export function TreasuryCap() {
 	return bcs.struct('TreasuryCap', {
 		id: object.UID(),
-		total_supply: balance.Supply(typeParameters[0]),
+		total_supply: balance.Supply(),
 	});
 }
 export function DenyCapV2() {

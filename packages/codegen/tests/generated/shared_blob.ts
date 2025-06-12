@@ -7,12 +7,11 @@ import { normalizeMoveArguments, type RawTransactionArgument } from './utils/ind
 import * as object from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
 import * as blob from './blob.js';
 import * as balance from './deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
-import * as wal from './wal.js';
 export function SharedBlob() {
 	return bcs.struct('SharedBlob', {
 		id: object.UID(),
 		blob: blob.Blob(),
-		funds: balance.Balance(wal.WAL()),
+		funds: balance.Balance(),
 	});
 }
 export function init(packageAddress: string) {
@@ -31,7 +30,7 @@ export function init(packageAddress: string) {
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::blob::Blob`,
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -46,7 +45,7 @@ export function init(packageAddress: string) {
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::shared_blob::SharedBlob`,
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({

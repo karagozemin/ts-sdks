@@ -93,7 +93,7 @@ export function init(packageAddress: string) {
 			`${packageAddress}::system::System`,
 			'u64',
 			'u32',
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -123,7 +123,7 @@ export function init(packageAddress: string) {
 			'u64',
 			'u8',
 			'bool',
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -201,7 +201,7 @@ export function init(packageAddress: string) {
 			`${packageAddress}::system::System`,
 			`${packageAddress}::blob::Blob`,
 			'u32',
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -220,7 +220,7 @@ export function init(packageAddress: string) {
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::system::System`,
-			`0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<${packageAddress}::wal::WAL>`,
+			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 			'u32',
 		];
 		return (tx: Transaction) =>
