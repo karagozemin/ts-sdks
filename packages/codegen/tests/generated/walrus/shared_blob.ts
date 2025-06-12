@@ -4,9 +4,9 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
+import * as object from '../sui/object.js';
 import * as blob from './blob.js';
-import * as balance from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
+import * as balance from '../sui/balance.js';
 export function SharedBlob() {
 	return bcs.struct('SharedBlob', {
 		id: object.UID(),
@@ -25,13 +25,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function new_funded(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::blob::Blob`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
-		];
+	function new_funded(options: { arguments: [RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::blob::Blob`];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -40,13 +35,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function fund(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::shared_blob::SharedBlob`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
-		];
+	function fund(options: { arguments: [RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::shared_blob::SharedBlob`];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,

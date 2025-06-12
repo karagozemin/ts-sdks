@@ -27,8 +27,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function authenticate_with_object<T0 extends BcsType<any>>(options: {
-		arguments: [RawTransactionArgument<T0>];
+	function authenticate_with_object<T extends BcsType<any>>(options: {
+		arguments: [RawTransactionArgument<T>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [`${options.typeArguments[0]}`];
@@ -51,10 +51,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function authorized_object(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-		];
+	function authorized_object(options: { arguments: [] }) {
+		const argumentsTypes = [];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -63,26 +61,5 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function matches(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::auth::Authenticated`,
-			`${packageAddress}::auth::Authorized`,
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'auth',
-				function: 'matches',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	return {
-		authenticate_sender,
-		authenticate_with_object,
-		authorized_address,
-		authorized_object,
-		matches,
-	};
+	return { authenticate_sender, authenticate_with_object, authorized_address, authorized_object };
 }

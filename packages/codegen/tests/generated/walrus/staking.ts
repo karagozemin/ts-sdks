@@ -4,7 +4,7 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
+import * as object from '../sui/object.js';
 export function Staking() {
 	return bcs.struct('Staking', {
 		id: object.UID(),
@@ -14,30 +14,6 @@ export function Staking() {
 	});
 }
 export function init(packageAddress: string) {
-	function create(options: {
-		arguments: [
-			RawTransactionArgument<number | bigint>,
-			RawTransactionArgument<number | bigint>,
-			RawTransactionArgument<number>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-		];
-	}) {
-		const argumentsTypes = [
-			'u64',
-			'u64',
-			'u16',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::clock::Clock',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'create',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function register_candidate(options: {
 		arguments: [
 			RawTransactionArgument<string>,
@@ -95,15 +71,10 @@ export function init(packageAddress: string) {
 			});
 	}
 	function collect_commission(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-		];
+		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
 			`${packageAddress}::auth::Authenticated`,
 		];
 		return (tx: Transaction) =>
@@ -119,12 +90,10 @@ export function init(packageAddress: string) {
 			RawTransactionArgument<string>,
 			RawTransactionArgument<string>,
 			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
 			`${packageAddress}::auth::Authenticated`,
 			`${packageAddress}::auth::Authorized`,
 		];
@@ -141,12 +110,10 @@ export function init(packageAddress: string) {
 			RawTransactionArgument<string>,
 			RawTransactionArgument<string>,
 			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
 			`${packageAddress}::auth::Authenticated`,
 			`${packageAddress}::auth::Authorized`,
 		];
@@ -155,41 +122,6 @@ export function init(packageAddress: string) {
 				package: packageAddress,
 				module: 'staking',
 				function: 'set_governance_authorized',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function check_governance_authorization(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-		];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-			`${packageAddress}::auth::Authenticated`,
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'check_governance_authorization',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function get_current_node_weight(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'get_current_node_weight',
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
@@ -263,13 +195,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function node_metadata(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-		];
+	function node_metadata(options: { arguments: [RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::staking::Staking`];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -380,13 +307,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function voting_end(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::clock::Clock',
-		];
+	function voting_end(options: { arguments: [RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::staking::Staking`];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -396,16 +318,11 @@ export function init(packageAddress: string) {
 			});
 	}
 	function initiate_epoch_change(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-		];
+		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::staking::Staking`,
 			`${packageAddress}::system::System`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::clock::Clock',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -420,14 +337,12 @@ export function init(packageAddress: string) {
 			RawTransactionArgument<string>,
 			RawTransactionArgument<string>,
 			RawTransactionArgument<number>,
-			RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::staking::Staking`,
 			`${packageAddress}::storage_node::StorageNodeCap`,
 			'u32',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::clock::Clock',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -437,18 +352,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function stake_with_pool(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-		];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-		];
+	function stake_with_pool(options: { arguments: [RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::staking::Staking`];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -502,26 +407,6 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function package_id(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::staking::Staking`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'package_id',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function version(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::staking::Staking`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'version',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function epoch(options: { arguments: [RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::staking::Staking`];
 		return (tx: Transaction) =>
@@ -532,34 +417,15 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function is_quorum(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number>];
-	}) {
-		const argumentsTypes = [`${packageAddress}::staking::Staking`, 'u16'];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'is_quorum',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function calculate_rewards(options: {
 		arguments: [
-			RawTransactionArgument<string>,
 			RawTransactionArgument<string>,
 			RawTransactionArgument<number | bigint>,
 			RawTransactionArgument<number>,
 			RawTransactionArgument<number>,
 		];
 	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-			'u64',
-			'u32',
-			'u32',
-		];
+		const argumentsTypes = [`${packageAddress}::staking::Staking`, 'u64', 'u32', 'u32'];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -568,60 +434,12 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function set_new_package_id(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staking::Staking`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'set_new_package_id',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function migrate(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::staking::Staking`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'migrate',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function inner_mut(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::staking::Staking`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'inner_mut',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function inner(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::staking::Staking`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staking',
-				function: 'inner',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	return {
-		create,
 		register_candidate,
 		set_next_commission,
 		collect_commission,
 		set_commission_receiver,
 		set_governance_authorized,
-		check_governance_authorization,
-		get_current_node_weight,
 		compute_next_committee,
 		set_storage_price_vote,
 		set_write_price_vote,
@@ -639,14 +457,7 @@ export function init(packageAddress: string) {
 		request_withdraw_stake,
 		withdraw_stake,
 		try_join_active_set,
-		package_id,
-		version,
 		epoch,
-		is_quorum,
 		calculate_rewards,
-		set_new_package_id,
-		migrate,
-		inner_mut,
-		inner,
 	};
 }

@@ -4,7 +4,7 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
+import * as object from '../sui/object.js';
 import * as storage_resource from './storage_resource.js';
 export function Blob() {
 	return bcs.struct('Blob', {
@@ -108,16 +108,6 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function storage_mut(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::blob::Blob`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'blob',
-				function: 'storage_mut',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function end_epoch(options: { arguments: [RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::blob::Blob`];
 		return (tx: Transaction) =>
@@ -125,18 +115,6 @@ export function init(packageAddress: string) {
 				package: packageAddress,
 				module: 'blob',
 				function: 'end_epoch',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function assert_certified_not_expired(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number>];
-	}) {
-		const argumentsTypes = [`${packageAddress}::blob::Blob`, 'u32'];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'blob',
-				function: 'assert_certified_not_expired',
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
@@ -156,68 +134,6 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function _new(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number | bigint>,
-			RawTransactionArgument<number | bigint>,
-			RawTransactionArgument<number | bigint>,
-			RawTransactionArgument<number>,
-			RawTransactionArgument<boolean>,
-			RawTransactionArgument<number>,
-			RawTransactionArgument<number>,
-		];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::storage_resource::Storage`,
-			'u256',
-			'u256',
-			'u64',
-			'u8',
-			'bool',
-			'u32',
-			'u16',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'blob',
-				function: 'new',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function certify_with_certified_msg(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number>,
-			RawTransactionArgument<string>,
-		];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::blob::Blob`,
-			'u32',
-			`${packageAddress}::messages::CertifiedBlobMessage`,
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'blob',
-				function: 'certify_with_certified_msg',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function _delete(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number>];
-	}) {
-		const argumentsTypes = [`${packageAddress}::blob::Blob`, 'u32'];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'blob',
-				function: 'delete',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function burn(options: { arguments: [RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::blob::Blob`];
 		return (tx: Transaction) =>
@@ -225,38 +141,6 @@ export function init(packageAddress: string) {
 				package: packageAddress,
 				module: 'blob',
 				function: 'burn',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function extend_with_resource(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number>,
-		];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::blob::Blob`,
-			`${packageAddress}::storage_resource::Storage`,
-			'u32',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'blob',
-				function: 'extend_with_resource',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function emit_certified(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<boolean>];
-	}) {
-		const argumentsTypes = [`${packageAddress}::blob::Blob`, 'bool'];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'blob',
-				function: 'emit_certified',
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
@@ -297,26 +181,6 @@ export function init(packageAddress: string) {
 				package: packageAddress,
 				module: 'blob',
 				function: 'take_metadata',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function metadata(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::blob::Blob`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'blob',
-				function: 'metadata',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function metadata_or_create(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::blob::Blob`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'blob',
-				function: 'metadata_or_create',
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
@@ -379,21 +243,12 @@ export function init(packageAddress: string) {
 		certified_epoch,
 		storage,
 		encoded_size,
-		storage_mut,
 		end_epoch,
-		assert_certified_not_expired,
 		derive_blob_id,
-		_new,
-		certify_with_certified_msg,
-		_delete,
 		burn,
-		extend_with_resource,
-		emit_certified,
 		add_metadata,
 		add_or_replace_metadata,
 		take_metadata,
-		metadata,
-		metadata_or_create,
 		insert_or_update_metadata_pair,
 		remove_metadata_pair,
 		remove_metadata_pair_if_exists,

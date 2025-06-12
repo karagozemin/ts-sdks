@@ -18,7 +18,7 @@ export function summaryFromDeserializedModule(mod: DeserializedModule) {
 	const summary: ModuleSummary = {
 		id: {
 			address: normalizeSuiAddress(mod.address_identifiers[moduleHandle.address]),
-			module: mod.identifiers[moduleHandle.name],
+			name: mod.identifiers[moduleHandle.name],
 		},
 		immediate_dependencies: mod.module_handles.map((m) => ({
 			address: normalizeSuiAddress(mod.address_identifiers[m.address]),
@@ -206,7 +206,7 @@ function typeFromTypeSignature(mod: DeserializedModule, type: TypeSignature): Ty
 				name: mod.identifiers[handle.name],
 				type_arguments: type.DatatypeInstantiation[1].map((t, i) => {
 					return {
-						is_phantom: handle.type_parameters[i].is_phantom,
+						phantom: handle.type_parameters[i].is_phantom,
 						argument: typeFromTypeSignature(mod, t),
 					};
 				}),

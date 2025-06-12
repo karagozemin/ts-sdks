@@ -4,8 +4,8 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
-import * as _package from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/package.js';
+import * as object from '../sui/object.js';
+import * as _package from '../sui/package.js';
 export function INIT() {
 	return bcs.struct('INIT', {
 		dummy_field: bcs.bool(),
@@ -18,36 +18,16 @@ export function InitCap() {
 	});
 }
 export function init(packageAddress: string) {
-	function init(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::init::INIT`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'init',
-				function: 'init',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function initialize_walrus(options: {
 		arguments: [
 			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
 			RawTransactionArgument<number | bigint>,
 			RawTransactionArgument<number | bigint>,
 			RawTransactionArgument<number>,
 			RawTransactionArgument<number>,
-			RawTransactionArgument<string>,
 		];
 	}) {
-		const argumentsTypes = [
-			`${packageAddress}::init::InitCap`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::package::UpgradeCap',
-			'u64',
-			'u64',
-			'u16',
-			'u32',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::clock::Clock',
-		];
+		const argumentsTypes = [`${packageAddress}::init::InitCap`, 'u64', 'u64', 'u16', 'u32'];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -71,5 +51,5 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	return { init, initialize_walrus, migrate };
+	return { initialize_walrus, migrate };
 }

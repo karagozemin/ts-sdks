@@ -4,7 +4,7 @@
 export interface ModuleSummary {
 	id: {
 		address: string;
-		module: string;
+		name: string;
 	};
 	doc?: string | null;
 	immediate_dependencies: {
@@ -35,7 +35,7 @@ export interface FunctionSummary {
 	attributes?: Attribute[];
 	visibility: FunctionVisibility;
 	entry: boolean;
-	_macro?: boolean;
+	macro_?: boolean;
 	type_parameters: DatatypeParameter[];
 	parameters: Parameter[];
 	return_: Type[];
@@ -132,7 +132,7 @@ export interface Datatype {
 }
 
 export interface TypeArgument {
-	is_phantom: boolean;
+	phantom: boolean;
 	argument: Type;
 }
 

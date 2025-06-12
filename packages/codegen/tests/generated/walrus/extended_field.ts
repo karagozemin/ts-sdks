@@ -4,7 +4,7 @@
 import { bcs, type BcsType } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
+import * as object from '../sui/object.js';
 export function ExtendedField() {
 	return bcs.struct('ExtendedField', {
 		id: object.UID(),
@@ -16,8 +16,8 @@ export function Key() {
 	});
 }
 export function init(packageAddress: string) {
-	function _new<T0 extends BcsType<any>>(options: {
-		arguments: [RawTransactionArgument<T0>];
+	function _new<T extends BcsType<any>>(options: {
+		arguments: [RawTransactionArgument<T>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [`${options.typeArguments[0]}`];
@@ -62,8 +62,8 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
-	function swap<T0 extends BcsType<any>>(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<T0>];
+	function swap<T extends BcsType<any>>(options: {
+		arguments: [RawTransactionArgument<string>, RawTransactionArgument<T>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [

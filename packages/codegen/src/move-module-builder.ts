@@ -4,45 +4,54 @@
 import { FileBuilder } from './file-builder.js';
 import { readFile } from 'node:fs/promises';
 import { deserialize } from '@mysten/move-bytecode-template';
-import { normalizeSuiAddress, SUI_FRAMEWORK_ADDRESS } from '@mysten/sui/utils';
-import { getSafeName, renderTypeSignature } from './render-types.js';
+import { getSafeName, renderTypeSignature, SUI_FRAMEWORK_ADDRESS } from './render-types.js';
 import { mapToObject, parseTS } from './utils.js';
 import type { ModuleSummary, Type } from './types/summary.js';
 import { summaryFromDeserializedModule } from './summary.js';
-import { basename } from 'node:path';
 import type { DeserializedModule } from './types/deserialized.js';
+import { join } from 'node:path';
 
 export class MoveModuleBuilder extends FileBuilder {
 	summary: ModuleSummary;
-	module: string;
-	address: string;
+	#depsDir = './';
+	#addressMappings: Record<string, string>;
 
 	constructor({
 		summary,
-		module,
-		address,
+		addressMappings = {},
 	}: {
 		summary: ModuleSummary;
-		module: string;
-		address: string;
+		addressMappings?: Record<string, string>;
 	}) {
 		super();
 		this.summary = summary;
-		this.module = module;
-		this.address = address;
+		this.#addressMappings = addressMappings;
 	}
 
-	static async fromFile(file: string) {
+	static async fromBytecodeFile(file: string) {
 		const bytes = await readFile(file);
 		const deserialized: DeserializedModule = deserialize(bytes);
 
-		return new MoveModuleBuilder({
+		const builder = new MoveModuleBuilder({
 			summary: summaryFromDeserializedModule(deserialized),
-			module: basename(file, '.mv'),
-			address: normalizeSuiAddress(
-				deserialized.address_identifiers[deserialized.self_module_handle_idx],
-			),
 		});
+
+		builder.#depsDir = './deps';
+
+		return builder;
+	}
+
+	static async fromSummaryFile(file: string, addressMappings: Record<string, string>) {
+		const summary = JSON.parse(await readFile(file, 'utf-8'));
+
+		return new MoveModuleBuilder({
+			summary,
+			addressMappings,
+		});
+	}
+
+	#resolveAddress(address: string) {
+		return this.#addressMappings[address] ?? address;
 	}
 
 	renderBCSTypes() {
@@ -57,8 +66,14 @@ export class MoveModuleBuilder extends FileBuilder {
 		);
 	}
 
+	hasFunctions() {
+		return Object.values(this.summary.functions).some(
+			(func) => func.visibility === 'Public' && !func.macro_,
+		);
+	}
+
 	hasTypesOrFunctions() {
-		return this.hasBcsTypes() || Object.keys(this.summary.functions).length > 0;
+		return this.hasBcsTypes() || this.hasFunctions();
 	}
 
 	renderStructs() {
@@ -71,11 +86,13 @@ export class MoveModuleBuilder extends FileBuilder {
 				renderTypeSignature(field.type_, {
 					format: 'bcs',
 					summary: this.summary,
+					typeParameters: struct.type_parameters,
+					resolveAddress: (address) => this.#resolveAddress(address),
 					onDependency: (address, mod) =>
 						this.addStarImport(
 							address === this.summary.id.address
 								? `./${mod}.js`
-								: `~root/deps/${address}/${mod}.js`,
+								: join(`~root`, this.#depsDir, `${address}/${mod}.js`),
 							mod,
 						),
 				}),
@@ -92,8 +109,8 @@ export class MoveModuleBuilder extends FileBuilder {
 			} else {
 				this.addImport('@mysten/sui/bcs', 'type BcsType');
 
-				const typeParams = `...typeParameters: [${params.map((_, i) => `T${i}`).join(', ')}]`;
-				const typeGenerics = `${params.map((_, i) => `T${i} extends BcsType<any>`).join(', ')}`;
+				const typeParams = `...typeParameters: [${params.map((param, i) => param.name ?? `T${i}`).join(', ')}]`;
+				const typeGenerics = `${params.map((param, i) => `${param.name ?? `T${i}`} extends BcsType<any>`).join(', ')}`;
 
 				this.statements.push(
 					...parseTS/* ts */ `export function ${name}<${typeGenerics}>(${typeParams}) {
@@ -115,6 +132,8 @@ export class MoveModuleBuilder extends FileBuilder {
 					signature: renderTypeSignature(field.type_, {
 						format: 'bcs',
 						summary: this.summary,
+						typeParameters: enumDef.type_parameters,
+						resolveAddress: (address) => this.#resolveAddress(address),
 						onDependency: (address, mod) =>
 							this.addStarImport(
 								address === this.summary.id.address
@@ -147,8 +166,8 @@ export class MoveModuleBuilder extends FileBuilder {
 			} else {
 				this.addImport('@mysten/sui/bcs', 'type BcsType');
 
-				const typeParams = `...typeParameters: [${params.map((_, i) => `T${i}`).join(', ')}]`;
-				const typeGenerics = `${params.map((_, i) => `T${i} extends BcsType<any>`).join(', ')}`;
+				const typeParams = `...typeParameters: [${params.map((param, i) => param.name ?? `T${i}`).join(', ')}]`;
+				const typeGenerics = `${params.map((param, i) => `${param.name ?? `T${i}`} extends BcsType<any>`).join(', ')}`;
 
 				this.statements.push(
 					...parseTS/* ts */ `
@@ -164,11 +183,16 @@ export class MoveModuleBuilder extends FileBuilder {
 		const statements = [];
 		const names = [];
 
-		if (Object.keys(this.summary.functions).length !== 0) {
-			this.addImport('@mysten/sui/transactions', 'type Transaction');
+		if (!this.hasFunctions()) {
+			return;
 		}
+		this.addImport('@mysten/sui/transactions', 'type Transaction');
 
 		for (const [name, func] of Object.entries(this.summary.functions)) {
+			if (func.visibility !== 'Public' || func.macro_) {
+				continue;
+			}
+
 			const parameters = func.parameters.filter((param) => !this.isContextReference(param.type_));
 			const fnName = getSafeName(name);
 
@@ -177,19 +201,20 @@ export class MoveModuleBuilder extends FileBuilder {
 
 			names.push(fnName);
 
-			const usedTypeParameters = new Set<number>();
+			const usedTypeParameters = new Set<number | string>();
+
 			const argumentsTypes = parameters
 				.map((param) =>
 					renderTypeSignature(param.type_, {
 						format: 'typescriptArg',
 						summary: this.summary,
+						typeParameters: func.type_parameters,
+						resolveAddress: (address) => this.#resolveAddress(address),
 						onTypeParameter: (typeParameter) => usedTypeParameters.add(typeParameter),
 					}),
 				)
 				.map((type) => `RawTransactionArgument<${type}>`)
 				.join(',\n');
-
-			const typeParameters = func.type_parameters.filter((_, i) => usedTypeParameters.has(i));
 
 			if (usedTypeParameters.size > 0) {
 				this.addImport('@mysten/sui/bcs', 'type BcsType');
@@ -198,9 +223,9 @@ export class MoveModuleBuilder extends FileBuilder {
 			statements.push(
 				...parseTS/* ts */ `function
 					${fnName}${
-						typeParameters.length
+						usedTypeParameters.size > 0
 							? `<
-							${typeParameters.map((_, i) => `T${i} extends BcsType<any>`)}
+							${func.type_parameters.map((param, i) => `${param.name ?? `T${i}`} extends BcsType<any>`)}
 						>`
 							: ''
 					}(options: {
@@ -219,6 +244,8 @@ export class MoveModuleBuilder extends FileBuilder {
 								renderTypeSignature(param.type_, {
 									format: 'typeTag',
 									summary: this.summary,
+									typeParameters: func.type_parameters,
+									resolveAddress: (address) => this.#resolveAddress(address),
 								}),
 							)
 							.map((tag) => (tag.includes('{') ? `\`${tag}\`` : `'${tag}'`))
@@ -226,7 +253,7 @@ export class MoveModuleBuilder extends FileBuilder {
 					]
 					return (tx: Transaction) => tx.moveCall({
 						package: packageAddress,
-						module: '${this.module}',
+						module: '${this.summary.id.name}',
 						function: '${name}',
 						arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 						${func.type_parameters.length ? 'typeArguments: options.typeArguments' : ''}
@@ -255,10 +282,7 @@ export class MoveModuleBuilder extends FileBuilder {
 		}
 
 		if ('Datatype' in type) {
-			return (
-				normalizeSuiAddress(type.Datatype.module.address) ===
-					normalizeSuiAddress(SUI_FRAMEWORK_ADDRESS) && type.Datatype.name === 'TxContext'
-			);
+			return this.#resolveAddress(type.Datatype.module.address) === SUI_FRAMEWORK_ADDRESS;
 		}
 
 		return false;

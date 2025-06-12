@@ -3,17 +3,19 @@
 
 import { normalizeSuiAddress } from '@mysten/sui/utils';
 
-import type { Datatype, ModuleSummary, Type } from './types/summary.js';
+import type { Datatype, ModuleSummary, Type, TypeParameter } from './types/summary.js';
 
-const MOVE_STDLIB_ADDRESS = normalizeSuiAddress('0x1');
-const SUI_FRAMEWORK_ADDRESS = normalizeSuiAddress('0x2');
+export const MOVE_STDLIB_ADDRESS = normalizeSuiAddress('0x1');
+export const SUI_FRAMEWORK_ADDRESS = normalizeSuiAddress('0x2');
 
 type TypeSignatureFormat = 'typescriptArg' | 'bcs' | 'typeTag';
 interface RenderTypeSignatureOptions {
 	format: TypeSignatureFormat;
 	summary: ModuleSummary;
+	typeParameters?: TypeParameter[];
 	onDependency?: (address: string, name: string) => void;
-	onTypeParameter?: (typeParameter: number) => void;
+	onTypeParameter?: (typeParameter: number | string) => void;
+	resolveAddress: (address: string) => string;
 }
 
 export function renderTypeSignature(type: Type, options: RenderTypeSignatureOptions): string {
@@ -97,7 +99,7 @@ export function renderTypeSignature(type: Type, options: RenderTypeSignatureOpti
 		options.onTypeParameter?.(type.TypeParameter);
 		switch (options.format) {
 			case 'typescriptArg':
-				return `T${type.TypeParameter}`;
+				return options.typeParameters?.[type.TypeParameter]?.name ?? `T${type.TypeParameter}`;
 			case 'typeTag':
 				return `\${options.typeArguments[${type.TypeParameter}]}`;
 			case 'bcs':
@@ -107,35 +109,62 @@ export function renderTypeSignature(type: Type, options: RenderTypeSignatureOpti
 		}
 	}
 
+	if ('NamedTypeParameter' in type) {
+		options.onTypeParameter?.(type.NamedTypeParameter);
+		const index =
+			options.typeParameters?.findIndex((p) => p.name === type.NamedTypeParameter) ?? -1;
+
+		if (index === -1) {
+			throw new Error(`Named type parameter ${type.NamedTypeParameter} not found`);
+		}
+
+		switch (options.format) {
+			case 'typescriptArg':
+				return type.NamedTypeParameter;
+			case 'typeTag':
+				return `\${options.typeArguments[${index}]}`;
+			case 'bcs':
+				return `typeParameters[${index}]`;
+			default:
+				throw new Error(`Unknown format: ${options.format}`);
+		}
+	}
+
 	throw new Error(`Unknown type signature: ${JSON.stringify(type, null, 2)}`);
 }
 
-export function isPureSignature(type: Type): boolean {
+export function isPureSignature(type: Type, options: RenderTypeSignatureOptions): boolean {
 	if (typeof type === 'string') {
 		return true;
 	}
 
 	if ('Reference' in type) {
-		return isPureSignature(type.Reference[1]);
+		return isPureSignature(type.Reference[1], options);
 	}
 
 	if ('Datatype' in type) {
-		return isPureDataType(type.Datatype);
+		return isPureDataType(type.Datatype, options);
 	}
 
 	if ('vector' in type) {
-		return isPureSignature(type.vector);
+		return isPureSignature(type.vector, options);
 	}
 
 	if ('TypeParameter' in type) {
 		return false;
 	}
 
+	if ('NamedTypeParameter' in type) {
+		return false;
+	}
+
 	throw new Error(`Unknown type signature: ${JSON.stringify(type, null, 2)}`);
 }
 
-function isPureDataType(type: Datatype) {
-	if (type.module.address === MOVE_STDLIB_ADDRESS) {
+function isPureDataType(type: Datatype, options: RenderTypeSignatureOptions) {
+	const address = options.resolveAddress(type.module.address);
+
+	if (address === MOVE_STDLIB_ADDRESS) {
 		if ((type.module.name === 'ascii' || type.module.name === 'string') && type.name === 'String') {
 			return true;
 		}
@@ -145,7 +174,7 @@ function isPureDataType(type: Datatype) {
 		}
 	}
 
-	if (type.module.address === SUI_FRAMEWORK_ADDRESS) {
+	if (address === SUI_FRAMEWORK_ADDRESS) {
 		if (type.module.name === 'object' && type.name === 'ID') {
 			return true;
 		}
@@ -155,19 +184,21 @@ function isPureDataType(type: Datatype) {
 }
 
 function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): string {
+	const address = options.resolveAddress(type.module.address);
+
 	if (options.format === 'typeTag') {
 		const typeArgs = type.type_arguments.map((type) => renderTypeSignature(type.argument, options));
 
 		if (typeArgs.length === 0) {
 			// eslint-disable-next-line no-template-curly-in-string
-			return `${type.module.address === options.summary.id.address ? '${packageAddress}' : type.module.address}::${type.module.name}::${type.name}`;
+			return `${address === options.resolveAddress(options.summary.id.address) ? '${packageAddress}' : address}::${type.module.name}::${type.name}`;
 		}
 
 		// eslint-disable-next-line no-template-curly-in-string
-		return `${type.module.address === options.summary.id.address ? '${packageAddress}' : type.module.address}::${type.module.name}::${type.name}<${typeArgs.join(', ')}>`;
+		return `${address === options.resolveAddress(options.summary.id.address) ? '${packageAddress}' : address}::${type.module.name}::${type.name}<${typeArgs.join(', ')}>`;
 	}
 
-	if (type.module.address === MOVE_STDLIB_ADDRESS) {
+	if (address === MOVE_STDLIB_ADDRESS) {
 		if ((type.module.name === 'ascii' || type.module.name === 'string') && type.name === 'String') {
 			switch (options.format) {
 				case 'typescriptArg':
@@ -182,7 +213,7 @@ function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): st
 		if (type.module.name === 'option' && type.name === 'Option') {
 			switch (options.format) {
 				case 'typescriptArg':
-					if (isPureDataType(type)) {
+					if (isPureDataType(type, options)) {
 						return `${renderTypeSignature(type.type_arguments[0].argument, options)} | null`;
 					}
 					break;
@@ -194,7 +225,7 @@ function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): st
 		}
 	}
 
-	if (type.module.address === SUI_FRAMEWORK_ADDRESS) {
+	if (address === SUI_FRAMEWORK_ADDRESS) {
 		if (type.module.name === 'object' && type.name === 'ID') {
 			switch (options.format) {
 				case 'typescriptArg':
@@ -208,8 +239,8 @@ function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): st
 	}
 
 	const isCurrentModule =
-		type.module.address === options.summary.id.address &&
-		type.module.name === options.summary.id.module;
+		address === options.resolveAddress(options.summary.id.address) &&
+		type.module.name === options.summary.id.name;
 
 	const typeNameRef = isCurrentModule
 		? type.name
@@ -225,7 +256,7 @@ function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): st
 		case 'bcs':
 			return `${typeNameRef}(
                 ${type.type_arguments
-									.filter((arg) => !arg.is_phantom)
+									.filter((arg) => !arg.phantom)
 									.map((type) => renderTypeSignature(type.argument, options))
 									.join(', ')})`;
 		default:

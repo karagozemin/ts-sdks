@@ -4,7 +4,7 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
+import * as object from '../sui/object.js';
 export function Storage() {
 	return bcs.struct('Storage', {
 		id: object.UID(),
@@ -41,34 +41,6 @@ export function init(packageAddress: string) {
 				package: packageAddress,
 				module: 'storage_resource',
 				function: 'size',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function create_storage(options: {
-		arguments: [
-			RawTransactionArgument<number>,
-			RawTransactionArgument<number>,
-			RawTransactionArgument<number | bigint>,
-		];
-	}) {
-		const argumentsTypes = ['u32', 'u32', 'u64'];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'storage_resource',
-				function: 'create_storage',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function extend_end_epoch(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number>];
-	}) {
-		const argumentsTypes = [`${packageAddress}::storage_resource::Storage`, 'u32'];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'storage_resource',
-				function: 'extend_end_epoch',
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
@@ -155,8 +127,6 @@ export function init(packageAddress: string) {
 		start_epoch,
 		end_epoch,
 		size,
-		create_storage,
-		extend_end_epoch,
 		split_by_epoch,
 		split_by_size,
 		fuse_periods,

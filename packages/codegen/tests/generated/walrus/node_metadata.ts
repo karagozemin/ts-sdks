@@ -4,7 +4,7 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as vec_map from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/vec_map.js';
+import * as vec_map from '../sui/vec_map.js';
 export function NodeMetadata() {
 	return bcs.struct('NodeMetadata', {
 		image_url: bcs.string(),
@@ -79,13 +79,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function set_extra_fields(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::node_metadata::NodeMetadata`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::vec_map::VecMap<0x0000000000000000000000000000000000000000000000000000000000000001::string::String, 0x0000000000000000000000000000000000000000000000000000000000000001::string::String>',
-		];
+	function set_extra_fields(options: { arguments: [RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::node_metadata::NodeMetadata`];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -134,16 +129,6 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function _default(options: { arguments: [] }) {
-		const argumentsTypes = [];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'node_metadata',
-				function: 'default',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	return {
 		_new,
 		set_image_url,
@@ -154,6 +139,5 @@ export function init(packageAddress: string) {
 		project_url,
 		description,
 		extra_fields,
-		_default,
 	};
 }

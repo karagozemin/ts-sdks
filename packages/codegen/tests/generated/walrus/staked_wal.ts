@@ -4,8 +4,8 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
-import * as balance from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/balance.js';
+import * as object from '../sui/object.js';
+import * as balance from '../sui/balance.js';
 export function StakedWal() {
 	return bcs.struct('StakedWal', {
 		id: object.UID(),
@@ -22,68 +22,6 @@ export function StakedWalState() {
 	});
 }
 export function init(packageAddress: string) {
-	function mint(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number>,
-		];
-	}) {
-		const argumentsTypes = [
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::balance::Balance<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
-			'u32',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staked_wal',
-				function: 'mint',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function into_balance(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::staked_wal::StakedWal`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staked_wal',
-				function: 'into_balance',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function set_withdrawing(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number>];
-	}) {
-		const argumentsTypes = [`${packageAddress}::staked_wal::StakedWal`, 'u32'];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staked_wal',
-				function: 'set_withdrawing',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function can_withdraw_early(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<boolean>,
-			RawTransactionArgument<string>,
-		];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::staked_wal::StakedWal`,
-			'bool',
-			`${packageAddress}::walrus_context::WalrusContext`,
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'staked_wal',
-				function: 'can_withdraw_early',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function node_id(options: { arguments: [RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::staked_wal::StakedWal`];
 		return (tx: Transaction) =>
@@ -172,10 +110,6 @@ export function init(packageAddress: string) {
 			});
 	}
 	return {
-		mint,
-		into_balance,
-		set_withdrawing,
-		can_withdraw_early,
 		node_id,
 		value,
 		activation_epoch,

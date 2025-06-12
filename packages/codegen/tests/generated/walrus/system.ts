@@ -4,7 +4,7 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../deps/0x0000000000000000000000000000000000000000000000000000000000000002/object.js';
+import * as object from '../sui/object.js';
 export function System() {
 	return bcs.struct('System', {
 		id: object.UID(),
@@ -14,21 +14,6 @@ export function System() {
 	});
 }
 export function init(packageAddress: string) {
-	function create_empty(options: {
-		arguments: [RawTransactionArgument<number>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			'u32',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'system',
-				function: 'create_empty',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	function invalidate_blob_id(options: {
 		arguments: [
 			RawTransactionArgument<string>,
@@ -86,15 +71,9 @@ export function init(packageAddress: string) {
 			RawTransactionArgument<string>,
 			RawTransactionArgument<number | bigint>,
 			RawTransactionArgument<number>,
-			RawTransactionArgument<string>,
 		];
 	}) {
-		const argumentsTypes = [
-			`${packageAddress}::system::System`,
-			'u64',
-			'u32',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
-		];
+		const argumentsTypes = [`${packageAddress}::system::System`, 'u64', 'u32'];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -112,7 +91,6 @@ export function init(packageAddress: string) {
 			RawTransactionArgument<number | bigint>,
 			RawTransactionArgument<number>,
 			RawTransactionArgument<boolean>,
-			RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -123,7 +101,6 @@ export function init(packageAddress: string) {
 			'u64',
 			'u8',
 			'bool',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -194,14 +171,12 @@ export function init(packageAddress: string) {
 			RawTransactionArgument<string>,
 			RawTransactionArgument<string>,
 			RawTransactionArgument<number>,
-			RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::system::System`,
 			`${packageAddress}::blob::Blob`,
 			'u32',
-			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
 		];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -212,17 +187,9 @@ export function init(packageAddress: string) {
 			});
 	}
 	function add_subsidy(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number>,
-		];
+		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number>];
 	}) {
-		const argumentsTypes = [
-			`${packageAddress}::system::System`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x000000000000000000000000000000000000000000000000000000000000002a::wal::WAL>',
-			'u32',
-		];
+		const argumentsTypes = [`${packageAddress}::system::System`, 'u32'];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -339,93 +306,7 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function advance_epoch(options: {
-		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-		];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::system::System`,
-			`${packageAddress}::bls_aggregate::BlsCommittee`,
-			`${packageAddress}::epoch_parameters::EpochParams`,
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'system',
-				function: 'advance_epoch',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function package_id(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::system::System`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'system',
-				function: 'package_id',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function version(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::system::System`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'system',
-				function: 'version',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function set_new_package_id(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
-	}) {
-		const argumentsTypes = [
-			`${packageAddress}::system::System`,
-			'0x0000000000000000000000000000000000000000000000000000000000000002::object::ID',
-		];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'system',
-				function: 'set_new_package_id',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function migrate(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::system::System`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'system',
-				function: 'migrate',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function inner_mut(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::system::System`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'system',
-				function: 'inner_mut',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
-	function inner(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::system::System`];
-		return (tx: Transaction) =>
-			tx.moveCall({
-				package: packageAddress,
-				module: 'system',
-				function: 'inner',
-				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
-			});
-	}
 	return {
-		create_empty,
 		invalidate_blob_id,
 		certify_event_blob,
 		reserve_space,
@@ -442,12 +323,5 @@ export function init(packageAddress: string) {
 		total_capacity_size,
 		used_capacity_size,
 		n_shards,
-		advance_epoch,
-		package_id,
-		version,
-		set_new_package_id,
-		migrate,
-		inner_mut,
-		inner,
 	};
 }
