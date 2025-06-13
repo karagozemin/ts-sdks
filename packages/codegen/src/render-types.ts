@@ -13,7 +13,7 @@ interface RenderTypeSignatureOptions {
 	format: TypeSignatureFormat;
 	summary: ModuleSummary;
 	typeParameters?: TypeParameter[];
-	onDependency?: (address: string, name: string) => void;
+	onDependency?: (address: string, module: string, type: string) => void;
 	onTypeParameter?: (typeParameter: number | string) => void;
 	resolveAddress: (address: string) => string;
 }
@@ -246,7 +246,7 @@ function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): st
 		? type.name
 		: `${getSafeName(type.module.name)}.${getSafeName(type.name)}`;
 
-	options.onDependency?.(type.module.address, type.module.name);
+	options.onDependency?.(type.module.address, type.module.name, type.name);
 
 	switch (options.format) {
 		case 'typescriptArg':

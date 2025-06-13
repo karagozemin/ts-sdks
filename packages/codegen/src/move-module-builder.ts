@@ -13,9 +13,9 @@ import { join } from 'node:path';
 
 export class MoveModuleBuilder extends FileBuilder {
 	summary: ModuleSummary;
-	#depsDir = './';
+	#depsDir = './deps';
 	#addressMappings: Record<string, string>;
-	#visitedTypes: Set<string> = new Set();
+	#includedTypes: Set<string> = new Set();
 
 	constructor({
 		summary,
@@ -37,8 +37,6 @@ export class MoveModuleBuilder extends FileBuilder {
 			summary: summaryFromDeserializedModule(deserialized),
 		});
 
-		builder.#depsDir = './deps';
-
 		return builder;
 	}
 
@@ -55,6 +53,70 @@ export class MoveModuleBuilder extends FileBuilder {
 		return this.#addressMappings[address] ?? address;
 	}
 
+	includeType(name: string, moduleBuilders: Record<string, MoveModuleBuilder>) {
+		if (this.#includedTypes.has(name)) {
+			return;
+		}
+
+		this.#includedTypes.add(name);
+
+		const struct = this.summary.structs[name];
+		const enum_ = this.summary.enums[name];
+
+		if (!struct && !enum_) {
+			throw new Error(
+				`Type ${name} not found in ${this.summary.id.address}::${this.summary.id.name}`,
+			);
+		}
+
+		if (struct) {
+			Object.values(struct.fields.fields).forEach((field) => {
+				renderTypeSignature(field.type_, {
+					format: 'bcs',
+					summary: this.summary,
+					typeParameters: struct.type_parameters,
+					resolveAddress: (address) => this.#resolveAddress(address),
+					onDependency: (address, mod, name) => {
+						const builder = moduleBuilders[`${address}::${mod}`];
+
+						if (!builder) {
+							throw new Error(`Module builder not found for ${address}::${mod}`);
+						}
+
+						builder.includeType(name, moduleBuilders);
+					},
+				});
+			});
+		}
+
+		if (enum_) {
+			Object.values(enum_.variants).forEach((variant) => {
+				Object.values(variant.fields.fields).forEach((field) => {
+					renderTypeSignature(field.type_, {
+						format: 'bcs',
+						summary: this.summary,
+						typeParameters: enum_.type_parameters,
+						resolveAddress: (address) => this.#resolveAddress(address),
+						onDependency: (address, mod, name) => {
+							const builder = moduleBuilders[`${address}::${mod}`];
+
+							if (!builder) {
+								throw new Error(`Module builder not found for ${address}::${mod}`);
+							}
+
+							builder.includeType(name, moduleBuilders);
+						},
+					});
+				});
+			});
+		}
+	}
+
+	includeAllTypes(moduleBuilders: Record<string, MoveModuleBuilder>) {
+		Object.keys(this.summary.structs).forEach((name) => this.includeType(name, moduleBuilders));
+		Object.keys(this.summary.enums).forEach((name) => this.includeType(name, moduleBuilders));
+	}
+
 	renderBCSTypes() {
 		this.addImport('@mysten/sui/bcs', 'bcs');
 		this.renderStructs();
@@ -62,9 +124,7 @@ export class MoveModuleBuilder extends FileBuilder {
 	}
 
 	hasBcsTypes() {
-		return (
-			Object.keys(this.summary.structs).length > 0 || Object.keys(this.summary.enums).length > 0
-		);
+		return this.#includedTypes.size > 0;
 	}
 
 	hasFunctions() {
@@ -200,8 +260,8 @@ export class MoveModuleBuilder extends FileBuilder {
 			const parameters = func.parameters.filter((param) => !this.isContextReference(param.type_));
 			const fnName = getSafeName(name);
 
-			this.addImport('~root/utils/index.js', 'normalizeMoveArguments');
-			this.addImport('~root/utils/index.js', 'type RawTransactionArgument');
+			this.addImport('~root/../utils/index.js', 'normalizeMoveArguments');
+			this.addImport('~root/../utils/index.js', 'type RawTransactionArgument');
 
 			names.push(fnName);
 

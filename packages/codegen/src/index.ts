@@ -64,9 +64,11 @@ export async function generateBuiltPackage({
 export async function generateFromPackageSummary({
 	source,
 	destination,
+	name,
 }: {
 	source: string;
 	destination: string;
+	name: string;
 }) {
 	const summaryDir = join(source, 'package_summaries');
 
@@ -85,25 +87,57 @@ export async function generateFromPackageSummary({
 		await Promise.all(
 			packages.map(async (pkg) => {
 				const modules = await readdir(join(summaryDir, pkg));
-				return modules.map((mod) => ({
-					package: pkg,
-					module: basename(mod, '.json'),
-					path: join(summaryDir, pkg, mod),
-				}));
+				return Promise.all(
+					modules.map(async (mod) => ({
+						package: pkg,
+						isMainPackage: pkg === name,
+						module: basename(mod, '.json'),
+						builder: await MoveModuleBuilder.fromSummaryFile(
+							join(summaryDir, pkg, mod),
+							addressMappings,
+						),
+					})),
+				);
 			}),
 		)
 	).flat();
 
+	const moduleBuilders = Object.fromEntries(
+		modules.map((mod) => [`${mod.package}::${mod.module}`, mod.builder]),
+	);
+
+	modules.forEach((mod) => {
+		if (mod.isMainPackage) {
+			mod.builder.includeAllTypes(moduleBuilders);
+		}
+	});
+
 	await Promise.all(
 		modules.map(async (mod) => {
-			const builder = await MoveModuleBuilder.fromSummaryFile(mod.path, addressMappings);
-			builder.renderBCSTypes();
-			builder.renderFunctions();
+			if (mod.isMainPackage && mod.builder.hasTypesOrFunctions()) {
+				mod.builder.renderBCSTypes();
+				mod.builder.renderFunctions();
+			} else if (mod.isMainPackage) {
+				return;
+			} else if (mod.builder.hasBcsTypes()) {
+				mod.builder.renderBCSTypes();
+			} else {
+				return;
+			}
 
-			await mkdir(join(destination, mod.package), { recursive: true });
+			await mkdir(
+				mod.isMainPackage ? join(destination, name) : join(destination, name, 'deps', mod.package),
+				{ recursive: true },
+			);
+
 			await writeFile(
-				join(destination, mod.package, `${mod.module}.ts`),
-				builder.toString('./', `./${mod.package}/${mod.module}.ts`),
+				mod.isMainPackage
+					? join(destination, name, `${mod.module}.ts`)
+					: join(destination, name, 'deps', mod.package, `${mod.module}.ts`),
+				mod.builder.toString(
+					'./',
+					mod.isMainPackage ? `./${mod.module}.ts` : `./deps/${mod.package}/${mod.module}.ts`,
+				),
 			);
 		}),
 	);

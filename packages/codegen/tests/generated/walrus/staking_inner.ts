@@ -2,7 +2,7 @@
  * THIS FILE IS GENERATED AND SHOULD NOT BE MANUALLY MODIFIED *
  **************************************************************/
 import { bcs } from '@mysten/sui/bcs';
-import * as object_table from '../sui/object_table.js';
+import * as object_table from './deps/sui/object_table.js';
 import * as extended_field from './extended_field.js';
 import * as committee from './committee.js';
 import * as epoch_parameters from './epoch_parameters.js';

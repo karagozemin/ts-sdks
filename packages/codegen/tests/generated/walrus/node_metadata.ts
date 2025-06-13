@@ -4,7 +4,7 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as vec_map from '../sui/vec_map.js';
+import * as vec_map from './deps/sui/vec_map.js';
 export function NodeMetadata() {
 	return bcs.struct('NodeMetadata', {
 		image_url: bcs.string(),

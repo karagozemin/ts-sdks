@@ -4,7 +4,7 @@
 import { bcs, type BcsType } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as uq64_64 from '../std/uq64_64.js';
+import * as uq64_64 from './deps/std/uq64_64.js';
 export function ApportionmentQueue<T extends BcsType<any>>(...typeParameters: [T]) {
 	return bcs.struct('ApportionmentQueue', {
 		entries: bcs.vector(Entry(typeParameters[0])),

@@ -4,7 +4,7 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../sui/object.js';
+import * as object from './deps/sui/object.js';
 import * as storage_resource from './storage_resource.js';
 export function Blob() {
 	return bcs.struct('Blob', {

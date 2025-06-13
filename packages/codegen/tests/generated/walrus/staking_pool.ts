@@ -2,13 +2,13 @@
  * THIS FILE IS GENERATED AND SHOULD NOT BE MANUALLY MODIFIED *
  **************************************************************/
 import { bcs } from '@mysten/sui/bcs';
-import * as object from '../sui/object.js';
+import * as object from './deps/sui/object.js';
 import * as storage_node from './storage_node.js';
 import * as pending_values from './pending_values.js';
-import * as table from '../sui/table.js';
-import * as balance from '../sui/balance.js';
+import * as table from './deps/sui/table.js';
+import * as balance from './deps/sui/balance.js';
 import * as auth from './auth.js';
-import * as bag from '../sui/bag.js';
+import * as bag from './deps/sui/bag.js';
 export function VotingParams() {
 	return bcs.struct('VotingParams', {
 		storage_price: bcs.u64(),

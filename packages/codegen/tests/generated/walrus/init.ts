@@ -4,8 +4,8 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../sui/object.js';
-import * as _package from '../sui/package.js';
+import * as object from './deps/sui/object.js';
+import * as _package from './deps/sui/package.js';
 export function INIT() {
 	return bcs.struct('INIT', {
 		dummy_field: bcs.bool(),

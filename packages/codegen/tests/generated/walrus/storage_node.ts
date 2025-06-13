@@ -4,9 +4,9 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as group_ops from '../sui/group_ops.js';
+import * as group_ops from './deps/sui/group_ops.js';
 import * as extended_field from './extended_field.js';
-import * as object from '../sui/object.js';
+import * as object from './deps/sui/object.js';
 import * as event_blob from './event_blob.js';
 export function StorageNodeInfo() {
 	return bcs.struct('StorageNodeInfo', {

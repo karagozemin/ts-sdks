@@ -4,8 +4,8 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as object from '../sui/object.js';
-import * as balance from '../sui/balance.js';
+import * as object from './deps/sui/object.js';
+import * as balance from './deps/sui/balance.js';
 export function Exchange() {
 	return bcs.struct('Exchange', {
 		id: object.UID(),

@@ -24,6 +24,7 @@ export async function generate(this: LocalContext, flags: SubdirCommandFlags): P
 		await generateFromPackageSummary({
 			source: path,
 			destination: flags.outputDir,
+			name: basename(path),
 		});
 	}
 }

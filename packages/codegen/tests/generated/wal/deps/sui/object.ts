@@ -2,9 +2,13 @@
  * THIS FILE IS GENERATED AND SHOULD NOT BE MANUALLY MODIFIED *
  **************************************************************/
 import { bcs } from '@mysten/sui/bcs';
-import * as vec_map from './deps/sui/vec_map.js';
-export function PendingValues() {
-	return bcs.struct('PendingValues', {
-		pos0: vec_map.VecMap(bcs.u32(), bcs.u64()),
+export function ID() {
+	return bcs.struct('ID', {
+		bytes: bcs.Address,
+	});
+}
+export function UID() {
+	return bcs.struct('UID', {
+		id: bcs.Address,
 	});
 }

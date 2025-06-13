@@ -2,7 +2,7 @@
  * THIS FILE IS GENERATED AND SHOULD NOT BE MANUALLY MODIFIED *
  **************************************************************/
 import { bcs } from '@mysten/sui/bcs';
-import * as balance from '../sui/balance.js';
+import * as balance from './deps/sui/balance.js';
 export function FutureAccounting() {
 	return bcs.struct('FutureAccounting', {
 		epoch: bcs.u32(),

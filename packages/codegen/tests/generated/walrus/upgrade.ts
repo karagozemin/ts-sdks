@@ -4,10 +4,10 @@
 import { bcs } from '@mysten/sui/bcs';
 import { type Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments, type RawTransactionArgument } from '../utils/index.js';
-import * as vec_set from '../sui/vec_set.js';
-import * as object from '../sui/object.js';
-import * as _package from '../sui/package.js';
-import * as table from '../sui/table.js';
+import * as vec_set from './deps/sui/vec_set.js';
+import * as object from './deps/sui/object.js';
+import * as _package from './deps/sui/package.js';
+import * as table from './deps/sui/table.js';
 export function PackageDigest() {
 	return bcs.struct('PackageDigest', {
 		pos0: bcs.vector(bcs.u8()),
