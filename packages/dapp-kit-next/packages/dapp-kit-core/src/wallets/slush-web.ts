@@ -16,7 +16,7 @@ export function slushWebWalletInitializer(config?: SlushWalletConfig): WalletIni
 			});
 
 			if (!result) throw new Error('Registration un-successful.');
-			return { wallets: [result.wallet], unregister: result.unregister };
+			return { unregister: result.unregister };
 		},
 	};
 }

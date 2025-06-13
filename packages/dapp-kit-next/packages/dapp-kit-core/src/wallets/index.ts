@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { ClientWithCoreApi } from '@mysten/sui/experimental';
-import type { Wallet } from '@mysten/wallet-standard';
 import type { Networks } from '../utils/networks.js';
 
 export type UnregisterCallback = () => void;
@@ -14,7 +13,6 @@ type InitilizeArgs<TNetworks extends Networks> = {
 
 type InitializeResult = {
 	unregister: () => void;
-	wallets: Wallet[];
 };
 
 export type WalletInitializer = {
@@ -24,6 +22,13 @@ export type WalletInitializer = {
 	): InitializeResult | Promise<InitializeResult>;
 };
 
+// The wallet standard registers wallets globally and uses object references
+// to keep prevent duplicate wallets from being registered. For applications
+// that register interfaces with hot module replacement enabled locally, this
+// doesn't quite work as expected as the original object reference gets lost.
+//
+// To work around these complexities, we can simply track initializers at the
+// module level to ensure that wallets get re-registered properly.
 const initializerMap = new Map<string, UnregisterCallback>();
 
 export async function registerAdditionalWallets<TNetworks extends Networks>(

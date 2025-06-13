@@ -36,7 +36,7 @@ export function unsafeBurnerWalletInitializer(): WalletInitializer {
 		async initialize({ networks, getClient }) {
 			const wallet = new UnsafeBurnerWallet({ clients: networks.map(getClient) });
 			const unregister = getWallets().register(wallet);
-			return { wallets: [wallet], unregister };
+			return { unregister };
 		},
 	};
 }
