@@ -11,8 +11,8 @@ import './index.css';
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
-		{/* <DAppKitProvider dAppKit={dAppKit}> */}
-		<App />
-		{/* </DAppKitProvider> */}
+		<DAppKitProvider dAppKit={dAppKit}>
+			<App />
+		</DAppKitProvider>
 	</StrictMode>,
 );
