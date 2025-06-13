@@ -117,11 +117,11 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 				</div>
 				<div role="separator" aria-orientation="horizontal"></div>
 				<div class="actions-container" role="group">
-					${when(
+					<!-- ${when(
 						// NOTE: No compatible wallets conform with the standard
 						// in a way to allow selecting other accounts besides Slush
 						// so we'll just hardcode this for now.
-						this.connection.wallet.name === SLUSH_WALLET_NAME,
+						//this.connection.wallet.name === SLUSH_WALLET_NAME,
 						() =>
 							html`<div
 								class="action-menu-item"
@@ -131,7 +131,15 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 							>
 								${connectIcon} Manage Connection
 							</div>`,
-					)}
+					)} -->
+					<div
+						class="action-menu-item"
+						role="menuitem"
+						tabindex="-1"
+						@click=${this.#onManageConnectionClick}
+					>
+						${connectIcon} Manage Connection
+					</div>
 					<div
 						class="action-menu-item"
 						role="menuitem"
