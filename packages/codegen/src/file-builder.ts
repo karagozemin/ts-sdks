@@ -33,7 +33,12 @@ export class FileBuilder {
 			([name, module]) => parseTS`import * as ${name} from '${modulePath(module)}'`,
 		);
 
-		const header = '// Copyright (c) Mysten Labs, Inc.\n// SPDX-License-Identifier: Apache-2.0\n\n';
+		const header = [
+			'/**************************************************************',
+			' * THIS FILE IS GENERATED AND SHOULD NOT BE MANUALLY MODIFIED *',
+			' **************************************************************/',
+			'',
+		].join('\n');
 
 		return `${header}${printStatements([...importStatements, ...starImportStatements, ...this.statements])}`;
 

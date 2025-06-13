@@ -15,6 +15,7 @@ export class MoveModuleBuilder extends FileBuilder {
 	summary: ModuleSummary;
 	#depsDir = './';
 	#addressMappings: Record<string, string>;
+	#visitedTypes: Set<string> = new Set();
 
 	constructor({
 		summary,
@@ -88,13 +89,16 @@ export class MoveModuleBuilder extends FileBuilder {
 					summary: this.summary,
 					typeParameters: struct.type_parameters,
 					resolveAddress: (address) => this.#resolveAddress(address),
-					onDependency: (address, mod) =>
-						this.addStarImport(
-							address === this.summary.id.address
-								? `./${mod}.js`
-								: join(`~root`, this.#depsDir, `${address}/${mod}.js`),
-							mod,
-						),
+					onDependency: (address, mod) => {
+						if (address !== this.summary.id.address || mod !== this.summary.id.name) {
+							this.addStarImport(
+								address === this.summary.id.address
+									? `./${mod}.js`
+									: join(`~root`, this.#depsDir, `${address}/${mod}.js`),
+								mod,
+							);
+						}
+					},
 				}),
 			]);
 

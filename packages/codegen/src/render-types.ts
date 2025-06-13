@@ -246,9 +246,7 @@ function renderDataType(type: Datatype, options: RenderTypeSignatureOptions): st
 		? type.name
 		: `${getSafeName(type.module.name)}.${getSafeName(type.name)}`;
 
-	if (!isCurrentModule) {
-		options.onDependency?.(type.module.address, type.module.name);
-	}
+	options.onDependency?.(type.module.address, type.module.name);
 
 	switch (options.format) {
 		case 'typescriptArg':

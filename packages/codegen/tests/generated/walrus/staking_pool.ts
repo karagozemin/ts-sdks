@@ -1,6 +1,6 @@
-// Copyright (c) Mysten Labs, Inc.
-// SPDX-License-Identifier: Apache-2.0
-
+/**************************************************************
+ * THIS FILE IS GENERATED AND SHOULD NOT BE MANUALLY MODIFIED *
+ **************************************************************/
 import { bcs } from '@mysten/sui/bcs';
 import * as object from '../sui/object.js';
 import * as storage_node from './storage_node.js';
