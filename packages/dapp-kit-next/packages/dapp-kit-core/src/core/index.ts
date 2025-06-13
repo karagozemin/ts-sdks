@@ -1,7 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-// @ts-nocheck
 import { readonlyType } from 'nanostores';
 import { createStores } from './store.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
@@ -47,14 +46,14 @@ export function createDAppKit<TNetworks extends Networks>({
 	const stores = createStores({ defaultNetwork, getClient });
 
 	storage ||= createInMemoryStorage();
-	//syncStateToStorage({ stores, storageKey, storage });
+	syncStateToStorage({ stores, storageKey, storage });
 
 	syncRegisteredWallets(stores);
-	// manageWalletConnection(stores);
+	manageWalletConnection(stores);
 
-	// if (autoConnect) {
-	// 	autoConnectWallet({ stores, storageKey, storage });
-	// }
+	if (autoConnect) {
+		autoConnectWallet({ stores, storageKey, storage });
+	}
 
 	registerAdditionalWallets(
 		[
