@@ -28,7 +28,8 @@ export type WalletInitializer = {
 // doesn't quite work as expected as the original object reference gets lost.
 //
 // To work around these complexities, we can simply track initializers at the
-// module level to ensure that wallets get re-registered properly.
+// module level to ensure that wallets get re-registered and de-duped properly
+// when there are multiple dApp Kit instances, across HMR reloads, etc.
 const initializerMap = new Map<string, UnregisterCallback>();
 
 export async function registerAdditionalWallets<TNetworks extends Networks>(
