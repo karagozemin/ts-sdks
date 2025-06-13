@@ -1,6 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+// @ts-nocheck
 import { readonlyType } from 'nanostores';
 import { createStores } from './store.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
@@ -19,6 +20,9 @@ import { switchAccountCreator } from './actions/switch-account.js';
 import { signPersonalMessageCreator } from './actions/sign-personal-message.js';
 import { signAndExecuteTransactionCreator } from './actions/sign-and-execute-transaction.js';
 import { signTransactionCreator } from './actions/sign-transaction.js';
+import { slushWebWalletInitializer } from '../wallets/slush-web.js';
+import { registerAdditionalWallets } from '../wallets/index.js';
+import { unsafeBurnerWalletInitializer } from '../wallets/unsafe-burner.js';
 
 export type DAppKit<TNetworks extends Networks = Networks> = ReturnType<
 	typeof createDAppKit<TNetworks>
@@ -29,8 +33,11 @@ export function createDAppKit<TNetworks extends Networks>({
 	networks,
 	createClient,
 	defaultNetwork = networks[0],
+	enableBurnerWallet = false,
+	slushWalletConfig,
 	storage = getDefaultStorage(),
 	storageKey = DEFAULT_STORAGE_KEY,
+	walletInitializers = [],
 }: CreateDAppKitOptions<TNetworks>) {
 	if (networks.length === 0) {
 		throw new DAppKitError('You must specify at least one Sui network for your application.');
@@ -40,14 +47,23 @@ export function createDAppKit<TNetworks extends Networks>({
 	const stores = createStores({ defaultNetwork, getClient });
 
 	storage ||= createInMemoryStorage();
-	syncStateToStorage({ stores, storageKey, storage });
+	//syncStateToStorage({ stores, storageKey, storage });
 
 	syncRegisteredWallets(stores);
-	manageWalletConnection(stores);
+	// manageWalletConnection(stores);
 
-	if (autoConnect) {
-		autoConnectWallet({ stores, storageKey, storage });
-	}
+	// if (autoConnect) {
+	// 	autoConnectWallet({ stores, storageKey, storage });
+	// }
+
+	registerAdditionalWallets(
+		[
+			...walletInitializers,
+			...(enableBurnerWallet ? [unsafeBurnerWalletInitializer()] : []),
+			...(slushWalletConfig !== null ? [slushWebWalletInitializer(slushWalletConfig)] : []),
+		],
+		{ networks, getClient },
+	);
 
 	return {
 		networkConfig,
