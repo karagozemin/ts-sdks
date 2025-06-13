@@ -33,8 +33,14 @@ import { parseTransactionBcs, parseTransactionEffectsBcs } from './utils.js';
 export class GraphQLTransport extends Experimental_CoreClient {
 	#graphqlClient: SuiGraphQLClient;
 
-	constructor(graphqlClient: SuiGraphQLClient) {
-		super({ network: graphqlClient.network });
+	constructor({
+		graphqlClient,
+		mvr,
+	}: {
+		graphqlClient: SuiGraphQLClient;
+		mvr?: Experimental_SuiClientTypes.MvrOptions;
+	}) {
+		super({ network: graphqlClient.network, base: graphqlClient, mvr });
 		this.#graphqlClient = graphqlClient;
 	}
 
@@ -98,13 +104,15 @@ export class GraphQLTransport extends Experimental_CoreClient {
 					}
 					return {
 						id: obj.address,
-						version: obj.version,
+						version: obj.version.toString(),
 						digest: obj.digest!,
 						owner: mapOwner(obj.owner!),
 						type: obj.asMoveObject?.contents?.type?.repr!,
-						content: obj.asMoveObject
-							? fromBase64(obj.asMoveObject?.contents?.bcs!)
-							: new Uint8Array(),
+						content: Promise.resolve(
+							obj.asMoveObject?.contents?.bcs
+								? fromBase64(obj.asMoveObject.contents.bcs)
+								: new Uint8Array(),
+						),
 					};
 				}),
 		};
@@ -128,11 +136,13 @@ export class GraphQLTransport extends Experimental_CoreClient {
 		return {
 			objects: objects.nodes.map((obj) => ({
 				id: obj.address,
-				version: obj.version,
+				version: obj.version.toString(),
 				digest: obj.digest!,
 				owner: mapOwner(obj.owner!),
 				type: obj.contents?.type?.repr!,
-				content: fromBase64(obj.contents?.bcs!),
+				content: Promise.resolve(
+					obj.contents?.bcs ? fromBase64(obj.contents.bcs) : new Uint8Array(),
+				),
 			})),
 			hasNextPage: objects.pageInfo.hasNextPage,
 			cursor: objects.pageInfo.endCursor ?? null,
@@ -159,12 +169,14 @@ export class GraphQLTransport extends Experimental_CoreClient {
 			hasNextPage: coins.pageInfo.hasNextPage,
 			objects: coins.nodes.map((coin) => ({
 				id: coin.address,
-				version: coin.version,
+				version: coin.version.toString(),
 				digest: coin.digest!,
 				owner: mapOwner(coin.owner!),
 				type: coin.contents?.type?.repr!,
 				balance: coin.coinBalance,
-				content: fromBase64(coin.contents?.bcs!),
+				content: Promise.resolve(
+					coin.contents?.bcs ? fromBase64(coin.contents.bcs) : new Uint8Array(),
+				),
 			})),
 		};
 	}

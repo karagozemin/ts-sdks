@@ -6,7 +6,6 @@ import '@webcomponents/scoped-custom-element-registry';
 import { html, LitElement } from 'lit';
 import { customElement, property, query } from 'lit/decorators.js';
 import { storeProperty } from '../utils/lit.js';
-import { getDefaultInstance } from '../core/index.js';
 import type { DAppKitConnectModalOptions } from './dapp-kit-connect-modal.js';
 import { DAppKitConnectModal } from './dapp-kit-connect-modal.js';
 import { ScopedRegistryHost } from '@lit-labs/scoped-registry-mixin';
@@ -35,19 +34,14 @@ export class DAppKitConnectButton extends ScopedRegistryHost(LitElement) {
 	modalOptions?: DAppKitConnectModalOptions;
 
 	@storeProperty()
-	instance?: RegisteredDAppKit;
+	instance!: RegisteredDAppKit;
 
 	@query('mysten-dapp-kit-connect-modal')
 	private readonly _modal!: DAppKitConnectModal;
 
-	override connectedCallback() {
-		super.connectedCallback();
-		this.instance ||= getDefaultInstance();
-	}
-
 	override render() {
-		const connection = this.instance!.stores.$connection.get();
-		const client = this.instance!.stores.$currentClient.get();
+		const connection = this.instance.stores.$connection.get();
+		const client = this.instance.stores.$currentClient.get();
 
 		return connection.account
 			? html`<connected-account-menu
