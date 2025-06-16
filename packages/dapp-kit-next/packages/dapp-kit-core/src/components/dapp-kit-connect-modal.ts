@@ -219,7 +219,7 @@ export class DAppKitConnectModal
 				this._state = { view: 'connecting', wallet };
 			}, 100);
 
-			await Promise.race([abortPromise, this.instance!.connectWallet({ wallet })]);
+			await Promise.race([abortPromise, this.instance.connectWallet({ wallet })]);
 			this.close('successful-connection');
 		} catch (error) {
 			if (error instanceof Error && error.name === 'AbortError') {
@@ -241,7 +241,7 @@ export class DAppKitConnectModal
 	}
 
 	#getWallets() {
-		const wallets = this.instance!.stores.$wallets.get();
+		const wallets = this.instance.stores.$wallets.get();
 		const filtered = this.filterFn ? wallets.filter(this.filterFn) : wallets;
 		const sorted = this.sortFn ? filtered.toSorted(this.sortFn) : filtered;
 		return sorted;
