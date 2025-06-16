@@ -6,7 +6,6 @@ import {
 	StandardEvents,
 	SuiSignAndExecuteTransaction,
 	SuiSignTransaction,
-	Wallet,
 	WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
 	WalletStandardError,
 } from '@mysten/wallet-standard';
