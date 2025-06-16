@@ -5,7 +5,6 @@ import type { SuiClient } from '@mysten/sui/client';
 import { Transaction } from '@mysten/sui/transactions';
 import { fromBase64, toBase64 } from '@mysten/sui/utils';
 import type {
-	IdentifierArray,
 	IdentifierString,
 	StandardConnectFeature,
 	StandardConnectMethod,
@@ -77,31 +76,36 @@ export class EnokiWallet implements Wallet {
 		StandardEventsFeature &
 		SuiSignTransactionFeature &
 		SuiSignAndExecuteTransactionFeature &
-		SuiSignPersonalMessageFeature {
+		SuiSignPersonalMessageFeature &
+		EnokiGetMetadataFeature {
 		return {
-			'standard:connect': {
+			[StandardConnect]: {
 				version: '1.0.0',
 				connect: this.#connect,
 			},
-			'standard:disconnect': {
+			[StandardDisconnect]: {
 				version: '1.0.0',
 				disconnect: this.#disconnect,
 			},
-			'standard:events': {
+			[StandardEvents]: {
 				version: '1.0.0',
 				on: this.#on,
 			},
-			'sui:signTransaction': {
+			[SuiSignTransaction]: {
 				version: '2.0.0',
 				signTransaction: this.#signTransaction,
 			},
-			'sui:signAndExecuteTransaction': {
+			[SuiSignAndExecuteTransaction]: {
 				version: '2.0.0',
 				signAndExecuteTransaction: this.#signAndExecuteTransaction,
 			},
-			'sui:signPersonalMessage': {
+			[SuiSignPersonalMessage]: {
 				version: '1.1.0',
 				signPersonalMessage: this.#signPersonalMessage,
+			},
+			[EnokiGetMetadata]: {
+				version: '1.0.0',
+				getMetadata: this.#getMetadata,
 			},
 		};
 	}
@@ -210,7 +214,8 @@ export class EnokiWallet implements Wallet {
 				new ReadonlyWalletAccount({
 					address: state.address,
 					chains: this.chains,
-					features: Object.keys(this.features) as IdentifierArray,
+					icon: wallet.icon,
+					features: [SuiSignPersonalMessage, SuiSignTransaction, SuiSignAndExecuteTransaction],
 					publicKey: fromBase64(state.publicKey),
 				}),
 			];
@@ -277,6 +282,12 @@ export class EnokiWallet implements Wallet {
 		return { accounts: this.accounts };
 	};
 
+	#getMetadata: EnokiGetMetadataMethod = () => {
+		return {
+			provider: this.#provider,
+		};
+	};
+
 	#disconnect: StandardDisconnectMethod = async () => {
 		await this.#flow.logout();
 
@@ -338,8 +349,22 @@ export function registerEnokiWallets({
 	};
 }
 
-export function isEnokiWallet(wallet: Wallet): wallet is EnokiWallet {
-	return !!wallet.id?.startsWith('enoki:');
+export function isEnokiWallet(wallet: UiWallet): boolean;
+export function isEnokiWallet(wallet: Wallet): wallet is EnokiWallet;
+export function isEnokiWallet(wallet: Wallet | UiWallet) {
+	if (Array.isArray(wallet.features)) {
+		return wallet.features.includes(EnokiGetMetadata);
+	}
+	return EnokiGetMetadata in wallet.features;
+}
+
+export function getEnokiWalletMetadata(enokiWallet: UiWallet) {
+	const { getMetadata } = getWalletFeature(
+		enokiWallet,
+		EnokiGetMetadata,
+	) as EnokiGetMetadataFeature[typeof EnokiGetMetadata];
+
+	return getMetadata();
 }
 
 export function defaultWindowFeatures() {
