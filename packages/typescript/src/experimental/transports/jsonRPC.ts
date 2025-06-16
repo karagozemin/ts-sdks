@@ -12,7 +12,6 @@ import type {
 	SuiTransactionBlockResponse,
 	TransactionEffects,
 } from '../../client/index.js';
-import { batch } from '../../transactions/plugins/utils.js';
 import { Transaction } from '../../transactions/Transaction.js';
 import { Experimental_CoreClient } from '../core.js';
 import { ObjectError } from '../errors.js';
@@ -20,17 +19,24 @@ import type { Experimental_SuiClientTypes } from '../types.js';
 import { parseTransactionBcs, parseTransactionEffectsBcs } from './utils.js';
 import { resolveTransactionPlugin } from './json-rpc-resolver.js';
 import { TransactionDataBuilder } from '../../transactions/TransactionData.js';
+import { chunk } from '@mysten/utils';
 
 export class JSONRpcTransport extends Experimental_CoreClient {
 	#jsonRpcClient: SuiClient;
 
-	constructor(jsonRpcClient: SuiClient) {
-		super({ network: jsonRpcClient.network });
+	constructor({
+		jsonRpcClient,
+		mvr,
+	}: {
+		jsonRpcClient: SuiClient;
+		mvr?: Experimental_SuiClientTypes.MvrOptions;
+	}) {
+		super({ network: jsonRpcClient.network, base: jsonRpcClient, mvr });
 		this.#jsonRpcClient = jsonRpcClient;
 	}
 
 	async getObjects(options: Experimental_SuiClientTypes.GetObjectsOptions) {
-		const batches = batch(options.objectIds, 50);
+		const batches = chunk(options.objectIds, 50);
 		const results: Experimental_SuiClientTypes.GetObjectsResponse['objects'] = [];
 
 		for (const batch of batches) {
@@ -67,6 +73,7 @@ export class JSONRpcTransport extends Experimental_CoreClient {
 				showType: true,
 				showBcs: true,
 			},
+			filter: options.type ? { StructType: options.type } : null,
 			signal: options.signal,
 		});
 
@@ -100,12 +107,14 @@ export class JSONRpcTransport extends Experimental_CoreClient {
 					digest: coin.digest,
 					balance: coin.balance,
 					type: `0x2::coin::Coin<${coin.coinType}>`,
-					content: Coin.serialize({
-						id: coin.coinObjectId,
-						balance: {
-							value: coin.balance,
-						},
-					}).toBytes(),
+					content: Promise.resolve(
+						Coin.serialize({
+							id: coin.coinObjectId,
+							balance: {
+								value: coin.balance,
+							},
+						}).toBytes(),
+					),
 					owner: {
 						$kind: 'ObjectOwner' as const,
 						ObjectOwner: options.address,
@@ -267,8 +276,9 @@ function parseObject(object: SuiObjectData): Experimental_SuiClientTypes.ObjectR
 		version: object.version,
 		digest: object.digest,
 		type: object.type!,
-		content:
+		content: Promise.resolve(
 			object.bcs?.dataType === 'moveObject' ? fromBase64(object.bcs.bcsBytes) : new Uint8Array(),
+		),
 		owner: parseOwner(object.owner!),
 	};
 }

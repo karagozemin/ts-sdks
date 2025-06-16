@@ -8,7 +8,6 @@ import { html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { storeProperty } from '../utils/lit.js';
 import { WalletList } from './internal/wallet-list.js';
-import { getDefaultInstance } from '../core/index.js';
 import { BaseModal } from './internal/base-modal.js';
 import type { UiWallet } from '@wallet-standard/ui';
 import { closeIcon } from './internal/icons/close-icon.js';
@@ -88,7 +87,7 @@ export class DAppKitConnectModal
 	 * The dApp Kit instance used for state management.
 	 */
 	@storeProperty()
-	instance?: RegisteredDAppKit;
+	instance!: RegisteredDAppKit;
 
 	@state()
 	private _state: ModalViewState = { view: 'wallet-selection' };
@@ -106,11 +105,6 @@ export class DAppKitConnectModal
 	sortFn: DAppKitConnectModalOptions['sortFn'];
 
 	#abortController?: AbortController;
-
-	override connectedCallback() {
-		super.connectedCallback();
-		this.instance ||= getDefaultInstance();
-	}
 
 	override render() {
 		const showBackButton = this._state.view === 'connecting' || this._state.view === 'error';

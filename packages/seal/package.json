@@ -1,6 +1,6 @@
 {
 	"name": "@mysten/seal",
-	"version": "0.4.10",
+	"version": "0.4.13",
 	"description": "Seal SDK",
 	"license": "Apache-2.0",
 	"author": "Mysten Labs <build@mystenlabs.com>",
@@ -54,7 +54,6 @@
 		"@mysten/bcs": "workspace:*",
 		"@mysten/sui": "workspace:*",
 		"@noble/curves": "^1.9.1",
-		"@noble/hashes": "^1.8.0",
-		"shamir-secret-sharing": "0.0.3"
+		"@noble/hashes": "^1.8.0"
 	}
 }

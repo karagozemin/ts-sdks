@@ -1,5 +1,30 @@
 # @mysten/seal
 
+## 0.4.13
+
+### Patch Changes
+
+- Updated dependencies [a00522b]
+  - @mysten/sui@1.33.0
+  - @mysten/bcs@1.6.3
+
+## 0.4.12
+
+### Patch Changes
+
+- Updated dependencies [6b7deb8]
+  - @mysten/sui@1.32.0
+
+## 0.4.11
+
+### Patch Changes
+
+- c15d220: Use versioned key server objects
+- Updated dependencies [1ff4e57]
+- Updated dependencies [550e2e3]
+- Updated dependencies [550e2e3]
+  - @mysten/sui@1.31.0
+
 ## 0.4.10
 
 ### Patch Changes
