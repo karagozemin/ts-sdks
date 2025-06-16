@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { IdentifierArray, Wallet, WalletWithFeatures } from '@mysten/wallet-standard';
+import type { Wallet, WalletWithFeatures } from '@mysten/wallet-standard';
 import type { UiWallet } from '@wallet-standard/ui';
 import { getWalletFeature } from '@wallet-standard/ui';
 import type { EnokiWallet } from './index.js';
@@ -12,8 +12,7 @@ export function isEnokiWallet(wallet: UiWallet): boolean;
 export function isEnokiWallet(wallet: Wallet): wallet is EnokiWallet;
 export function isEnokiWallet(wallet: Wallet | UiWallet) {
 	if (isWalletHandle(wallet)) {
-		const features = wallet.features as IdentifierArray;
-		return features.includes(EnokiGetMetadata);
+		return wallet.features.includes(EnokiGetMetadata);
 	}
 	return EnokiGetMetadata in wallet.features;
 }
