@@ -27,9 +27,10 @@ export type WalletInitializer = {
 // that register interfaces with hot module replacement enabled locally, this
 // doesn't quite work as expected as the original object reference gets lost.
 //
-// To work around these complexities, we can simply track initializers at the
-// module level to ensure that wallets get re-registered and de-duped properly
-// when there are multiple dApp Kit instances, across HMR reloads, etc.
+// To work around this and other complexities around when nanostore stores mount
+// and unmount, we can simply track initializers at the module level to ensure
+// that wallets get re-registered and de-duped properly when there are multiple
+// dApp Kit instances, across HMR reloads, etc.
 const initializerMap = new Map<string, UnregisterCallback>();
 
 export async function registerAdditionalWallets<TNetworks extends Networks>(
