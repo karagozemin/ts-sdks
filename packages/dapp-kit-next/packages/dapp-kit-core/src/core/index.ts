@@ -61,11 +61,17 @@ export function createDAppKit<TNetworks extends Networks>({
 			...(enableBurnerWallet ? [unsafeBurnerWalletInitializer()] : []),
 			...(slushWalletConfig !== null ? [slushWebWalletInitializer(slushWalletConfig)] : []),
 		],
-		{ networks, getClient },
+		{
+			networks,
+			getClient: (network) => {
+				return network ? getClient(network) : stores.$currentClient.get();
+			},
+		},
 	);
 
 	return {
 		networkConfig,
+		networks,
 		getClient,
 		signTransaction: signTransactionCreator(stores),
 		signAndExecuteTransaction: signAndExecuteTransactionCreator(stores),
