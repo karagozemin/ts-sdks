@@ -4,7 +4,6 @@
 import { readonlyType } from 'nanostores';
 import { createStores } from './store.js';
 import { syncRegisteredWallets } from './initializers/registered-wallets.js';
-import { DAppKitError } from '../utils/errors.js';
 import { autoConnectWallet } from './initializers/autoconnect-wallet.js';
 import { createInMemoryStorage, DEFAULT_STORAGE_KEY, getDefaultStorage } from '../utils/storage.js';
 import { syncStateToStorage } from './initializers/sync-state-to-storage.js';
@@ -38,12 +37,12 @@ export function createDAppKit<TNetworks extends Networks>({
 	storageKey = DEFAULT_STORAGE_KEY,
 	walletInitializers = [],
 }: CreateDAppKitOptions<TNetworks>) {
-	if (networks.length === 0) {
-		throw new DAppKitError('You must specify at least one Sui network for your application.');
-	}
+	const networkConfig = createNetworkConfig(networks, createClient);
+	const stores = createStores({ defaultNetwork, getClient: networkConfig.getClient });
 
-	const { networkConfig, getClient } = createNetworkConfig(networks, createClient);
-	const stores = createStores({ defaultNetwork, getClient });
+	const getClient = (network?: TNetworks[number]) => {
+		return network ? networkConfig.getClient(network) : stores.$currentClient.get();
+	};
 
 	storage ||= createInMemoryStorage();
 	syncStateToStorage({ stores, storageKey, storage });
@@ -61,16 +60,10 @@ export function createDAppKit<TNetworks extends Networks>({
 			...(enableBurnerWallet ? [unsafeBurnerWalletInitializer()] : []),
 			...(slushWalletConfig !== null ? [slushWebWalletInitializer(slushWalletConfig)] : []),
 		],
-		{
-			networks,
-			getClient: (network) => {
-				return network ? getClient(network) : stores.$currentClient.get();
-			},
-		},
+		{ networks, getClient },
 	);
 
 	return {
-		networkConfig,
 		networks,
 		getClient,
 		signTransaction: signTransactionCreator(stores),
