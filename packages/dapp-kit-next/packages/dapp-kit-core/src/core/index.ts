@@ -55,7 +55,7 @@ export function createDAppKit<TNetworks extends Networks>({
 		signTransaction: signTransactionCreator(stores),
 		signAndExecuteTransaction: signAndExecuteTransactionCreator(stores),
 		signPersonalMessage: signPersonalMessageCreator(stores),
-		connectWallet: connectWalletCreator(stores, networks),
+		connectWallet: connectWalletCreator(stores),
 		disconnectWallet: disconnectWalletCreator(stores),
 		switchAccount: switchAccountCreator(stores),
 		switchNetwork: switchNetworkCreator(stores),
