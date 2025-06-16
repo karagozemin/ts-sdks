@@ -40,9 +40,9 @@ export function createDAppKit<TNetworks extends Networks>({
 	const networkConfig = createNetworkConfig(networks, createClient);
 	const stores = createStores({ defaultNetwork, getClient: networkConfig.getClient });
 
-	const getClient = (network?: TNetworks[number]) => {
+	function getClient<T extends TNetworks[number]>(network?: TNetworks[number] | T) {
 		return network ? networkConfig.getClient(network) : stores.$currentClient.get();
-	};
+	}
 
 	storage ||= createInMemoryStorage();
 	syncStateToStorage({ stores, storageKey, storage });
