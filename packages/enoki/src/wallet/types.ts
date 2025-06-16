@@ -1,11 +1,11 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { SuiClient } from '@mysten/sui/client';
 import type { StandardEventsListeners } from '@mysten/wallet-standard';
 
 import type { EnokiClientConfig } from '../EnokiClient/index.js';
-import type { AuthProvider, EnokiNetwork } from '../EnokiClient/type.js';
+import type { AuthProvider } from '../EnokiClient/type.js';
+import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui/experimental';
 
 export type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
@@ -38,15 +38,12 @@ export interface RegisterEnokiWalletsOptions extends EnokiClientConfig {
 	>;
 
 	/**
-	 * The SuiClient instance to use when building and executing transactions.
+	 * A list of client instances to use when building and executing transactions.
 	 */
-	client: SuiClient;
+	clients: ClientWithCoreApi[];
 
-	/**
-	 * The network to use when building and executing transactions.
-	 * @default 'mainnet'
-	 */
-	network?: EnokiNetwork;
+	/** A function that returns the current network that the application is acting on. */
+	getCurrentNetwork: () => Experimental_SuiClientTypes.Network;
 
 	/**
 	 * The window features to use when opening the authorization popup.

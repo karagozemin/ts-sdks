@@ -1,14 +1,14 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import type { ClientWithCoreApi } from '@mysten/sui/experimental';
 import type { Networks } from '../utils/networks.js';
+import type { DAppKitCompatibleClient } from '../core/types.js';
 
 export type UnregisterCallback = () => void;
 
 type InitilizeArgs<TNetworks extends Networks> = {
 	networks: TNetworks;
-	getClient: (network: TNetworks[number]) => ClientWithCoreApi;
+	getClient: (network?: TNetworks[number]) => DAppKitCompatibleClient;
 };
 
 type InitializeResult = {

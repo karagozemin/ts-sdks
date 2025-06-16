@@ -1,6 +1,6 @@
 {
 	"name": "@mysten/enoki",
-	"version": "0.6.19",
+	"version": "0.6.20",
 	"description": "TODO: Description",
 	"license": "Apache-2.0",
 	"author": "Mysten Labs <build@mystenlabs.com>",
@@ -45,7 +45,7 @@
 	"homepage": "https://github.com/mystenlabs/ts-sdks#readme",
 	"devDependencies": {
 		"@mysten/build-scripts": "workspace:*",
-		"@mysten/dapp-kit": "workspace:*",
+		"@mysten/dapp-kit-react": "workspace:*",
 		"@tanstack/react-query": "^5.80.2",
 		"@types/node": "^22.15.29",
 		"@types/react": "^18.3.3",
@@ -61,6 +61,7 @@
 		"@mysten/sui": "workspace:*",
 		"@mysten/wallet-standard": "workspace:*",
 		"@nanostores/react": "^1.0.0",
+		"@wallet-standard/ui": "^1.0.1",
 		"idb-keyval": "^6.2.2",
 		"mitt": "^3.0.1",
 		"nanostores": "^1.0.1"

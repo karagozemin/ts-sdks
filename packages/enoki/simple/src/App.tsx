@@ -4,28 +4,29 @@
 import { Transaction } from '@mysten/sui/transactions';
 import { useState } from 'react';
 
-import { getEnokiMetadata, isEnokiWallet } from '../src/wallet/index.js';
 import { ConnectButton, useCurrentAccount, useDAppKit, useWallets } from '@mysten/dapp-kit-react';
 import { useMutation } from '@tanstack/react-query';
+import { isEnokiWallet, getEnokiWalletMetadata } from '@mysten/enoki';
 import { dAppKit } from './dApp-kit.js';
 
-export function App() {
+export default function App() {
 	const { connectWallet, signAndExecuteTransaction, networkConfig } = useDAppKit();
 	const { mutate: connect } = useMutation({ mutationFn: connectWallet });
-	const { mutateAsync: signAndExecute } = useMutation({ mutationFn: signAndExecuteTransaction });
+	const signAndExecute = useMutation({ mutationFn: signAndExecuteTransaction });
 
 	const currentAccount = useCurrentAccount();
 	const [result, setResult] = useState<any>();
 
 	const enokiWallets = useWallets().filter(isEnokiWallet);
 	const googleWallet = enokiWallets.find((wallet) => {
-		const metadata = getEnokiMetadata(wallet);
+		const metadata = getEnokiWalletMetadata(wallet);
 		return metadata.provider === 'google';
 	});
 
 	return (
 		<div>
 			<ConnectButton modalOptions={{ filterFn: (wallet) => !isEnokiWallet(wallet) }} />
+			<div>hello</div>
 
 			{googleWallet ? (
 				<button
@@ -49,7 +50,7 @@ export function App() {
 								arguments: [transaction.object('0x6')],
 							});
 
-							const result = await signAndExecute({ transaction });
+							const result = await signAndExecute.mutateAsync({ transaction });
 							setResult(result.digest);
 						} catch (e) {
 							console.log(e);
@@ -57,16 +58,16 @@ export function App() {
 						}
 					}}
 				>
-					Sign transaction
+					{signAndExecute.isPending ? 'Signing...' : 'Sign transaction'}
 				</button>
 			)}
 
-			{result && <div>{JSON.stringify(result)}</div>}
+			{result ? <div>{JSON.stringify(result)}</div> : null}
 
 			<ul>
-				{Object.keys(networkConfig).map((network) => (
+				{[...networkConfig.keys()].map((network) => (
 					<li key={network}>
-						<button onClick={() => dAppKit.switchNetwork(network as any)}>{network}</button>
+						<button onClick={() => dAppKit.switchNetwork(network)}>{network}</button>
 					</li>
 				))}
 			</ul>
