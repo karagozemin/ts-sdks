@@ -10,23 +10,27 @@ import {
 	useWallets,
 } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { getWalletMetadata, isEnokiWallet, isGoogleWallet } from '../src/wallet/utils.js';
+import type { Wallet } from '@mysten/wallet-standard';
 
 export function App() {
 	const { mutate: connect } = useConnectWallet();
 	const currentAccount = useCurrentAccount();
 	const [result, setResult] = useState<any>();
 
-	const wallets = useWallets().filter(isEnokiWallet);
-	const googleWallet = wallets.find(isGoogleWallet);
+	function getSignedInEmail(enokiWallet: Wallet) {
+		const metadata = getWalletMetadata(enokiWallet);
+		const decodedJwt = metadata.activeSession?.decodedJwt;
 
-	const metadata = googleWallet ? getWalletMetadata(googleWallet) : null;
-	const decodedJwt = metadata?.activeSession?.decodedJwt;
-	const email = decodedJwt && 'email' in decodedJwt ? decodedJwt.email : null;
+		return decodedJwt && 'email' in decodedJwt ? decodedJwt.email : null;
+	}
 
-	console.log('Email', email);
+	const enokiWallet = useWallets().find(isEnokiWallet);
+	const email = enokiWallet ? getSignedInEmail(enokiWallet) : null;
+
+	console.log(email);
 
 	const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
 	const { selectNetwork, networks } = useSuiClientContext();
@@ -35,11 +39,11 @@ export function App() {
 		<div>
 			<ConnectButton walletFilter={(wallet) => !isEnokiWallet(wallet)} />
 
-			{googleWallet ? (
+			{enokiWallet ? (
 				<button
 					disabled={!!currentAccount}
 					onClick={() => {
-						connect({ wallet: googleWallet });
+						connect({ wallet: enokiWallet });
 					}}
 				>
 					{currentAccount?.address ?? 'Sign in with Google'}

@@ -143,8 +143,6 @@ export class INTERNAL_ONLY_EnokiFlow {
 				throw new Error(`Invalid provider: ${input.provider}`);
 		}
 
-		console.log(oauthUrl);
-
 		this.$zkLoginState.set({ provider: input.provider });
 
 		await set('ephemeralKeyPair', ephemeralKeyPair.export(), this.#idbStore);

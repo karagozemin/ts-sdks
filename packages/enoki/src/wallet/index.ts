@@ -227,7 +227,12 @@ export class EnokiWallet implements Wallet {
 					address: state.address,
 					chains: this.chains,
 					icon: this.icon,
-					features: [SuiSignPersonalMessage, SuiSignTransaction, SuiSignAndExecuteTransaction],
+					features: [
+						EnokiGetMetadata,
+						SuiSignPersonalMessage,
+						SuiSignTransaction,
+						SuiSignAndExecuteTransaction,
+					],
 					publicKey: fromBase64(state.publicKey),
 				}),
 			];

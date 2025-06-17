@@ -22,12 +22,12 @@ export function RegisterEnokiWallets() {
 					},
 					clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
 				},
-				facebook: {
-					clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
-				},
-				twitch: {
-					clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
-				},
+				// facebook: {
+				// 	clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
+				// },
+				// twitch: {
+				// 	clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
+				// },
 			},
 
 			client: client as never,
