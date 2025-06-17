@@ -43,8 +43,8 @@
 		"node": ">=16"
 	},
 	"dependencies": {
-		"@mysten/sui": "workspace:*",
-		"@mysten/bcs": "workspace:*"
+		"@mysten/bcs": "workspace:*",
+		"@mysten/sui": "workspace:*"
 	},
 	"devDependencies": {
 		"@mysten/build-scripts": "workspace:*",
