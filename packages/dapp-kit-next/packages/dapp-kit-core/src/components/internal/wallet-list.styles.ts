@@ -12,5 +12,11 @@ export const styles = [
 			flex-direction: column;
 			gap: 8px;
 		}
+
+		.no-wallets-container {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
 	`,
 ];
