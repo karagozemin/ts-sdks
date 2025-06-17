@@ -5,9 +5,7 @@ import type { Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments } from '../utils/index.js';
 import type { RawTransactionArgument } from '../utils/index.js';
 export function ControllerV2() {
-	return bcs.struct('ControllerV2', {
-		dummy_field: bcs.bool(),
-	});
+	return bcs.tuple([bcs.bool()], { name: 'ControllerV2' });
 }
 export function Controller() {
 	return bcs.struct('Controller', {
@@ -15,11 +13,12 @@ export function Controller() {
 	});
 }
 export function init(packageAddress: string) {
+	/** Set the target address of a domain. */
 	function set_target_address(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string | null>,
+			suins: RawTransactionArgument<string>,
+			nft: RawTransactionArgument<string>,
+			new_target: RawTransactionArgument<string | null>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -35,8 +34,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** Set the reverse lookup address for the domain */
 	function set_reverse_lookup(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [suins: RawTransactionArgument<string>, domain_name: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::suins::SuiNS`,
@@ -50,7 +50,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function unset_reverse_lookup(options: { arguments: [RawTransactionArgument<string>] }) {
+	/** User-facing function - unset the reverse lookup address for the domain. */
+	function unset_reverse_lookup(options: { arguments: [suins: RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::suins::SuiNS`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -60,8 +61,12 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Allows setting the reverse lookup address for an object. Expects a mutable
+	 * reference of the object.
+	 */
 	function set_object_reverse_lookup(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [suins: RawTransactionArgument<string>, domain_name: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::suins::SuiNS`,
@@ -75,7 +80,13 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function unset_object_reverse_lookup(options: { arguments: [RawTransactionArgument<string>] }) {
+	/**
+	 * Allows unsetting the reverse lookup address for an object. Expects a mutable
+	 * reference of the object.
+	 */
+	function unset_object_reverse_lookup(options: {
+		arguments: [suins: RawTransactionArgument<string>];
+	}) {
 		const argumentsTypes = [`${packageAddress}::suins::SuiNS`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -85,12 +96,13 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** User-facing function - add a new key-value pair to the name record's data. */
 	function set_user_data(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
+			suins: RawTransactionArgument<string>,
+			nft: RawTransactionArgument<string>,
+			key: RawTransactionArgument<string>,
+			value: RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -107,11 +119,12 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** User-facing function - remove a key from the name record's data. */
 	function unset_user_data(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
+			suins: RawTransactionArgument<string>,
+			nft: RawTransactionArgument<string>,
+			key: RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -128,7 +141,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function burn_expired(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [suins: RawTransactionArgument<string>, nft: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::suins::SuiNS`,
@@ -143,7 +156,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function burn_expired_subname(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [suins: RawTransactionArgument<string>, nft: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::suins::SuiNS`,

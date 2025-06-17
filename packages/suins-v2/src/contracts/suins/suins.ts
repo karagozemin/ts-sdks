@@ -1,5 +1,31 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
+
+/**
+ * The main module of the SuiNS application, defines the `SuiNS` object and the
+ * authorization mechanism for interacting with the main data storage.
+ *
+ * Authorization mechanic: The Admin can authorize applications to access protected
+ * features of the SuiNS, they're named with a prefix `app_*`. Once authorized,
+ * application can get mutable access to the `Registry` and add to the application
+ * `Balance`.
+ *
+ * At any moment any of the applications can be deathorized by the Admin making it
+ * impossible for the deauthorized module to access the registry.
+ *
+ * ---
+ *
+ * Package Upgrades in mind:
+ *
+ * - None of the public functions of the SuiNS feature any specific types - instead
+ *   we use generics to define the actual types in arbitrary modules.
+ * - The `Registry` itself (the main feature of the application) is stored as a
+ *   dynamic field so that we can change the type and the module that serves the
+ *   registry without breaking the SuiNS compatibility.
+ * - Any of the old modules can be deauthorized hence disabling its access to the
+ *   registry and the balance.
+ */
+
 import { bcs } from '@mysten/sui/bcs';
 import type { BcsType } from '@mysten/sui/bcs';
 import type { Transaction } from '@mysten/sui/transactions';
@@ -15,6 +41,10 @@ export function AdminCap() {
 export function SuiNS() {
 	return bcs.struct('SuiNS', {
 		id: object.UID(),
+		/**
+		 * The total balance of the SuiNS. Can be added to by authorized apps. Can be
+		 * withdrawn only by the application Admin.
+		 */
 		balance: balance.Balance(),
 	});
 }
@@ -44,8 +74,13 @@ export function AppKey() {
 	});
 }
 export function init(packageAddress: string) {
+	/**
+	 * Withdraw from the SuiNS balance directly and access the Coins within the same
+	 * transaction. This is useful for the admin to withdraw funds from the SuiNS and
+	 * then send them somewhere specific or keep at the address.
+	 */
 	function withdraw(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [_: RawTransactionArgument<string>, self: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::suins::AdminCap`,
@@ -59,8 +94,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** Withdraw from the SuiNS balance of a custom coin type. */
 	function withdraw_custom(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, _: RawTransactionArgument<string>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [
@@ -76,8 +112,9 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/** Authorize an application to access protected features of the SuiNS. */
 	function authorize_app(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [_: RawTransactionArgument<string>, self: RawTransactionArgument<string>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [
@@ -93,8 +130,9 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/** Deauthorize an application by removing its authorization key. */
 	function deauthorize_app(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [_: RawTransactionArgument<string>, self: RawTransactionArgument<string>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [
@@ -110,8 +148,9 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/** Check if an application is authorized to access protected features of the SuiNS. */
 	function is_app_authorized(options: {
-		arguments: [RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [`${packageAddress}::suins::SuiNS`] satisfies string[];
@@ -124,8 +163,12 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/**
+	 * Assert that an application is authorized to access protected features of the
+	 * SuiNS. Aborts with `EAppNotAuthorized` if not.
+	 */
 	function assert_app_is_authorized(options: {
-		arguments: [RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [`${packageAddress}::suins::SuiNS`] satisfies string[];
@@ -138,8 +181,9 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/** Adds balance to the SuiNS. */
 	function app_add_balance<App extends BcsType<any>>(options: {
-		arguments: [RawTransactionArgument<App>, RawTransactionArgument<string>];
+		arguments: [_: RawTransactionArgument<App>, self: RawTransactionArgument<string>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [
@@ -155,8 +199,9 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/** Adds a balance of type `T` to the SuiNS protocol as an authorized app. */
 	function app_add_custom_balance<App extends BcsType<any>>(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<App>];
+		arguments: [self: RawTransactionArgument<string>, _: RawTransactionArgument<App>];
 		typeArguments: [string, string];
 	}) {
 		const argumentsTypes = [
@@ -172,8 +217,12 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/**
+	 * Get a mutable access to the `Registry` object. Can only be performed by
+	 * authorized applications.
+	 */
 	function app_registry_mut<App extends BcsType<any>>(options: {
-		arguments: [RawTransactionArgument<App>, RawTransactionArgument<string>];
+		arguments: [_: RawTransactionArgument<App>, self: RawTransactionArgument<string>];
 		typeArguments: [string, string];
 	}) {
 		const argumentsTypes = [
@@ -189,11 +238,12 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/** Attach dynamic configuration object to the application. */
 	function add_config<Config extends BcsType<any>>(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<Config>,
+			_: RawTransactionArgument<string>,
+			self: RawTransactionArgument<string>,
+			config: RawTransactionArgument<Config>,
 		];
 		typeArguments: [string];
 	}) {
@@ -211,8 +261,9 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/** Borrow configuration object. Read-only mode for applications. */
 	function get_config(options: {
-		arguments: [RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [`${packageAddress}::suins::SuiNS`] satisfies string[];
@@ -225,8 +276,16 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/**
+	 * Get the configuration object for editing. The admin should put it back after
+	 * editing (no extra check performed). Can be used to swap configuration since the
+	 * `T` has `drop`. Eg nothing is stopping the admin from removing the configuration
+	 * object and adding a new one.
+	 *
+	 * Fully taking the config also allows for edits within a transaction.
+	 */
 	function remove_config(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [_: RawTransactionArgument<string>, self: RawTransactionArgument<string>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [
@@ -242,8 +301,9 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/** Get a read-only access to the `Registry` object. */
 	function registry(options: {
-		arguments: [RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>];
 		typeArguments: [string];
 	}) {
 		const argumentsTypes = [`${packageAddress}::suins::SuiNS`] satisfies string[];
@@ -256,11 +316,12 @@ export function init(packageAddress: string) {
 				typeArguments: options.typeArguments,
 			});
 	}
+	/** Add a registry to the SuiNS. Can only be performed by the admin. */
 	function add_registry<R extends BcsType<any>>(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<R>,
+			_: RawTransactionArgument<string>,
+			self: RawTransactionArgument<string>,
+			registry: RawTransactionArgument<R>,
 		];
 		typeArguments: [string];
 	}) {

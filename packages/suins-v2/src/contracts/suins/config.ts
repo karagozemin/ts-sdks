@@ -13,12 +13,16 @@ export function Config() {
 	});
 }
 export function init(packageAddress: string) {
+	/**
+	 * Create a new instance of the configuration object. Define all properties from
+	 * the start.
+	 */
 	function _new(options: {
 		arguments: [
-			RawTransactionArgument<number[]>,
-			RawTransactionArgument<number | bigint>,
-			RawTransactionArgument<number | bigint>,
-			RawTransactionArgument<number | bigint>,
+			_public_key: RawTransactionArgument<number[]>,
+			_three_char_price: RawTransactionArgument<number | bigint>,
+			_four_char_price: RawTransactionArgument<number | bigint>,
+			_five_plus_char_price: RawTransactionArgument<number | bigint>,
 		];
 	}) {
 		const argumentsTypes = ['vector<u8>', 'u64', 'u64', 'u64'] satisfies string[];
@@ -31,7 +35,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function set_public_key(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number[]>];
+		arguments: [_: RawTransactionArgument<string>, _: RawTransactionArgument<number[]>];
 	}) {
 		const argumentsTypes = [`${packageAddress}::config::Config`, 'vector<u8>'] satisfies string[];
 		return (tx: Transaction) =>
@@ -43,7 +47,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function set_three_char_price(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number | bigint>];
+		arguments: [_: RawTransactionArgument<string>, _: RawTransactionArgument<number | bigint>];
 	}) {
 		const argumentsTypes = [`${packageAddress}::config::Config`, 'u64'] satisfies string[];
 		return (tx: Transaction) =>
@@ -55,7 +59,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function set_four_char_price(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number | bigint>];
+		arguments: [_: RawTransactionArgument<string>, _: RawTransactionArgument<number | bigint>];
 	}) {
 		const argumentsTypes = [`${packageAddress}::config::Config`, 'u64'] satisfies string[];
 		return (tx: Transaction) =>
@@ -67,7 +71,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function set_five_plus_char_price(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number | bigint>];
+		arguments: [_: RawTransactionArgument<string>, _: RawTransactionArgument<number | bigint>];
 	}) {
 		const argumentsTypes = [`${packageAddress}::config::Config`, 'u64'] satisfies string[];
 		return (tx: Transaction) =>
@@ -80,9 +84,9 @@ export function init(packageAddress: string) {
 	}
 	function calculate_price(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number>,
-			RawTransactionArgument<number>,
+			_: RawTransactionArgument<string>,
+			_: RawTransactionArgument<number>,
+			_: RawTransactionArgument<number>,
 		];
 	}) {
 		const argumentsTypes = [`${packageAddress}::config::Config`, 'u8', 'u8'] satisfies string[];
@@ -94,7 +98,7 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function public_key(options: { arguments: [RawTransactionArgument<string>] }) {
+	function public_key(options: { arguments: [_: RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::config::Config`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -104,7 +108,7 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function three_char_price(options: { arguments: [RawTransactionArgument<string>] }) {
+	function three_char_price(options: { arguments: [_: RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::config::Config`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -114,7 +118,7 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function four_char_price(options: { arguments: [RawTransactionArgument<string>] }) {
+	function four_char_price(options: { arguments: [_: RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::config::Config`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -124,7 +128,7 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function five_plus_char_price(options: { arguments: [RawTransactionArgument<string>] }) {
+	function five_plus_char_price(options: { arguments: [_: RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::config::Config`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -135,7 +139,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function assert_valid_user_registerable_domain(options: {
-		arguments: [RawTransactionArgument<string>];
+		arguments: [_: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [`${packageAddress}::domain::Domain`] satisfies string[];
 		return (tx: Transaction) =>

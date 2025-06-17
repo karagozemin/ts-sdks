@@ -1,5 +1,8 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
+
+/** Implementation of auction module. More information in: ../../../docs */
+
 import { bcs } from '@mysten/sui/bcs';
 import type { Transaction } from '@mysten/sui/transactions';
 import { normalizeMoveArguments } from '../utils/index.js';
@@ -64,11 +67,12 @@ export function AuctionExtendedEvent() {
 	});
 }
 export function init(packageAddress: string) {
+	/** Start an auction if it's not started yet; and make the first bid. */
 	function start_auction_and_place_bid(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
+			self: RawTransactionArgument<string>,
+			suins: RawTransactionArgument<string>,
+			domain_name: RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -84,8 +88,16 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * #### Notice
+	 *
+	 * Bidders use this function to place a new bid.
+	 *
+	 * Panics Panics if `domain` is invalid or there isn't an auction for `domain` or
+	 * `bid` is too low,
+	 */
 	function place_bid(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, domain_name: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::auction::AuctionHouse`,
@@ -99,8 +111,15 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * #### Notice
+	 *
+	 * Auction winner can come and claim the NFT
+	 *
+	 * Panics sender is not the winner
+	 */
 	function claim(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, domain_name: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::auction::AuctionHouse`,
@@ -114,8 +133,21 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * #### Notice
+	 *
+	 * Get metadata of an auction
+	 *
+	 * #### Params
+	 *
+	 * The domain name being auctioned.
+	 *
+	 * #### Return
+	 *
+	 * (`start_timestamp_ms`, `end_timestamp_ms`, `winner`, `highest_amount`)
+	 */
 	function get_auction_metadata(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, domain_name: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::auction::AuctionHouse`,
@@ -130,7 +162,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function collect_winning_auction_fund(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, domain_name: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::auction::AuctionHouse`,
@@ -145,7 +177,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function admin_withdraw_funds(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [_: RawTransactionArgument<string>, self: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::suins::AdminCap`,
@@ -159,11 +191,28 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Admin functionality used to finalize a single auction.
+	 *
+	 * An `operation_limit` limit must be provided which controls how many individual
+	 * operations to perform. This allows the admin to be able to make forward progress
+	 * in finalizing auctions even in the presence of thousands of bids.
+	 *
+	 * This will attempt to do as much as possible of the following based on the
+	 * provided `operation_limit`:
+	 *
+	 * - claim the winning bid and place in `AuctionHouse.balance`
+	 * - push the `SuinsRegistration` to the winner
+	 * - push loosing bids back to their respective account owners
+	 *
+	 * Once all of the above has been done the auction is destroyed, freeing on-chain
+	 * storage.
+	 */
 	function admin_finalize_auction(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
+			admin: RawTransactionArgument<string>,
+			self: RawTransactionArgument<string>,
+			domain: RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -179,11 +228,18 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Admin functionality used to finalize an arbitrary number of auctions.
+	 *
+	 * An `operation_limit` limit must be provided which controls how many individual
+	 * operations to perform. This allows the admin to be able to make forward progress
+	 * in finalizing auctions even in the presence of thousands of auctions/bids.
+	 */
 	function admin_try_finalize_auctions(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number | bigint>,
+			admin: RawTransactionArgument<string>,
+			self: RawTransactionArgument<string>,
+			operation_limit: RawTransactionArgument<number | bigint>,
 		];
 	}) {
 		const argumentsTypes = [

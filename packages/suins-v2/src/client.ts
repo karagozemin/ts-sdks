@@ -15,14 +15,13 @@ export class SuiNsClient {
 	#client: SuiNsCompatibleClient;
 
 	constructor(options: SuiNsClientOptions) {
-		if (options.client.network !== 'mainnet' && options.client.network !== 'testnet') {
-			if (options.client.network === 'unknown') {
+		this.#client = options.client;
+		if (this.#client.network !== 'mainnet' && this.#client.network !== 'testnet') {
+			if (this.#client.network === 'unknown') {
 				throw new Error('network must be defined on SuiClient');
 			}
 			throw new Error('SuiNsClient only supports mainnet and testnet');
 		}
-
-		this.#client = options.client;
 	}
 
 	static asClientExtension(

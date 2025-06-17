@@ -6,10 +6,7 @@ import { normalizeMoveArguments } from '../utils/index.js';
 import type { RawTransactionArgument } from '../utils/index.js';
 import * as vec_map from './deps/sui/vec_map.js';
 export function Range() {
-	return bcs.struct('Range', {
-		pos0: bcs.u64(),
-		pos1: bcs.u64(),
-	});
+	return bcs.tuple([bcs.u64(), bcs.u64()], { name: 'Range' });
 }
 export function PricingConfig() {
 	return bcs.struct('PricingConfig', {
@@ -22,8 +19,19 @@ export function RenewalConfig() {
 	});
 }
 export function init(packageAddress: string) {
+	/**
+	 * Calculates the base price for a given length.
+	 *
+	 * - Base price type is abstracted away. We can switch to a different base. Our
+	 *   core base will become USDC.
+	 * - The price is calculated based on the length of the domain name and the
+	 *   available ranges.
+	 */
 	function calculate_base_price(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number | bigint>];
+		arguments: [
+			config: RawTransactionArgument<string>,
+			length: RawTransactionArgument<number | bigint>,
+		];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::pricing_config::PricingConfig`,
@@ -37,8 +45,19 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Creates a new PricingConfig with the given ranges and prices.
+	 *
+	 * - The ranges should be sorted in `ascending order` and should not overlap.
+	 * - The length of the ranges and prices should be the same.
+	 *
+	 * All the ranges are inclusive (e.g. [3,5]: includes 3, 4, and 5).
+	 */
 	function _new(options: {
-		arguments: [RawTransactionArgument<string[]>, RawTransactionArgument<number | bigint[]>];
+		arguments: [
+			ranges: RawTransactionArgument<string[]>,
+			prices: RawTransactionArgument<number | bigint[]>,
+		];
 	}) {
 		const argumentsTypes = [
 			`vector<${packageAddress}::pricing_config::Range>`,
@@ -52,8 +71,12 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** Checks if the value is between the range (inclusive). */
 	function is_between_inclusive(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<number | bigint>];
+		arguments: [
+			range: RawTransactionArgument<string>,
+			length: RawTransactionArgument<number | bigint>,
+		];
 	}) {
 		const argumentsTypes = [`${packageAddress}::pricing_config::Range`, 'u64'] satisfies string[];
 		return (tx: Transaction) =>
@@ -64,7 +87,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function pricing(options: { arguments: [RawTransactionArgument<string>] }) {
+	/** Returns the pricing config for usage in external apps. */
+	function pricing(options: { arguments: [config: RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::pricing_config::PricingConfig`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -74,7 +98,8 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function new_renewal_config(options: { arguments: [RawTransactionArgument<string>] }) {
+	/** Constructor for Renewal<T> that initializes it with a PricingConfig. */
+	function new_renewal_config(options: { arguments: [config: RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::pricing_config::PricingConfig`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -84,7 +109,7 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function new_range(options: { arguments: [RawTransactionArgument<number | bigint[]>] }) {
+	function new_range(options: { arguments: [range: RawTransactionArgument<number | bigint[]>] }) {
 		const argumentsTypes = ['vector<u64>'] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -94,7 +119,7 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function config(options: { arguments: [RawTransactionArgument<string>] }) {
+	function config(options: { arguments: [renewal: RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::pricing_config::RenewalConfig`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({

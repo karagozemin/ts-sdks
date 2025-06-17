@@ -7,12 +7,20 @@ import type { RawTransactionArgument } from '../utils/index.js';
 import * as table from './deps/sui/table.js';
 export function Registry() {
 	return bcs.struct('Registry', {
+		/**
+		 * The `registry` table maps `Domain` to `NameRecord`. Added / replaced in the
+		 * `add_record` function.
+		 */
 		registry: table.Table(),
+		/**
+		 * The `reverse_registry` table maps `address` to `domain_name`. Updated in the
+		 * `set_reverse_lookup` function.
+		 */
 		reverse_registry: table.Table(),
 	});
 }
 export function init(packageAddress: string) {
-	function _new(options: { arguments: [RawTransactionArgument<string>] }) {
+	function _new(options: { arguments: [_: RawTransactionArgument<string>] }) {
 		const argumentsTypes = [`${packageAddress}::suins::AdminCap`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
@@ -22,11 +30,16 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Attempts to add a new record to the registry without looking at the grace
+	 * period. Currently used for subdomains where there's no grace period to respect.
+	 * Returns a `SuinsRegistration` upon success.
+	 */
 	function add_record_ignoring_grace_period(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number>,
+			self: RawTransactionArgument<string>,
+			domain: RawTransactionArgument<string>,
+			no_years: RawTransactionArgument<number>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -42,11 +55,16 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Attempts to add a new record to the registry and returns a `SuinsRegistration`
+	 * upon success. Only use with second-level names. Enforces a `grace_period` by
+	 * default. Not suitable for subdomains (unless a grace period is needed).
+	 */
 	function add_record(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number>,
+			self: RawTransactionArgument<string>,
+			domain: RawTransactionArgument<string>,
+			no_years: RawTransactionArgument<number>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -62,8 +80,12 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Attempts to burn an NFT and get storage rebates. Only works if the NFT has
+	 * expired.
+	 */
 	function burn_registration_object(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, nft: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::registry::Registry`,
@@ -77,8 +99,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** Allow creation of subdomain wrappers only to authorized modules. */
 	function wrap_subdomain(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [_: RawTransactionArgument<string>, nft: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::registry::Registry`,
@@ -92,8 +115,12 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Attempts to burn a subdomain registration object, and also invalidates any
+	 * records in the registry / reverse registry.
+	 */
 	function burn_subdomain_object(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, nft: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::registry::Registry`,
@@ -107,11 +134,27 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Adds a `leaf` record to the registry. A `leaf` record is a record that is a
+	 * subdomain and doesn't have an equivalent `SuinsRegistration` object.
+	 *
+	 * Instead, the parent's `SuinsRegistration` object is used to manage
+	 * target_address & remove it / determine expiration.
+	 *
+	 * 1.  Leaf records can't have children. They only work as a resolving mechanism.
+	 * 2.  Leaf records must always have a `target` address (can't point to `none`).
+	 * 3.  Leaf records do not expire. Their expiration date is actually what defines
+	 *     their type.
+	 *
+	 * Leaf record's expiration is defined by the parent's expiration. Since the parent
+	 * can only be a `node`, we need to check that the parent's NFT_ID is valid &
+	 * hasn't expired.
+	 */
 	function add_leaf_record(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
+			self: RawTransactionArgument<string>,
+			domain: RawTransactionArgument<string>,
+			target: RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -127,8 +170,13 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Can be used to remove a leaf record. Leaf records do not have any symmetrical
+	 * `SuinsRegistration` object. Authorization of who calls this is delegated to the
+	 * authorized module that calls this.
+	 */
 	function remove_leaf_record(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, domain: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::registry::Registry`,
@@ -144,9 +192,9 @@ export function init(packageAddress: string) {
 	}
 	function set_target_address(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string | null>,
+			self: RawTransactionArgument<string>,
+			domain: RawTransactionArgument<string>,
+			new_target: RawTransactionArgument<string | null>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -163,7 +211,7 @@ export function init(packageAddress: string) {
 			});
 	}
 	function unset_reverse_lookup(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, address: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [`${packageAddress}::registry::Registry`, 'address'] satisfies string[];
 		return (tx: Transaction) =>
@@ -174,11 +222,12 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** Reverse lookup can only be set for the record that has the target address. */
 	function set_reverse_lookup(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
+			self: RawTransactionArgument<string>,
+			address: RawTransactionArgument<string>,
+			domain: RawTransactionArgument<string>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -194,12 +243,17 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Update the `expiration_timestamp_ms` of the given `SuinsRegistration` and
+	 * `NameRecord`. Requires the `SuinsRegistration` to make sure that both timestamps
+	 * are in sync.
+	 */
 	function set_expiration_timestamp_ms(options: {
 		arguments: [
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<string>,
-			RawTransactionArgument<number | bigint>,
+			self: RawTransactionArgument<string>,
+			nft: RawTransactionArgument<string>,
+			domain: RawTransactionArgument<string>,
+			expiration_timestamp_ms: RawTransactionArgument<number | bigint>,
 		];
 	}) {
 		const argumentsTypes = [
@@ -216,8 +270,14 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Update the `data` of the given `NameRecord` using a `SuinsRegistration`. Use
+	 * with caution and validate(!!) that any system fields are not removed
+	 * (accidentally), when building authorized packages that can write the metadata
+	 * field.
+	 */
 	function set_data(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, domain: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::registry::Registry`,
@@ -231,8 +291,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** Check whether the given `domain` is registered in the `Registry`. */
 	function has_record(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, domain: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::registry::Registry`,
@@ -246,8 +307,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** Returns the `NameRecord` associated with the given domain or None. */
 	function lookup(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, domain: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::registry::Registry`,
@@ -261,8 +323,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** Returns the `domain_name` associated with the given address or None. */
 	function reverse_lookup(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, address: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [`${packageAddress}::registry::Registry`, 'address'] satisfies string[];
 		return (tx: Transaction) =>
@@ -273,8 +336,14 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/**
+	 * Asserts that the provided NFT:
+	 *
+	 * 1.  Matches the ID in the corresponding `Record`
+	 * 2.  Has not expired (does not take into account the grace period)
+	 */
 	function assert_nft_is_authorized(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, nft: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::registry::Registry`,
@@ -288,8 +357,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
+	/** Returns the `data` associated with the given `Domain`. */
 	function get_data(options: {
-		arguments: [RawTransactionArgument<string>, RawTransactionArgument<string>];
+		arguments: [self: RawTransactionArgument<string>, domain: RawTransactionArgument<string>];
 	}) {
 		const argumentsTypes = [
 			`${packageAddress}::registry::Registry`,
