@@ -1,5 +1,4 @@
 {
-	"private": true,
 	"name": "@mysten/codegen",
 	"version": "0.0.0",
 	"description": "typescript codegen for sui move",
