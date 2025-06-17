@@ -9,7 +9,7 @@ export function slushWebWalletInitializer(config?: SlushWalletConfig): WalletIni
 	return {
 		id: 'slush-web-wallet-initializer',
 		async initialize() {
-			const appName = config?.name || getDefaultAppName();
+			const appName = config?.appName || getDefaultAppName();
 			const result = await registerSlushWallet(appName, {
 				origin: config?.origin,
 				metadataApiUrl: config?.metadataApiUrl,

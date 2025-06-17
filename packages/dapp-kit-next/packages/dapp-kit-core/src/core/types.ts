@@ -17,7 +17,7 @@ export type SlushWalletConfig = {
 	 * The name of your application, shown to the user when connecting to the wallet.
 	 * @defaultValue The value of the `<meta name="application-name">` tag, or `document.title` if the meta tag is not populated.
 	 */
-	name?: string;
+	appName?: string;
 
 	/**
 	 * The host origin of the wallet.

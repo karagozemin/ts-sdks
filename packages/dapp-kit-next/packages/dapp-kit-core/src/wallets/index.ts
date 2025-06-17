@@ -6,9 +6,9 @@ import type { DAppKitCompatibleClient } from '../core/types.js';
 
 export type UnregisterCallback = () => void;
 
-type InitilizeArgs<TNetworks extends Networks> = {
-	networks: TNetworks;
-	getClient: (network?: TNetworks[number]) => DAppKitCompatibleClient;
+type InitilizeArgs = {
+	networks: Networks;
+	getClient: (network?: Networks[number]) => DAppKitCompatibleClient;
 };
 
 type InitializeResult = {
@@ -17,9 +17,7 @@ type InitializeResult = {
 
 export type WalletInitializer = {
 	id: string;
-	initialize<TNetworks extends Networks>(
-		input: InitilizeArgs<TNetworks>,
-	): InitializeResult | Promise<InitializeResult>;
+	initialize(input: InitilizeArgs): InitializeResult | Promise<InitializeResult>;
 };
 
 // The wallet standard registers wallets globally and uses object references
@@ -33,9 +31,9 @@ export type WalletInitializer = {
 // dApp Kit instances, across HMR reloads, etc.
 const initializerMap = new Map<string, UnregisterCallback>();
 
-export async function registerAdditionalWallets<TNetworks extends Networks>(
+export async function registerAdditionalWallets(
 	initializers: WalletInitializer[],
-	args: InitilizeArgs<TNetworks>,
+	args: InitilizeArgs,
 ) {
 	initializerMap.forEach((unregister) => unregister());
 	initializerMap.clear();
