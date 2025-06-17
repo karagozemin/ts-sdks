@@ -125,10 +125,20 @@ export class MoveModuleBuilder extends FileBuilder {
 		Object.keys(this.summary.enums).forEach((name) => this.includeType(name, moduleBuilders));
 	}
 
+<<<<<<< HEAD
 	async renderBCSTypes() {
 		this.addImport('@mysten/sui/bcs', 'bcs');
 		await this.renderStructs();
 		await this.renderEnums();
+=======
+	renderBCSTypes() {
+		if (this.hasBcsTypes()) {
+			this.addImport('@mysten/sui/bcs', 'bcs');
+		}
+
+		this.renderStructs();
+		this.renderEnums();
+>>>>>>> 1a46dc64 (scaffold suins-v2 package)
 	}
 
 	hasBcsTypes() {
@@ -145,6 +155,7 @@ export class MoveModuleBuilder extends FileBuilder {
 		return this.hasBcsTypes() || this.hasFunctions();
 	}
 
+<<<<<<< HEAD
 	async #renderFieldsAsStruct(
 		name: string,
 		{ fields }: Fields,
@@ -154,6 +165,18 @@ export class MoveModuleBuilder extends FileBuilder {
 			items: Object.entries(fields),
 			getComment: ([_name, field]) => field.doc,
 			mapper: ([name, field]) => [
+=======
+	renderStructs() {
+		for (const [name, struct] of Object.entries(this.summary.structs)) {
+			if (!this.#includedTypes.has(name)) {
+				continue;
+			}
+
+			this.exports.push(name);
+
+			const fields = Object.entries(struct.fields.fields);
+			const fieldObject = mapToObject(fields, ([name, field]) => [
+>>>>>>> 1a46dc64 (scaffold suins-v2 package)
 				name,
 				renderTypeSignature(field.type_, {
 					format: 'bcs',
@@ -251,8 +274,12 @@ export class MoveModuleBuilder extends FileBuilder {
 		}
 
 		for (const [name, enumDef] of Object.entries(this.summary.enums)) {
+			if (!this.#includedTypes.has(name)) {
+				continue;
+			}
 			this.exports.push(name);
 
+<<<<<<< HEAD
 			const variantsObject = await mapToObject({
 				items: Object.entries(enumDef.variants),
 				getComment: ([_name, variant]) => variant.doc,
@@ -287,6 +314,39 @@ export class MoveModuleBuilder extends FileBuilder {
 								),
 				],
 			});
+=======
+			const variants = Object.entries(enumDef.variants).map(([variantName, variant]) => ({
+				name: variantName,
+				fields: Object.entries(variant.fields.fields).map(([fieldName, field]) => ({
+					name: fieldName,
+					signature: renderTypeSignature(field.type_, {
+						format: 'bcs',
+						summary: this.summary,
+						typeParameters: enumDef.type_parameters,
+						resolveAddress: (address) => this.#resolveAddress(address),
+						onDependency: (address, mod) => {
+							if (address !== this.summary.id.address || mod !== this.summary.id.name) {
+								this.addStarImport(
+									address === this.summary.id.address
+										? `./${mod}.js`
+										: `~root/deps/${address}/${mod}.js`,
+									mod,
+								);
+							}
+						},
+					}),
+				})),
+			}));
+
+			const variantsObject = mapToObject(variants, (variant) => [
+				variant.name,
+				variant.fields.length === 0
+					? 'null'
+					: variant.fields.length === 1
+						? variant.fields[0].signature
+						: `bcs.tuple([${variant.fields.map((field) => field.signature).join(', ')}])`,
+			]);
+>>>>>>> 1a46dc64 (scaffold suins-v2 package)
 
 			const params = enumDef.type_parameters.filter((param) => !param.phantom);
 
@@ -337,7 +397,9 @@ export class MoveModuleBuilder extends FileBuilder {
 			const fnName = getSafeName(name);
 
 			this.addImport('~root/../utils/index.js', 'normalizeMoveArguments');
-			this.addImport('~root/../utils/index.js', 'type RawTransactionArgument');
+			if (parameters.length > 0) {
+				this.addImport('~root/../utils/index.js', 'type RawTransactionArgument');
+			}
 
 			names.push(fnName);
 
@@ -364,14 +426,19 @@ export class MoveModuleBuilder extends FileBuilder {
 				this.addImport('@mysten/sui/bcs', 'type BcsType');
 			}
 
+			const filteredTypeParameters = func.type_parameters.filter(
+				(param, i) =>
+					usedTypeParameters.has(i) || (param.name && usedTypeParameters.has(param.name)),
+			);
+
 			statements.push(
 				...(await withComment(
 					func,
 					parseTS/* ts */ `function
 					${fnName}${
-						usedTypeParameters.size > 0
+						filteredTypeParameters.length > 0
 							? `<
-							${func.type_parameters.map((param, i) => `${param.name ?? `T${i}`} extends BcsType<any>`)}
+							${filteredTypeParameters.map((param, i) => `${param.name ?? `T${i}`} extends BcsType<any>`)}
 						>`
 							: ''
 					}(options: {
@@ -396,7 +463,7 @@ export class MoveModuleBuilder extends FileBuilder {
 							)
 							.map((tag) => (tag.includes('{') ? `\`${tag}\`` : `'${tag}'`))
 							.join(',\n')}
-					]
+					] satisfies string[]
 					return (tx: Transaction) => tx.moveCall({
 						package: packageAddress,
 						module: '${this.summary.id.name}',
