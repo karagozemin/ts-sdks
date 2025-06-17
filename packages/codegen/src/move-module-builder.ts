@@ -125,20 +125,12 @@ export class MoveModuleBuilder extends FileBuilder {
 		Object.keys(this.summary.enums).forEach((name) => this.includeType(name, moduleBuilders));
 	}
 
-<<<<<<< HEAD
 	async renderBCSTypes() {
-		this.addImport('@mysten/sui/bcs', 'bcs');
-		await this.renderStructs();
-		await this.renderEnums();
-=======
-	renderBCSTypes() {
 		if (this.hasBcsTypes()) {
 			this.addImport('@mysten/sui/bcs', 'bcs');
 		}
-
-		this.renderStructs();
-		this.renderEnums();
->>>>>>> 1a46dc64 (scaffold suins-v2 package)
+		await this.renderStructs();
+		await this.renderEnums();
 	}
 
 	hasBcsTypes() {
@@ -155,7 +147,6 @@ export class MoveModuleBuilder extends FileBuilder {
 		return this.hasBcsTypes() || this.hasFunctions();
 	}
 
-<<<<<<< HEAD
 	async #renderFieldsAsStruct(
 		name: string,
 		{ fields }: Fields,
@@ -165,18 +156,6 @@ export class MoveModuleBuilder extends FileBuilder {
 			items: Object.entries(fields),
 			getComment: ([_name, field]) => field.doc,
 			mapper: ([name, field]) => [
-=======
-	renderStructs() {
-		for (const [name, struct] of Object.entries(this.summary.structs)) {
-			if (!this.#includedTypes.has(name)) {
-				continue;
-			}
-
-			this.exports.push(name);
-
-			const fields = Object.entries(struct.fields.fields);
-			const fieldObject = mapToObject(fields, ([name, field]) => [
->>>>>>> 1a46dc64 (scaffold suins-v2 package)
 				name,
 				renderTypeSignature(field.type_, {
 					format: 'bcs',
@@ -224,6 +203,10 @@ export class MoveModuleBuilder extends FileBuilder {
 
 	async renderStructs() {
 		for (const [name, struct] of Object.entries(this.summary.structs)) {
+			if (!this.#includedTypes.has(name)) {
+				continue;
+			}
+
 			this.exports.push(name);
 
 			const params = struct.type_parameters.filter((param) => !param.phantom);
@@ -279,7 +262,6 @@ export class MoveModuleBuilder extends FileBuilder {
 			}
 			this.exports.push(name);
 
-<<<<<<< HEAD
 			const variantsObject = await mapToObject({
 				items: Object.entries(enumDef.variants),
 				getComment: ([_name, variant]) => variant.doc,
@@ -294,13 +276,16 @@ export class MoveModuleBuilder extends FileBuilder {
 										summary: this.summary,
 										typeParameters: enumDef.type_parameters,
 										resolveAddress: (address) => this.#resolveAddress(address),
-										onDependency: (address, mod) =>
-											this.addStarImport(
-												address === this.summary.id.address
-													? `./${mod}.js`
-													: `~root/deps/${address}/${mod}.js`,
-												mod,
-											),
+										onDependency: (address, mod) => {
+											if (address !== this.summary.id.address || mod !== this.summary.id.name) {
+												this.addStarImport(
+													address === this.summary.id.address
+														? `./${mod}.js`
+														: `~root/deps/${address}/${mod}.js`,
+													mod,
+												);
+											}
+										},
 									})
 								: await this.#renderFieldsAsTuple(
 										`${name}.${variantName}`,
@@ -314,39 +299,6 @@ export class MoveModuleBuilder extends FileBuilder {
 								),
 				],
 			});
-=======
-			const variants = Object.entries(enumDef.variants).map(([variantName, variant]) => ({
-				name: variantName,
-				fields: Object.entries(variant.fields.fields).map(([fieldName, field]) => ({
-					name: fieldName,
-					signature: renderTypeSignature(field.type_, {
-						format: 'bcs',
-						summary: this.summary,
-						typeParameters: enumDef.type_parameters,
-						resolveAddress: (address) => this.#resolveAddress(address),
-						onDependency: (address, mod) => {
-							if (address !== this.summary.id.address || mod !== this.summary.id.name) {
-								this.addStarImport(
-									address === this.summary.id.address
-										? `./${mod}.js`
-										: `~root/deps/${address}/${mod}.js`,
-									mod,
-								);
-							}
-						},
-					}),
-				})),
-			}));
-
-			const variantsObject = mapToObject(variants, (variant) => [
-				variant.name,
-				variant.fields.length === 0
-					? 'null'
-					: variant.fields.length === 1
-						? variant.fields[0].signature
-						: `bcs.tuple([${variant.fields.map((field) => field.signature).join(', ')}])`,
-			]);
->>>>>>> 1a46dc64 (scaffold suins-v2 package)
 
 			const params = enumDef.type_parameters.filter((param) => !param.phantom);
 
