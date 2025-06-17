@@ -52,6 +52,7 @@
 	"homepage": "https://github.com/mystenlabs/sui#readme",
 	"devDependencies": {
 		"@mysten/build-scripts": "workspace:*",
+		"@mysten/build--move-bytecode-template": "workspace:*",
 		"vitest": "^3.2.1"
 	},
 	"dependencies": {
