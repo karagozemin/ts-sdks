@@ -17,19 +17,15 @@ export function RegisterEnokiWallets() {
 			apiKey: 'enoki_public_b995248de4faffd13864f12cd8539a8d',
 			providers: {
 				google: {
-					extraParams: {
-						scope: 'email profile',
-					},
 					clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
 				},
-				// facebook: {
-				// 	clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
-				// },
-				// twitch: {
-				// 	clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
-				// },
+				facebook: {
+					clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
+				},
+				twitch: {
+					clientId: '705781974144-cltddr1ggjnuc3kaimtc881r2n5bderc.apps.googleusercontent.com',
+				},
 			},
-
 			client: client as never,
 			network,
 		});
