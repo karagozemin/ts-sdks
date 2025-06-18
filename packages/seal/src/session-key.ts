@@ -184,18 +184,18 @@ export class SessionKey {
 
 	async createRequestParams(
 		txBytes: Uint8Array,
-	): Promise<{ decryptionKey: Uint8Array; requestSignature: string }> {
+		encPublicKey: Uint8Array,
+		encVerificationKey: Uint8Array,
+	): Promise<{ requestSignature: string }> {
 		if (this.isExpired()) {
 			throw new ExpiredSessionKeyError();
 		}
-		const egSk = generateSecretKey();
 		const msgToSign = RequestFormat.serialize({
 			ptb: txBytes.slice(1),
-			encKey: toPublicKey(egSk),
-			encVerificationKey: toVerificationKey(egSk),
+			encKey: encPublicKey,
+			encVerificationKey
 		}).toBytes();
 		return {
-			decryptionKey: egSk,
 			requestSignature: toBase64(await this.#sessionKey.sign(msgToSign)),
 		};
 	}

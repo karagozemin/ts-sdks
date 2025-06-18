@@ -1,11 +1,13 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { fromBase64, toHex } from '@mysten/bcs';
 import { EncryptedObject } from './bcs.js';
 import { G1Element, G2Element } from './bls12381.js';
 import { decrypt } from './decrypt.js';
 import type { EncryptionInput } from './dem.js';
 import { AesGcm256, Hmac256Ctr } from './dem.js';
+import { elgamalDecrypt, generateSecretKey, toPublicKey, toVerificationKey } from './elgamal.js';
 import { DemType, encrypt, KemType } from './encrypt.js';
 import {
 	InconsistentKeyServersError,
@@ -327,7 +329,12 @@ export class SealClient {
 		}
 
 		const cert = await sessionKey.getCertificate();
-		const signedRequest = await sessionKey.createRequestParams(txBytes);
+		
+		const egSk = generateSecretKey();
+		const encPublicKey = toPublicKey(egSk);
+		const encVerificationKey = toVerificationKey(egSk);
+		
+		const signedRequest = await sessionKey.createRequestParams(txBytes, encPublicKey, encVerificationKey);
 
 		const controller = new AbortController();
 		const errors: Error[] = [];
@@ -336,17 +343,23 @@ export class SealClient {
 			const server = keyServers.get(objectId)!;
 			try {
 				const config = this.#configs.get(objectId);
-				const allKeys = await fetchKeysForAllIds(
+				const resp = await fetchKeysForAllIds(
 					server.url,
 					signedRequest.requestSignature,
 					txBytes,
-					signedRequest.decryptionKey,
+					encPublicKey,
+					encVerificationKey,
 					cert,
 					this.#timeout,
 					config?.apiKeyName,
 					config?.apiKey,
 					controller.signal,
 				);
+
+				let allKeys = resp.decryption_keys.map((dk: { id: Uint8Array; encrypted_key: [string, string] }) => ({
+					fullId: toHex(dk.id),
+					key: elgamalDecrypt(egSk, dk.encrypted_key.map(fromBase64) as [Uint8Array, Uint8Array]),
+				}))
 				// Check validity of the keys and add them to the cache.
 				for (const { fullId, key } of allKeys) {
 					const keyElement = G1Element.fromBytes(key);

@@ -25,18 +25,19 @@ export async function fetchKeysForAllIds(
 	url: string,
 	requestSig: string,
 	txBytes: Uint8Array,
-	encKey: Uint8Array,
+	encPublicKey: Uint8Array,
+	encVerificationKey: Uint8Array,
 	certificate: Certificate,
 	timeout: number,
 	apiKeyName?: string,
 	apiKey?: string,
 	signal?: AbortSignal,
-): Promise<{ fullId: string; key: Uint8Array }[]> {
-	const encKeyPk = toPublicKey(encKey);
-	const encVerificationKey = toVerificationKey(encKey);
+): Promise<{
+	decryption_keys: { id: Uint8Array; encrypted_key: [string, string] }[];
+}> {
 	const body = {
 		ptb: toBase64(txBytes.slice(1)), // removes the byte of the transaction type version
-		enc_key: toBase64(encKeyPk),
+		enc_key: toBase64(encPublicKey),
 		enc_verification_key: toBase64(encVerificationKey),
 		request_signature: requestSig, // already b64
 		certificate,
@@ -62,8 +63,5 @@ export async function fetchKeysForAllIds(
 	const resp = await response.json();
 	verifyKeyServerVersion(response);
 
-	return resp.decryption_keys.map((dk: { id: Uint8Array; encrypted_key: [string, string] }) => ({
-		fullId: toHex(dk.id),
-		key: elgamalDecrypt(encKey, dk.encrypted_key.map(fromBase64) as [Uint8Array, Uint8Array]),
-	}));
+	return resp.decryption_keys;
 }
