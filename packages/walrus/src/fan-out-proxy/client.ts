@@ -4,7 +4,13 @@
 import { ConnectionTimeoutError, StorageNodeAPIError } from '../storage-node/error.js';
 import { UserAbortError } from '../storage-node/error.js';
 import type { mergeHeaders } from '../storage-node/utils.js';
-import type { ProtocolMessageCertificate, WalrusClientRequestOptions } from '../types.js';
+import type {
+	EncodingType,
+	FanOutTipConfig,
+	ProtocolMessageCertificate,
+	TipStrategy,
+	WalrusClientRequestOptions,
+} from '../types.js';
 import { fromUrlSafeBase64, urlSafeBase64 } from '../utils/index.js';
 
 export type Fetch = (url: RequestInfo, init?: RequestInit) => Promise<Response>;
@@ -45,6 +51,7 @@ export type WriteBlobToFanOutProxyOptions = {
 	blob: Uint8Array;
 	blobObjectId: string;
 	deletable: boolean;
+	encodingType?: EncodingType;
 } & WalrusClientRequestOptions;
 
 export class FanOutProxyClient {
@@ -59,6 +66,25 @@ export class FanOutProxyClient {
 		this.#onError = onError;
 	}
 
+	async tipConfig(): Promise<FanOutTipConfig> {
+		const response = await this.#request({
+			method: 'GET',
+			path: '/v1/tip-config',
+		});
+
+		const data = (await response.json()) as {
+			send_tip: {
+				address: string;
+				kind: TipStrategy;
+			};
+		};
+
+		return {
+			address: data.send_tip.address,
+			tip: data.send_tip.kind,
+		};
+	}
+
 	async writeBlob({
 		blobId,
 		nonce,
@@ -66,6 +92,7 @@ export class FanOutProxyClient {
 		blob,
 		deletable,
 		blobObjectId,
+		encodingType,
 		...options
 	}: WriteBlobToFanOutProxyOptions): Promise<{
 		blobId: string;
@@ -79,6 +106,10 @@ export class FanOutProxyClient {
 
 		if (deletable) {
 			query.set('deletable_blob_object', blobObjectId);
+		}
+
+		if (encodingType) {
+			query.set('encoding_type', encodingType);
 		}
 
 		const response = await this.#request({

@@ -53,20 +53,29 @@ type WalrusNetworkOrPackageConfig =
 			packageConfig: WalrusPackageConfig;
 	  };
 
+export type TipStrategy =
+	| {
+			const: number | bigint;
+	  }
+	| {
+			linear: {
+				base: number | bigint;
+				multiplier: number | bigint;
+			};
+	  };
+
+export type FanOutTipConfig = {
+	address: string;
+	max?: number;
+	tip: TipStrategy;
+};
+
 export interface FanOutConfig extends FanOutProxyClientOptions {
-	sendTip?: {
-		address: string;
-		tip:
-			| {
-					const: number | bigint;
-			  }
-			| {
-					linear: {
-						base: number | bigint;
-						multiplier: number | bigint;
-					};
-			  };
-	};
+	sendTip?:
+		| FanOutTipConfig
+		| {
+				max: number;
+		  };
 }
 
 interface BaseWalrusClientConfig {
@@ -221,6 +230,7 @@ export type WriteBlobToFanOutProxyOptions = {
 	txDigest: string;
 	blobObjectId: string;
 	deletable: boolean;
+	encodingType?: EncodingType;
 } & WalrusClientRequestOptions;
 
 export type WriteBlobOptions = {

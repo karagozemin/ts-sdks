@@ -46,6 +46,7 @@ import type {
 	CommitteeInfo,
 	ComputeBlobMetadataOptions,
 	DeleteBlobOptions,
+	EncodingType,
 	ExtendBlobOptions,
 	FanOutConfig,
 	GetBlobMetadataOptions,
@@ -923,24 +924,57 @@ export class WalrusClient {
 		};
 	}
 
+	#loadTipConfig() {
+		return this.#cache.read(['fanout-tip-config'], async () => {
+			if (!this.#fanOutConfig?.sendTip || !this.#fanOutClient) {
+				return null;
+			}
+
+			if ('tip' in this.#fanOutConfig.sendTip) {
+				return this.#fanOutConfig.sendTip;
+			}
+
+			const tipConfig = await this.#fanOutClient.tipConfig();
+
+			return {
+				...tipConfig,
+				max: this.#fanOutConfig.sendTip.max,
+			};
+		});
+	}
+
 	async calculateFanOutTip(options: { size: number }) {
 		const systemState = await this.systemState();
 		const encodedSize = encodedBlobLength(options.size, systemState.committee.n_shards);
-		if (!this.#fanOutConfig?.sendTip) {
+		const tipConfig = await this.#loadTipConfig();
+
+		if (!tipConfig) {
 			return 0n;
 		}
 
-		const { tip } = this.#fanOutConfig.sendTip;
-		return 'const' in tip
-			? tip.const
-			: BigInt(tip.linear.base) + BigInt(tip.linear.multiplier) * BigInt(encodedSize);
+		const { max, tip } = tipConfig;
+
+		const amount =
+			'const' in tip
+				? tip.const
+				: BigInt(tip.linear.base) + BigInt(tip.linear.multiplier) * BigInt(encodedSize);
+
+		if (max != null && amount > max) {
+			throw new WalrusClientError(
+				`Tip amount (${amount}) exceeds the maximum allowed tip (${max})`,
+			);
+		}
+
+		return amount;
 	}
 
 	sendFanOutTip({ size }: { size: number }) {
 		return async (transaction: Transaction) => {
-			if (this.#fanOutConfig?.sendTip) {
+			const tipConfig = await this.#loadTipConfig();
+
+			if (tipConfig) {
 				const amount = await this.calculateFanOutTip({ size });
-				const { address } = this.#fanOutConfig.sendTip;
+				const { address } = tipConfig;
 				transaction.transferObjects(
 					[
 						coinWithBalance({
@@ -1823,6 +1857,7 @@ export class WalrusClient {
 				signal,
 				deletable,
 				blobObjectId: registerResult.blob.id.id,
+				encodingType: metadata.metadata.encodingType as EncodingType,
 			});
 
 			const certificate = result.certificate;

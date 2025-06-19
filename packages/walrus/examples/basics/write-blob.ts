@@ -26,10 +26,7 @@ const client = new SuiClient({
 		fanOut: {
 			host: 'https://fan-out.testnet.walrus.space',
 			sendTip: {
-				address: '0x4b6a7439159cf10533147fc3d678cf10b714f2bc998f6cb1f1b0b9594cdc52b6',
-				tip: {
-					const: 105,
-				},
+				max: 1_000,
 			},
 		},
 	}),
