@@ -24,9 +24,9 @@ const client = new SuiClient({
 			timeout: 60_000,
 		},
 		fanOut: {
-			host: 'http://0.0.0.0:57391',
+			host: 'https://fan-out.testnet.walrus.space',
 			sendTip: {
-				address: '0x588bcc28b11b1c2f1893a43ed07c473f7f9d920e3741dc28045ad586d7d0164a',
+				address: '0x4b6a7439159cf10533147fc3d678cf10b714f2bc998f6cb1f1b0b9594cdc52b6',
 				tip: {
 					const: 105,
 				},
@@ -42,7 +42,7 @@ async function uploadFile() {
 
 	const { blobId, blobObject } = await client.walrus.writeBlob({
 		blob: file,
-		deletable: false,
+		deletable: true,
 		epochs: 3,
 		signer: keypair,
 	});

@@ -334,10 +334,12 @@ export class WalrusClient {
 
 		const bindings = await this.#wasmBindings();
 		const { blobId, metadata, rootHash } = bindings.computeMetadata(shardCount, bytes);
+		let sha256Hash: Promise<Uint8Array> | undefined;
+		const nonce = crypto.getRandomValues(new Uint8Array(32));
 
 		return {
-			blobId,
 			rootHash,
+			blobId,
 			metadata: {
 				encodingType: metadata.V1.encoding_type,
 				hashes: Array.from(metadata.V1.hashes).map((hashes) => ({
@@ -345,6 +347,14 @@ export class WalrusClient {
 					secondaryHash: hashes.secondary_hash,
 				})),
 				unencodedLength: metadata.V1.unencoded_length,
+			},
+			nonce,
+			blobDigest: () => {
+				if (!sha256Hash) {
+					sha256Hash = crypto.subtle.digest('SHA-256', bytes).then((hash) => new Uint8Array(hash));
+				}
+
+				return sha256Hash;
 			},
 		};
 	}
@@ -890,18 +900,47 @@ export class WalrusClient {
 		};
 	}
 
-	sendFanOutTip(options: { size: number }) {
+	addAuthPayload({
+		size,
+		blobDigest,
+		nonce,
+	}: {
+		size: number;
+		blobDigest: Uint8Array;
+		nonce: Uint8Array;
+	}) {
+		return async (transaction: Transaction) => {
+			const nonceDigest = await crypto.subtle.digest('SHA-256', nonce);
+			const lengthBytes = bcs.u64().serialize(size).toBytes();
+			const authPayload = new Uint8Array(
+				nonceDigest.byteLength + blobDigest.byteLength + lengthBytes.byteLength,
+			);
+
+			authPayload.set(blobDigest, 0);
+			authPayload.set(new Uint8Array(nonceDigest), blobDigest.byteLength);
+			authPayload.set(lengthBytes, nonceDigest.byteLength + blobDigest.byteLength);
+			transaction.pure(authPayload);
+		};
+	}
+
+	async calculateFanOutTip(options: { size: number }) {
+		const systemState = await this.systemState();
+		const encodedSize = encodedBlobLength(options.size, systemState.committee.n_shards);
+		if (!this.#fanOutConfig?.sendTip) {
+			return 0n;
+		}
+
+		const { tip } = this.#fanOutConfig.sendTip;
+		return 'const' in tip
+			? tip.const
+			: BigInt(tip.linear.base) + BigInt(tip.linear.multiplier) * BigInt(encodedSize);
+	}
+
+	sendFanOutTip({ size }: { size: number }) {
 		return async (transaction: Transaction) => {
 			if (this.#fanOutConfig?.sendTip) {
-				const systemState = await this.systemState();
-				const { tip, address } = this.#fanOutConfig.sendTip;
-				const encodedSize = encodedBlobLength(options.size, systemState.committee.n_shards);
-
-				const amount =
-					'const' in tip
-						? tip.const
-						: BigInt(tip.linear.base) + BigInt(tip.linear.multiplier) * BigInt(encodedSize);
-
+				const amount = await this.calculateFanOutTip({ size });
+				const { address } = this.#fanOutConfig.sendTip;
 				transaction.transferObjects(
 					[
 						coinWithBalance({
@@ -929,10 +968,6 @@ export class WalrusClient {
 		const registration = transaction.add(this.registerBlob(options));
 
 		transaction.transferObjects([registration], options.owner);
-
-		if (this.#fanOutConfig?.sendTip) {
-			transaction.add(this.sendFanOutTip({ size: options.size }));
-		}
 
 		return transaction;
 	}
@@ -1650,7 +1685,6 @@ export class WalrusClient {
 	 */
 	async writeBlobToFanOutProxy(options: WriteBlobToFanOutProxyOptions): Promise<{
 		blobId: string;
-		blobObjectId: string;
 		certificate: ProtocolMessageCertificate;
 	}> {
 		if (!this.#fanOutClient) {
@@ -1754,7 +1788,20 @@ export class WalrusClient {
 			});
 			const blobId = metadata.blobId;
 
-			const transaction = this.registerBlobTransaction({
+			const transaction = new Transaction();
+
+			transaction.add(
+				this.addAuthPayload({
+					size: blob.length,
+					blobDigest: await metadata.blobDigest(),
+					nonce: metadata.nonce,
+				}),
+			);
+			transaction.add(this.sendFanOutTip({ size: blob.length }));
+
+			const registerResult = await this.executeRegisterBlobTransaction({
+				signer,
+				transaction,
 				size: blob.length,
 				epochs,
 				blobId: metadata.blobId,
@@ -1764,22 +1811,22 @@ export class WalrusClient {
 				attributes,
 			});
 
-			transaction.setSenderIfNotSet(signer.toSuiAddress());
-			const bytes = await transaction.build({
-				client: this.#suiClient,
+			await this.#suiClient.core.waitForTransaction({
+				digest: registerResult.digest,
 			});
-			const { signature } = await signer.signTransaction(bytes);
 
 			const result = await this.writeBlobToFanOutProxy({
 				blobId,
-				transactionBytes: bytes,
-				signature,
 				blob,
+				nonce: metadata.nonce,
+				txDigest: registerResult.digest,
 				signal,
+				deletable,
+				blobObjectId: registerResult.blob.id.id,
 			});
 
 			const certificate = result.certificate;
-			const blobObjectId = result.blobObjectId;
+			const blobObjectId = registerResult.blob.id.id;
 
 			await this.executeCertifyBlobTransaction({
 				signer,

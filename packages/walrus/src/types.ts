@@ -216,9 +216,11 @@ export type WriteEncodedBlobToNodesOptions = {
 
 export type WriteBlobToFanOutProxyOptions = {
 	blobId: string;
-	transactionBytes: Uint8Array;
-	signature: string;
 	blob: Uint8Array;
+	nonce: Uint8Array;
+	txDigest: string;
+	blobObjectId: string;
+	deletable: boolean;
 } & WalrusClientRequestOptions;
 
 export type WriteBlobOptions = {

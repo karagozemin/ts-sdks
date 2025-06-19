@@ -1,7 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { fromBase64 } from '@mysten/utils';
 import { ConnectionTimeoutError, StorageNodeAPIError } from '../storage-node/error.js';
 import { UserAbortError } from '../storage-node/error.js';
 import type { mergeHeaders } from '../storage-node/utils.js';
@@ -41,9 +40,11 @@ export type RequestOptions = {
 
 export type WriteBlobToFanOutProxyOptions = {
 	blobId: string;
-	transactionBytes: Uint8Array;
-	signature: string;
+	nonce: Uint8Array;
+	txDigest: string;
 	blob: Uint8Array;
+	blobObjectId: string;
+	deletable: boolean;
 } & WalrusClientRequestOptions;
 
 export class FanOutProxyClient {
@@ -60,32 +61,35 @@ export class FanOutProxyClient {
 
 	async writeBlob({
 		blobId,
-		transactionBytes,
-		signature,
+		nonce,
+		txDigest,
 		blob,
+		deletable,
+		blobObjectId,
 		...options
 	}: WriteBlobToFanOutProxyOptions): Promise<{
 		blobId: string;
-		blobObjectId: string;
 		certificate: ProtocolMessageCertificate;
 	}> {
 		const query = new URLSearchParams({
 			blob_id: blobId,
-			tx_bytes: urlSafeBase64(transactionBytes),
-			signature: urlSafeBase64(fromBase64(signature)),
-		}).toString();
+			tx_id: txDigest,
+			nonce: urlSafeBase64(nonce),
+		});
 
-		console.log(blobId, query);
+		if (deletable) {
+			query.set('deletable_blob_object', blobObjectId);
+		}
 
 		const response = await this.#request({
 			method: 'POST',
-			path: `/v1/blob-fan-out?${query}`,
+			path: `/v1/blob-fan-out?${query.toString()}`,
 			body: blob,
 			...options,
 		});
 
 		const data: {
-			blob_object: string;
+			blob_id: number[];
 			confirmation_certificate: {
 				signers: number[];
 				serialized_message: number[];
@@ -95,7 +99,6 @@ export class FanOutProxyClient {
 
 		return {
 			blobId,
-			blobObjectId: data.blob_object,
 			certificate: {
 				signers: data.confirmation_certificate.signers,
 				serializedMessage: new Uint8Array(data.confirmation_certificate.serialized_message),
