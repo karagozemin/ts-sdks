@@ -937,6 +937,49 @@ importers:
         specifier: ^6.3.5
         version: 6.3.5(@types/node@22.15.29)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
 
+  packages/enoki/examples/dapp-kit-next:
+    dependencies:
+      '@mysten/dapp-kit-react':
+        specifier: workspace:*
+        version: link:../../../dapp-kit-next/packages/dapp-kit-react
+      '@mysten/enoki':
+        specifier: workspace:*
+        version: link:../..
+      '@mysten/sui':
+        specifier: workspace:*
+        version: link:../../../typescript
+      '@nanostores/react':
+        specifier: ^1.0.0
+        version: 1.0.0(nanostores@1.0.1)(react@18.3.1)
+      '@tanstack/react-query':
+        specifier: ^5.80.2
+        version: 5.80.2(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.3
+        version: 18.3.18
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.5(@types/react@18.3.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.5.1
+        version: 4.5.1(vite@6.3.5(@types/node@22.15.29)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0))
+      globals:
+        specifier: ^16.2.0
+        version: 16.2.0
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^6.3.5
+        version: 6.3.5(@types/node@22.15.29)(jiti@2.4.2)(lightningcss@1.30.1)(tsx@4.19.4)(yaml@2.8.0)
+
   packages/graphql-transport:
     dependencies:
       '@graphql-typed-document-node/core':
