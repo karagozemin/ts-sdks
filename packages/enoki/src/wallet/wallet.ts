@@ -36,7 +36,7 @@ import type { EnokiWalletOptions, WalletEventsMap, EnokiSessionContext } from '.
 import type { EnokiGetMetadataFeature, EnokiGetMetadataMethod } from './feature.js';
 import { EnokiGetMetadata } from './feature.js';
 import type { Experimental_SuiClientTypes } from '@mysten/sui/experimental';
-import { decodeJwt } from '@mysten/sui/src/zklogin/index.js';
+import { decodeJwt } from '@mysten/sui/zklogin/';
 import type { ExportedWebCryptoKeypair } from '@mysten/signers/webcrypto';
 import { WebCryptoSigner } from '@mysten/signers/webcrypto';
 import { get, set } from 'idb-keyval';
