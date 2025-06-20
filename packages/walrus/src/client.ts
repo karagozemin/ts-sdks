@@ -907,19 +907,20 @@ export class WalrusClient {
 		nonce,
 	}: {
 		size: number;
-		blobDigest: Uint8Array;
+		blobDigest: Uint8Array | (() => Promise<Uint8Array>);
 		nonce: Uint8Array;
 	}) {
 		return async (transaction: Transaction) => {
 			const nonceDigest = await crypto.subtle.digest('SHA-256', nonce);
 			const lengthBytes = bcs.u64().serialize(size).toBytes();
+			const digest = typeof blobDigest === 'function' ? await blobDigest() : blobDigest;
 			const authPayload = new Uint8Array(
-				nonceDigest.byteLength + blobDigest.byteLength + lengthBytes.byteLength,
+				nonceDigest.byteLength + digest.byteLength + lengthBytes.byteLength,
 			);
 
-			authPayload.set(blobDigest, 0);
-			authPayload.set(new Uint8Array(nonceDigest), blobDigest.byteLength);
-			authPayload.set(lengthBytes, nonceDigest.byteLength + blobDigest.byteLength);
+			authPayload.set(digest, 0);
+			authPayload.set(new Uint8Array(nonceDigest), digest.byteLength);
+			authPayload.set(lengthBytes, nonceDigest.byteLength + digest.byteLength);
 			transaction.pure(authPayload);
 		};
 	}
@@ -930,7 +931,7 @@ export class WalrusClient {
 				return null;
 			}
 
-			if ('tip' in this.#fanOutConfig.sendTip) {
+			if ('kind' in this.#fanOutConfig.sendTip) {
 				return this.#fanOutConfig.sendTip;
 			}
 
@@ -952,12 +953,12 @@ export class WalrusClient {
 			return 0n;
 		}
 
-		const { max, tip } = tipConfig;
+		const { max, kind } = tipConfig;
 
 		const amount =
-			'const' in tip
-				? tip.const
-				: BigInt(tip.linear.base) + BigInt(tip.linear.multiplier) * BigInt(encodedSize);
+			'const' in kind
+				? kind.const
+				: BigInt(kind.linear.base) + BigInt(kind.linear.multiplier) * BigInt(encodedSize);
 
 		if (max != null && amount > max) {
 			throw new WalrusClientError(
@@ -968,11 +969,20 @@ export class WalrusClient {
 		return amount;
 	}
 
-	sendFanOutTip({ size }: { size: number }) {
+	sendFanOutTip({
+		size,
+		blobDigest,
+		nonce,
+	}: {
+		size: number;
+		blobDigest: Uint8Array | (() => Promise<Uint8Array>);
+		nonce: Uint8Array;
+	}) {
 		return async (transaction: Transaction) => {
 			const tipConfig = await this.#loadTipConfig();
 
 			if (tipConfig) {
+				transaction.add(this.addAuthPayload({ size, blobDigest, nonce }));
 				const amount = await this.calculateFanOutTip({ size });
 				const { address } = tipConfig;
 				transaction.transferObjects(
@@ -1725,7 +1735,10 @@ export class WalrusClient {
 			throw new WalrusClientError('Fan out proxy not configured');
 		}
 
-		return this.#fanOutClient.writeBlob(options);
+		return this.#fanOutClient.writeBlob({
+			...options,
+			requiresTip: !!this.#fanOutConfig?.sendTip,
+		});
 	}
 
 	/**
@@ -1825,13 +1838,12 @@ export class WalrusClient {
 			const transaction = new Transaction();
 
 			transaction.add(
-				this.addAuthPayload({
+				this.sendFanOutTip({
 					size: blob.length,
-					blobDigest: await metadata.blobDigest(),
+					blobDigest: metadata.blobDigest,
 					nonce: metadata.nonce,
 				}),
 			);
-			transaction.add(this.sendFanOutTip({ size: blob.length }));
 
 			const registerResult = await this.executeRegisterBlobTransaction({
 				signer,

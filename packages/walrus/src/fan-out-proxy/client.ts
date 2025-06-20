@@ -51,6 +51,7 @@ export type WriteBlobToFanOutProxyOptions = {
 	blob: Uint8Array;
 	blobObjectId: string;
 	deletable: boolean;
+	requiresTip: boolean;
 	encodingType?: EncodingType;
 } & WalrusClientRequestOptions;
 
@@ -79,10 +80,7 @@ export class FanOutProxyClient {
 			};
 		};
 
-		return {
-			address: data.send_tip.address,
-			tip: data.send_tip.kind,
-		};
+		return data.send_tip;
 	}
 
 	async writeBlob({
@@ -92,6 +90,7 @@ export class FanOutProxyClient {
 		blob,
 		deletable,
 		blobObjectId,
+		requiresTip,
 		encodingType,
 		...options
 	}: WriteBlobToFanOutProxyOptions): Promise<{
@@ -100,9 +99,12 @@ export class FanOutProxyClient {
 	}> {
 		const query = new URLSearchParams({
 			blob_id: blobId,
-			tx_id: txDigest,
-			nonce: urlSafeBase64(nonce),
 		});
+
+		if (requiresTip) {
+			query.set('nonce', urlSafeBase64(nonce));
+			query.set('tx_id', txDigest);
+		}
 
 		if (deletable) {
 			query.set('deletable_blob_object', blobObjectId);

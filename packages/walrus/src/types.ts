@@ -67,11 +67,12 @@ export type TipStrategy =
 export type FanOutTipConfig = {
 	address: string;
 	max?: number;
-	tip: TipStrategy;
+	kind: TipStrategy;
 };
 
 export interface FanOutConfig extends FanOutProxyClientOptions {
 	sendTip?:
+		| null
 		| FanOutTipConfig
 		| {
 				max: number;
