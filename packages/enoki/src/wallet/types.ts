@@ -28,7 +28,7 @@ export type ZkLoginSession = {
 	proof?: ZkLoginSignatureInputs;
 };
 
-export type EnokiSessionState = {
+export type EnokiSessionContext = {
 	idbStore: UseStore;
 	client: ClientWithCoreApi;
 	storageKey: string;
