@@ -18,14 +18,17 @@ import type { AuthProvider, EnokiNetwork } from '../EnokiClient/type.js';
 import { EnokiKeypair } from '../EnokiKeypair.js';
 import type { SyncStore } from '../stores.js';
 import { createSessionStorage } from '../stores.js';
+import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui/experimental';
 
-type EnokiFlowConfig = EnokiClientConfig & { network: EnokiNetwork };
+type EnokiFlowConfig = EnokiClientConfig & {
+	clients: ClientWithCoreApi[];
+	providerId: string;
+};
 
 // State that is not bound to a session, and is encrypted.
 interface ZkLoginState {
 	provider?: AuthProvider;
 	address?: string;
-	salt?: string;
 	publicKey?: string;
 }
 
@@ -39,38 +42,71 @@ interface ZkLoginSession {
 	proof?: ZkLoginSignatureInputs;
 }
 
-const createStorageKeys = (apiKey: string, network: EnokiNetwork) => ({
-	STATE: `@enoki/flow/state/${apiKey}/${network}`,
-	SESSION: `@enoki/flow/session/${apiKey}/${network}`,
-});
+export type EnokiSessionState = {
+	idbStore: UseStore;
+	client: ClientWithCoreApi;
+	storageKey: string;
+	$zkLoginSession: WritableAtom<{ initialized: boolean; value: ZkLoginSession | null }>;
+};
+
+function createStateStorageKey(apiKey: string, providerId: string) {
+	return `@enoki/flow/state/${apiKey}/${providerId}` as const;
+}
+
+function createSessionStorageKey(
+	apiKey: string,
+	network: Experimental_SuiClientTypes.Network,
+	providerId: string,
+) {
+	return `@enoki/flow/session/${apiKey}/${network}/${providerId}` as const;
+}
 
 export class INTERNAL_ONLY_EnokiFlow {
-	#storageKeys: { STATE: string; SESSION: string };
 	#enokiClient: EnokiClient;
-	#network: EnokiNetwork;
+	#clients: ClientWithCoreApi[];
 	#encryption: Encryption;
 	#encryptionKey: string;
-	#store: SyncStore;
-	#idbStore: UseStore;
-
-	$zkLoginSession: WritableAtom<{ initialized: boolean; value: ZkLoginSession | null }>;
-	$zkLoginState: WritableAtom<ZkLoginState>;
+	#sessionStore: SyncStore;
+	#sessionStateByNetwork: Map<Experimental_SuiClientTypes.Network, EnokiSessionState>;
+	#zkLoginState: WritableAtom<ZkLoginState>;
+	#stateStorageKey: string;
 
 	constructor(config: EnokiFlowConfig) {
 		this.#enokiClient = new EnokiClient({
 			apiKey: config.apiKey,
 			apiUrl: config.apiUrl,
 		});
-		this.#network = config.network;
+		this.#clients = config.clients;
 		this.#encryptionKey = config.apiKey;
 		this.#encryption = createDefaultEncryption();
-		this.#store = createSessionStorage();
-		this.#storageKeys = createStorageKeys(config.apiKey, this.#network);
-		this.#idbStore = createStore(`${config.apiKey}_${this.#network}`, 'enoki');
+		this.#sessionStore = createSessionStorage();
+		this.#stateStorageKey = createStateStorageKey(config.apiKey, config.providerId);
+
+		this.#sessionStateByNetwork = this.#clients.reduce((accumulator, client) => {
+			const network = client.network as Experimental_SuiClientTypes.Network;
+			const storageKey = createSessionStorageKey(config.apiKey, network, config.providerId);
+			const idbStore = createStore(`${config.apiKey}_${network}`, 'enoki');
+
+			const state: EnokiSessionState = {
+				$zkLoginSession: atom({ initialized: false, value: null }),
+				client,
+				storageKey,
+				idbStore,
+			};
+
+			// Hydrate the session on mount:
+			onMount(state.$zkLoginSession, () => {
+				this.#getSession(state);
+			});
+
+			return accumulator.set(network, state);
+		}, new Map());
 
 		let storedState = null;
+		const stateStore = localStorage ?? this.#sessionStore;
+
 		try {
-			const rawStoredValue = this.#store.get(this.#storageKeys.STATE);
+			const rawStoredValue = stateStore.getItem(this.#stateStorageKey);
 			if (rawStoredValue) {
 				storedState = JSON.parse(rawStoredValue);
 			}
@@ -78,33 +114,27 @@ export class INTERNAL_ONLY_EnokiFlow {
 			// Ignore errors
 		}
 
-		this.$zkLoginState = atom(storedState || {});
-		this.$zkLoginSession = atom({ initialized: false, value: null });
+		this.#zkLoginState = atom(storedState || {});
 
-		// Hydrate the session on mount:
-		onMount(this.$zkLoginSession, () => {
-			this.getSession();
+		onSet(this.#zkLoginState, ({ newValue }) => {
+			stateStore.setItem(this.#stateStorageKey, JSON.stringify(newValue));
 		});
-
-		onSet(this.$zkLoginState, ({ newValue }) => {
-			this.#store.set(this.#storageKeys.STATE, JSON.stringify(newValue));
-		});
-	}
-
-	get network() {
-		return this.#network;
 	}
 
 	async createAuthorizationURL(input: {
 		provider: AuthProvider;
 		clientId: string;
 		redirectUrl: string;
+		network: Experimental_SuiClientTypes.Network;
 		extraParams?: Record<string, string>;
 	}) {
+		const state = this.#sessionStateByNetwork.get(input.network);
+		if (!state) throw new Error(`The network ${input.network} isn't supported.`);
+
 		const ephemeralKeyPair = await WebCryptoSigner.generate();
 		const { nonce, randomness, maxEpoch, estimatedExpiration } =
 			await this.#enokiClient.createZkLoginNonce({
-				network: this.#network,
+				network: input.network as EnokiNetwork,
 				ephemeralPublicKey: ephemeralKeyPair.getPublicKey(),
 			});
 
@@ -143,10 +173,10 @@ export class INTERNAL_ONLY_EnokiFlow {
 				throw new Error(`Invalid provider: ${input.provider}`);
 		}
 
-		this.$zkLoginState.set({ provider: input.provider });
+		this.#zkLoginState.set({ provider: input.provider });
 
-		await set('ephemeralKeyPair', ephemeralKeyPair.export(), this.#idbStore);
-		await this.#setSession({
+		await set('ephemeralKeyPair', ephemeralKeyPair.export(), state.idbStore);
+		await this.#setSession(state, {
 			expiresAt: estimatedExpiration,
 			maxEpoch,
 			randomness,
@@ -155,11 +185,20 @@ export class INTERNAL_ONLY_EnokiFlow {
 		return oauthUrl;
 	}
 
-	async handleAuthCallback(hash: string = window.location.hash) {
+	async handleAuthCallback({
+		hash = window.location.hash,
+		network,
+	}: {
+		hash?: string;
+		network: Experimental_SuiClientTypes.Network;
+	}) {
+		const state = this.#sessionStateByNetwork.get(network);
+		if (!state) throw new Error(`The network ${network} isn't supported.`);
+
 		const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
 
 		// Before we handle the auth redirect and get the state, we need to restore it:
-		const zkp = await this.getSession();
+		const zkp = await this.#getSession(state);
 
 		if (!zkp || !zkp.maxEpoch || !zkp.randomness) {
 			throw new Error(
@@ -174,15 +213,14 @@ export class INTERNAL_ONLY_EnokiFlow {
 
 		decodeJwt(jwt);
 
-		const { address, salt, publicKey } = await this.#enokiClient.getZkLogin({ jwt });
+		const { address, publicKey } = await this.#enokiClient.getZkLogin({ jwt });
 
-		this.$zkLoginState.set({
-			...this.$zkLoginState.get(),
-			salt,
+		this.#zkLoginState.set({
 			address,
 			publicKey,
 		});
-		await this.#setSession({
+
+		await this.#setSession(state, {
 			...zkp,
 			jwt,
 		});
@@ -190,28 +228,36 @@ export class INTERNAL_ONLY_EnokiFlow {
 		return params.get('state');
 	}
 
-	async #setSession(newValue: ZkLoginSession | null) {
+	get sessionStateByNetwork() {
+		return this.#sessionStateByNetwork;
+	}
+
+	get zkLoginState() {
+		return this.#zkLoginState.get();
+	}
+
+	async #setSession(state: EnokiSessionState, newValue: ZkLoginSession | null) {
 		if (newValue) {
 			const storedValue = await this.#encryption.encrypt(
 				this.#encryptionKey,
 				JSON.stringify(newValue),
 			);
 
-			this.#store.set(this.#storageKeys.SESSION, storedValue);
+			this.#sessionStore.set(state.storageKey, storedValue);
 		} else {
-			this.#store.delete(this.#storageKeys.SESSION);
+			this.#sessionStore.delete(state.storageKey);
 		}
 
-		this.$zkLoginSession.set({ initialized: true, value: newValue });
+		state.$zkLoginSession.set({ initialized: true, value: newValue });
 	}
 
-	async getSession() {
-		if (this.$zkLoginSession.get().initialized) {
-			return this.$zkLoginSession.get().value;
+	async #getSession({ $zkLoginSession, storageKey }: EnokiSessionState) {
+		if ($zkLoginSession.get().initialized) {
+			return $zkLoginSession.get().value;
 		}
 
 		try {
-			const storedValue = this.#store.get(this.#storageKeys.SESSION);
+			const storedValue = this.#sessionStore.get(storageKey);
 			if (!storedValue) return null;
 
 			const state: ZkLoginSession = JSON.parse(
@@ -223,27 +269,31 @@ export class INTERNAL_ONLY_EnokiFlow {
 			if (state?.expiresAt && Date.now() > state.expiresAt) {
 				await this.logout();
 			} else {
-				this.$zkLoginSession.set({ initialized: true, value: state });
+				$zkLoginSession.set({ initialized: true, value: state });
 			}
 		} catch {
-			this.$zkLoginSession.set({ initialized: true, value: null });
+			$zkLoginSession.set({ initialized: true, value: null });
 		}
 
-		return this.$zkLoginSession.get().value;
+		return $zkLoginSession.get().value;
 	}
 
 	async logout() {
-		this.$zkLoginState.set({});
-		this.#store.delete(this.#storageKeys.STATE);
+		this.#zkLoginState.set({});
+		this.#sessionStore.delete(this.#stateStorageKey);
 
-		await clear(this.#idbStore);
-		await this.#setSession(null);
+		for (const state of this.#sessionStateByNetwork.values()) {
+			await clear(state.idbStore);
+			await this.#setSession(state, null);
+		}
 	}
 
 	// TODO: Should this return the proof if it already exists?
-	async getProof() {
-		const zkp = await this.getSession();
-		const { salt } = this.$zkLoginState.get();
+	async getProof(input: { network: Experimental_SuiClientTypes.Network }) {
+		const state = this.#sessionStateByNetwork.get(input.network);
+		if (!state) throw new Error(`The network ${input.network} isn't supported.`);
+
+		const zkp = await this.#getSession(state);
 
 		if (zkp?.proof) {
 			if (zkp.expiresAt && Date.now() > zkp.expiresAt) {
@@ -253,13 +303,13 @@ export class INTERNAL_ONLY_EnokiFlow {
 			return zkp.proof;
 		}
 
-		if (!salt || !zkp || !zkp.jwt) {
+		if (!zkp?.jwt) {
 			throw new Error('Missing required parameters for proof generation');
 		}
 
 		const storedNativeSigner = await get<ExportedWebCryptoKeypair>(
 			'ephemeralKeyPair',
-			this.#idbStore,
+			state.idbStore,
 		);
 		if (!storedNativeSigner) {
 			throw new Error('Native signer not found in store.');
@@ -268,14 +318,14 @@ export class INTERNAL_ONLY_EnokiFlow {
 		const ephemeralKeyPair = WebCryptoSigner.import(storedNativeSigner);
 
 		const proof = await this.#enokiClient.createZkLoginZkp({
-			network: this.#network,
+			network: input.network as EnokiNetwork,
 			jwt: zkp.jwt,
 			maxEpoch: zkp.maxEpoch,
 			randomness: zkp.randomness,
 			ephemeralPublicKey: ephemeralKeyPair.getPublicKey(),
 		});
 
-		await this.#setSession({
+		await this.#setSession(state, {
 			...zkp,
 			proof,
 		});
@@ -283,14 +333,17 @@ export class INTERNAL_ONLY_EnokiFlow {
 		return proof;
 	}
 
-	async getKeypair() {
-		// Get the proof, so that we ensure it exists in state:
-		await this.getProof();
+	async getKeypair(input: { network: Experimental_SuiClientTypes.Network }) {
+		const state = this.#sessionStateByNetwork.get(input.network);
+		if (!state) throw new Error(`The network ${input.network} isn't supported.`);
 
-		const zkp = await this.getSession();
+		// Get the proof, so that we ensure it exists in state:
+		await this.getProof(input);
+
+		const zkp = await this.#getSession(state);
 
 		// Check to see if we have the essentials for a keypair:
-		const { address } = this.$zkLoginState.get();
+		const { address } = this.#zkLoginState.get();
 		if (!address || !zkp || !zkp.proof) {
 			throw new Error('Missing required data for keypair generation.');
 		}
@@ -301,7 +354,7 @@ export class INTERNAL_ONLY_EnokiFlow {
 
 		const storedNativeSigner = await get<ExportedWebCryptoKeypair>(
 			'ephemeralKeyPair',
-			this.#idbStore,
+			state.idbStore,
 		);
 
 		if (!storedNativeSigner) {

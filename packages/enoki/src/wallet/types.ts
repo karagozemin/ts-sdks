@@ -6,12 +6,13 @@ import type { StandardEventsListeners } from '@mysten/wallet-standard';
 
 import type { EnokiClientConfig } from '../EnokiClient/index.js';
 import type { AuthProvider, EnokiNetwork } from '../EnokiClient/type.js';
+import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui/experimental';
 
 export type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
 };
 
-export interface RegisterEnokiWalletsOptions extends EnokiClientConfig {
+export type RegisterEnokiWalletsOptions = EnokiClientConfig & {
 	/**
 	 * Configuration for each OAuth provider.
 	 */
@@ -38,19 +39,30 @@ export interface RegisterEnokiWalletsOptions extends EnokiClientConfig {
 	>;
 
 	/**
-	 * The SuiClient instance to use when building and executing transactions.
-	 */
-	client: SuiClient;
-
-	/**
-	 * The network to use when building and executing transactions.
-	 * @default 'mainnet'
-	 */
-	network?: EnokiNetwork;
-
-	/**
 	 * The window features to use when opening the authorization popup.
 	 * https://developer.mozilla.org/en-US/docs/Web/API/Window/open#windowfeatures
 	 */
 	windowFeatures?: string | (() => string);
-}
+} & (
+		| {
+				/**
+				 * A list of client instances to use when building and executing transactions.
+				 */
+				clients: ClientWithCoreApi[];
+
+				/** A function that returns the current network that the application is acting on. */
+				getCurrentNetwork: () => Experimental_SuiClientTypes.Network;
+		  }
+		| {
+				/**
+				 * The SuiClient instance to use when building and executing transactions.
+				 */
+				client: SuiClient;
+
+				/**
+				 * The network to use when building and executing transactions.
+				 * @default 'mainnet'
+				 */
+				network?: EnokiNetwork;
+		  }
+	);
