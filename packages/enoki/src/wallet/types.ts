@@ -4,7 +4,7 @@
 import type { SuiClient } from '@mysten/sui/client';
 import type { StandardEventsListeners, Wallet } from '@mysten/wallet-standard';
 
-import type { EnokiClient, EnokiClientConfig } from '../EnokiClient/index.js';
+import type { EnokiClientConfig } from '../EnokiClient/index.js';
 import type { AuthProvider, EnokiNetwork } from '../EnokiClient/type.js';
 import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui/experimental';
 import type { ZkLoginSignatureInputs } from '@mysten/sui/zklogin';
@@ -24,7 +24,6 @@ export type ZkLoginSession = {
 	maxEpoch: number;
 	randomness: string;
 	expiresAt: number;
-
 	jwt?: string;
 	proof?: ZkLoginSignatureInputs;
 };
