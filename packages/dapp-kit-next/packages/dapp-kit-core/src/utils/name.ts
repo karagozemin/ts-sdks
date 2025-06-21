@@ -13,9 +13,10 @@ export async function resolveNameServiceName(client: DAppKitCompatibleClient, ad
 
 	try {
 		const result = await client.core.resolveNameServiceNames?.({
-			address: '0x5a3afb4e2d6421488d4417f8cbdaf276079dd6f9c0195d8c8453c7a56d863194',
+			address,
 			limit: 1,
 		});
+
 		const name = result?.data.at(0) ?? null;
 		cache.set(address, name ? normalizeSuiNSName(name, 'at') : null);
 		return name;
