@@ -94,5 +94,78 @@ export const styles = [
 			padding: 16px;
 			gap: 8px;
 		}
+
+		.container {
+			padding-top: 12px;
+			padding-bottom: 12px;
+			padding-left: 16px;
+			padding-right: 16px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 8px;
+			width: 100%;
+			border-radius: var(--dapp-kit-radius-sm);
+		}
+
+		.container[data-checked='true'] {
+			background-color: var(--dapp-kit-accent);
+		}
+
+		.account-title {
+			font-weight: var(--dapp-kit-font-weight-medium);
+		}
+
+		.account-subtitle {
+			color: var(--dapp-kit-muted-foreground);
+		}
+
+		.account-info {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+
+		.content {
+			display: flex;
+			gap: 12px;
+		}
+
+		.copy-address-button {
+			display: inline-flex;
+		}
+
+		.copy-address-button svg {
+			width: 16px;
+			height: 16px;
+		}
+
+		.radio-button {
+			width: 20px;
+			height: 20px;
+			border-radius: 100%;
+			background-color: var(--dapp-kit-input);
+			border: 1px solid var(--dapp-kit-border);
+			display: inline-flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		[data-checked='true'] .radio-button {
+			color: var(--dapp-kit-positive);
+			border-color: var(--dapp-kit-positive);
+		}
+
+		.radio-input {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border-width: 0;
+		}
 	`,
 ];

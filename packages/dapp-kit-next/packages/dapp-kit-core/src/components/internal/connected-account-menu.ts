@@ -17,6 +17,8 @@ import type { WalletConnection } from '../../core/store.js';
 import { plusIcon } from './icons/plus-icon.js';
 import { SLUSH_WALLET_NAME } from '@mysten/slush-wallet';
 import { when } from 'lit/directives/when.js';
+import { Task } from '@lit/task';
+import { resolveNameServiceName } from '../../utils/name.js';
 
 export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 	static elementDefinitions = {
@@ -43,6 +45,11 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 
 	#unsubscribeFromAutoUpdate?: () => void;
 
+	#resolveNameTask = new Task(this, {
+		args: () => [this.client, this.connection.account.address],
+		task: async ([client, address]) => resolveNameServiceName(client, address),
+	});
+
 	override connectedCallback() {
 		super.connectedCallback();
 		document.addEventListener('click', this.#onDocumentClick);
@@ -64,7 +71,11 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 			>
 				<div class="trigger-content">
 					<img src=${this.connection.account.icon ?? this.connection.wallet.icon} alt="" />
-					${this.#getDisplayAddress()}
+					${this.#resolveNameTask.render({
+						pending: this.#getAccountTitle,
+						complete: this.#getAccountTitle,
+						error: () => this.#getAccountTitle,
+					})}
 					<div class="chevron">${chevronDownIcon}</div>
 				</div>
 			</internal-button>
@@ -75,7 +86,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 						// NOTE: No compatible wallets conform with the standard
 						// in a way to allow selecting other accounts besides Slush
 						// so we'll just hardcode this for now.
-						this.connection.wallet.name === SLUSH_WALLET_NAME,
+						this.connection.wallet.name.startsWith(SLUSH_WALLET_NAME),
 						() =>
 							html`<button
 								class="icon-button"
@@ -101,11 +112,9 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 						)}
 					</ul>
 				</div>
-				<div class="actions-container">
-					<button class="disconnect-button" @click=${this.#onDisconnectClick}>
-						${unlinkIcon} Disconnect all
-					</button>
-				</div>
+				<button class="disconnect-button" @click=${this.#onDisconnectClick}>
+					${unlinkIcon} Disconnect all
+				</button>
 			</div>`;
 	}
 
@@ -127,8 +136,8 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 		);
 	}
 
-	#getDisplayAddress = () => {
-		return this.connection.account.label || formatAddress(this.connection.account.address);
+	#getAccountTitle = (name?: string | null) => {
+		return name || this.connection.account.label || formatAddress(this.connection.account.address);
 	};
 
 	#onDocumentClick = (event: MouseEvent) => {
@@ -165,7 +174,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 		this.#unsubscribeFromAutoUpdate = autoUpdate(this._trigger, this._menu, async () => {
 			const result = await computePosition(this._trigger, this._menu, {
 				placement: 'bottom-end',
-				middleware: [offset(8), flip(), shift({ padding: 8 }), autoPlacement()],
+				middleware: [offset(12), flip(), shift({ padding: 16 }), autoPlacement()],
 			});
 
 			Object.assign(this._menu.style, {

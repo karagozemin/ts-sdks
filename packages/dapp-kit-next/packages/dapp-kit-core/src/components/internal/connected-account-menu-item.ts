@@ -6,7 +6,6 @@ import { html, LitElement } from 'lit';
 import { formatAddress } from '@mysten/sui/utils';
 import { property, state } from 'lit/decorators.js';
 import type { UiWalletAccount } from '@wallet-standard/ui';
-import { styles } from './connected-account-menu-item.styles.js';
 import { copyIcon } from './icons/copy-icon.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { circleIcon } from './icons/circle-icon.js';
@@ -18,12 +17,9 @@ import { circleCheckIcon } from './icons/circle-check-icon.js';
 export type AccountSelectedEvent = CustomEvent<{ account: UiWalletAccount }>;
 
 export class AccountMenuItem extends LitElement {
-	static override styles = styles;
-
-	static shadowRootOptions = {
-		...LitElement.shadowRootOptions,
-		delegatesFocus: true,
-	};
+	override createRenderRoot() {
+		return this;
+	}
 
 	@property({ type: Object })
 	account!: UiWalletAccount;
@@ -42,45 +38,31 @@ export class AccountMenuItem extends LitElement {
 		task: async ([client, address]) => resolveNameServiceName(client, address),
 	});
 
-	connectedCallback() {
+	override connectedCallback() {
 		super.connectedCallback();
 		this.addEventListener('click', this.#accountSelected);
 	}
 
-	disconnectedCallback() {
+	override disconnectedCallback() {
 		super.disconnectedCallback();
 		this.removeEventListener('click', this.#accountSelected);
 	}
 
 	override render() {
 		return html`
-			<div
-				class=${classMap({
-					container: true,
-					'container--selected': this.selected,
-				})}
-			>
-				<label class="content">
-					<input
-						type="radio"
-						name="wallet-address"
-						aria-hidden="true"
-						tabindex="-1"
-						value=${this.account.address}
-						?checked=${this.selected}
-						@change=${this.#accountSelected}
-						class="radio-input"
-					/>
-					<button
-						class="radio-button"
-						role="radio"
-						name="r"
-						type="button"
-						data-checked=${this.selected}
-						aria-labelledby=""
-					>
-						${when(this.selected, () => circleIcon)}
-					</button>
+			<div class="container" data-checked=${this.selected}>
+				<input
+					type="radio"
+					name="wallet-address"
+					tabindex="${this.selected ? '0' : '-1'}"
+					value=${this.account.address}
+					?checked=${this.selected}
+					@change=${this.#accountSelected}
+					class="radio-input"
+					id=${this.account.address}
+				/>
+				<label class="content" for=${this.account.address}>
+					<div class="radio-button">${when(this.selected, () => circleIcon)}</div>
 					${when(this.account.icon, (icon) => html`<img src=${icon} alt="" />`)}
 					${this.#resolveNameTask.render({
 						pending: this.#renderAccountInfo,
@@ -99,7 +81,9 @@ export class AccountMenuItem extends LitElement {
 		`;
 	}
 
-	async #copyAddressToClipboard() {
+	async #copyAddressToClipboard(event: Event) {
+		event.stopPropagation();
+
 		try {
 			await navigator.clipboard.writeText(this.account.address);
 			this._wasCopySuccessful = true;
