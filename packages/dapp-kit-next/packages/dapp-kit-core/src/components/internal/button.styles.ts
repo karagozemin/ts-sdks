@@ -12,7 +12,7 @@ export const styles = [
 			transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 			transition-duration: 0.15s;
 			border-radius: var(--dapp-kit-radius-md);
-			font-weight: var(--dapp-kit-font-weight-medium);
+			font-weight: var(--dapp-kit-font-weight-semibold);
 			outline-style: none;
 			display: inline-flex;
 			justify-content: center;
@@ -21,7 +21,7 @@ export const styles = [
 			padding-right: 16px;
 			padding-top: 8px;
 			padding-bottom: 8px;
-			height: 36px;
+			height: 40px;
 		}
 
 		button:focus-visible {

@@ -14,16 +14,17 @@ export const styles = [
 			width: fit-content;
 		}
 
-		[role='menu'] {
+		.menu {
 			display: none;
 		}
 
-		[aria-expanded='true'] + [role='menu'] {
+		[aria-expanded='true'] + .menu {
 			display: flex;
 			flex-direction: column;
 			max-width: fit-content;
-			min-width: 240px;
-			padding: 4px;
+			min-width: 396px;
+			gap: 16px;
+			padding: 16px;
 			position: absolute;
 			outline: none;
 			background-color: var(--dapp-kit-popover);
@@ -35,39 +36,22 @@ export const styles = [
 				0 2px 4px -2px rgba(0, 0, 0, 0.1);
 		}
 
-		[role='menuitem'],
-		[role='menuitemradio'] {
-			cursor: default;
+		.header-container {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
 		}
 
-		[role='separator'] {
-			height: 1px;
-			margin-left: -4px;
-			margin-right: -4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			background-color: var(--dapp-kit-border);
+		.header-title {
+			font-size: 18px;
+			font-weight: var(--dapp-kit-font-weight-semibold);
+			letter-spacing: -0.18px;
 		}
 
 		img {
 			width: 24px;
 			height: 24px;
 			border-radius: 96px;
-		}
-
-		.current-account-container {
-			display: flex;
-			align-items: center;
-			padding-left: 8px;
-			padding-right: 8px;
-			padding-top: 6px;
-			padding-bottom: 6px;
-			gap: 8px;
-		}
-
-		.connected-text {
-			color: var(--dapp-kit-muted-foreground);
-			font-size: 12px;
 		}
 
 		[aria-expanded='true'] .chevron {
@@ -80,74 +64,35 @@ export const styles = [
 		}
 
 		.chevron svg {
-			width: 16px;
-			height: 16px;
-		}
-
-		.copy-address-button {
-			margin-left: auto;
-		}
-
-		.copy-address-success {
-			width: 24px;
-			height: 24px;
+			width: 12px;
+			height: 12px;
 		}
 
 		.trigger-content {
 			display: flex;
 			align-items: center;
 			font-weight: var(--dapp-kit-font-weight-semibold);
-			gap: 8px;
-		}
-
-		.accounts-container {
-			padding-left: 8px;
-			padding-right: 8px;
-		}
-
-		.accounts-label {
-			color: var(--dapp-kit-muted-foreground);
-			font-weight: var(--dapp-kit-font-weight-medium);
-			padding-top: 4px;
-			padding-bottom: 4px;
-			font-size: 13px;
+			gap: 12px;
 		}
 
 		.accounts-list {
 			display: flex;
 			flex-direction: column;
-			gap: 4px;
+			gap: 12px;
 			max-height: 240px;
 			overflow-y: auto;
 		}
 
-		.actions-container {
-			display: flex;
-			flex-direction: column;
-			gap: 4px;
-		}
-
-		.action-menu-item {
-			border-radius: var(--dapp-kit-radius-sm);
-			display: flex;
+		.disconnect-button {
+			background-color: rgba(0, 0, 0, 0.8);
+			display: inline-flex;
 			align-items: center;
-			font-size: 14px;
-			padding: 8px;
-			gap: 8px;
+			justify-content: center;
 			width: 100%;
-		}
-
-		.action-menu-item:hover,
-		.action-menu-item:focus {
-			background-color: var(--dapp-kit-accent);
-			outline: 2px solid transparent;
-			outline-offset: 2px;
-		}
-
-		.action-menu-item svg {
-			color: var(--dapp-kit-muted-foreground);
-			width: 16px;
-			height: 16px;
+			border-radius: var(--dapp-kit-radius-md);
+			height: 48px;
+			padding: 16px;
+			gap: 8px;
 		}
 	`,
 ];
