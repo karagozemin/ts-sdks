@@ -128,6 +128,7 @@ export const styles = [
 
 		.content {
 			display: flex;
+			flex-grow: 1;
 			gap: 12px;
 		}
 
@@ -140,7 +141,7 @@ export const styles = [
 			height: 16px;
 		}
 
-		.radio-button {
+		.radio-indicator {
 			width: 20px;
 			height: 20px;
 			border-radius: 100%;
@@ -151,7 +152,13 @@ export const styles = [
 			align-items: center;
 		}
 
-		[data-checked='true'] .radio-button {
+		.content:focus-visible .radio-indicator {
+			border-color: hsl(var(--dapp-kit-ring));
+			box-shadow: 0 0 0 3px hsl(var(--dapp-kit-ring) / 0.5);
+			outline: none;
+		}
+
+		[data-checked='true'] .radio-indicator {
 			color: var(--dapp-kit-positive);
 			border-color: var(--dapp-kit-positive);
 		}

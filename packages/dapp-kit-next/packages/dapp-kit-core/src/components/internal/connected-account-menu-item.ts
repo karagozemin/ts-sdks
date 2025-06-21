@@ -7,7 +7,6 @@ import { formatAddress } from '@mysten/sui/utils';
 import { property, state } from 'lit/decorators.js';
 import type { UiWalletAccount } from '@wallet-standard/ui';
 import { copyIcon } from './icons/copy-icon.js';
-import { classMap } from 'lit/directives/class-map.js';
 import { circleIcon } from './icons/circle-icon.js';
 import { Task } from '@lit/task';
 import type { DAppKitCompatibleClient } from '../../core/types.js';
@@ -62,7 +61,7 @@ export class AccountMenuItem extends LitElement {
 					id=${this.account.address}
 				/>
 				<label class="content" for=${this.account.address}>
-					<div class="radio-button">${when(this.selected, () => circleIcon)}</div>
+					<div class="radio-indicator">${when(this.selected, () => circleIcon)}</div>
 					${when(this.account.icon, (icon) => html`<img src=${icon} alt="" />`)}
 					${this.#resolveNameTask.render({
 						pending: this.#renderAccountInfo,

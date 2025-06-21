@@ -79,7 +79,7 @@ export class ConnectedAccountMenu extends ScopedRegistryHost(LitElement) {
 					<div class="chevron">${chevronDownIcon}</div>
 				</div>
 			</internal-button>
-			<div class="menu" id="menu" aria-labelledby="menu-button">
+			<div class="menu" id="menu" tabindex="-1" aria-labelledby="menu-button">
 				<div class="header-container">
 					<h2 class="header-title">Connected accounts</h2>
 					${when(
