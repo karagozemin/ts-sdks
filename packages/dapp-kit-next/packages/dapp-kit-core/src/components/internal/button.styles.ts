@@ -27,7 +27,7 @@ export const styles = [
 		button:focus-visible {
 			border-color: var(--dapp-kit-ring);
 			box-shadow:
-				0 0 0 3px color-mix(in oklab, oklch(0.708 0 0) 50%, transparent),
+				0 0 0 3px color-mix(in oklab, var(--dapp-kit-ring) 50%, transparent),
 				rgba(0, 0, 0, 0.05) 0px 1px 2px 0px;
 		}
 

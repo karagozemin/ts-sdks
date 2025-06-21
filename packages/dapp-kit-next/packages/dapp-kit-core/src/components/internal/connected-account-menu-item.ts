@@ -7,7 +7,6 @@ import { formatAddress } from '@mysten/sui/utils';
 import { property, state } from 'lit/decorators.js';
 import type { UiWalletAccount } from '@wallet-standard/ui';
 import { copyIcon } from './icons/copy-icon.js';
-import { circleIcon } from './icons/circle-icon.js';
 import { Task } from '@lit/task';
 import type { DAppKitCompatibleClient } from '../../core/types.js';
 import { resolveNameServiceName } from '../../utils/name.js';
@@ -61,7 +60,6 @@ export class AccountMenuItem extends LitElement {
 					id=${this.account.address}
 				/>
 				<label class="content" for=${this.account.address}>
-					<div class="radio-indicator">${when(this.selected, () => circleIcon)}</div>
 					${when(this.account.icon, (icon) => html`<img src=${icon} alt="" />`)}
 					${this.#resolveNameTask.render({
 						pending: this.#renderAccountInfo,
@@ -96,11 +94,13 @@ export class AccountMenuItem extends LitElement {
 	}
 
 	#renderAccountInfo = (name?: string | null) => {
-		const formattedAddress = formatAddress(this.account.address);
+		const { address, label } = this.account;
+		const formattedAddress = formatAddress(address);
+		const title = name || label;
 
 		return html`<div class="account-info">
-			<div class="account-title">${name || formattedAddress}</div>
-			${when(name, () => html`<div class="account-subtitle">${formattedAddress}</div>`)}
+			<div class="account-title">${title || formattedAddress}</div>
+			${when(title, () => html`<div class="account-subtitle">${formattedAddress}</div>`)}
 		</div>`;
 	};
 

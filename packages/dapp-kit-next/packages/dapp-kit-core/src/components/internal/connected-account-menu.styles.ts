@@ -89,10 +89,17 @@ export const styles = [
 			align-items: center;
 			justify-content: center;
 			width: 100%;
+			background-color: var(--dapp-kit-secondary);
+			color: var(--dapp-kit-destructive);
 			border-radius: var(--dapp-kit-radius-md);
+			font-weight: var(--dapp-kit-font-weight-medium);
 			height: 48px;
 			padding: 16px;
 			gap: 8px;
+		}
+
+		.disconnect-button:hover {
+			background-color: color-mix(in oklab, var(--dapp-kit-secondary) 80%, transparent);
 		}
 
 		.container {
@@ -113,11 +120,13 @@ export const styles = [
 		}
 
 		.account-title {
-			font-weight: var(--dapp-kit-font-weight-medium);
+			font-weight: var(--dapp-kit-font-weight-semibold);
 		}
 
 		.account-subtitle {
 			color: var(--dapp-kit-muted-foreground);
+			font-weight: var(--dapp-kit-font-weight-medium);
+			font-size: 14px;
 		}
 
 		.account-info {
@@ -153,8 +162,8 @@ export const styles = [
 		}
 
 		.content:focus-visible .radio-indicator {
-			border-color: hsl(var(--dapp-kit-ring));
-			box-shadow: 0 0 0 3px hsl(var(--dapp-kit-ring) / 0.5);
+			border-color: var(--dapp-kit-ring);
+			box-shadow: 0 0 0 3px var(--dapp-kit-ring) / 0.5;
 			outline: none;
 		}
 
@@ -164,15 +173,45 @@ export const styles = [
 		}
 
 		.radio-input {
+			appearance: none;
+			-webkit-appearance: none;
+			width: 20px;
+			height: 20px;
+			margin: 0;
+			border-radius: 50%;
+			background-color: var(--dapp-kit-input);
+			border: 1px solid var(--dapp-kit-input);
+			cursor: pointer;
+			position: relative;
+			outline: none;
+			transition: box-shadow 0.2s;
+		}
+
+		.radio-input::before {
+			content: '';
 			position: absolute;
-			width: 1px;
-			height: 1px;
-			padding: 0;
-			margin: -1px;
-			overflow: hidden;
-			clip: rect(0, 0, 0, 0);
-			white-space: nowrap;
-			border-width: 0;
+			top: 50%;
+			left: 50%;
+			width: 0.5rem;
+			height: 0.5rem;
+			background-color: var(--dapp-kit-positive);
+			border-radius: 9999px;
+			transform: translate(-50%, -50%) scale(0);
+			transition: transform 0.2s ease;
+		}
+
+		.radio-input:checked {
+			background-color: transparent;
+			border-color: var(--dapp-kit-positive);
+		}
+
+		.radio-input:checked::before {
+			transform: translate(-50%, -50%) scale(1);
+		}
+
+		.radio-input:focus-visible {
+			border-color: var(--dapp-kit-ring);
+			box-shadow: 0 0 0 3px var(--dapp-kit-ring);
 		}
 	`,
 ];
