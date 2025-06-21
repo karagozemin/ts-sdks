@@ -3,12 +3,9 @@
 
 import { FileBuilder } from './file-builder.js';
 import { readFile } from 'node:fs/promises';
-import { deserialize } from '@mysten/move-bytecode-template';
 import { getSafeName, renderTypeSignature, SUI_FRAMEWORK_ADDRESS } from './render-types.js';
-import { mapToObject, parseTS } from './utils.js';
-import type { ModuleSummary, Type } from './types/summary.js';
-import { summaryFromDeserializedModule } from './summary.js';
-import type { DeserializedModule } from './types/deserialized.js';
+import { formatComment, mapToObject, parseTS, withComment } from './utils.js';
+import type { Fields, ModuleSummary, Type, TypeParameter } from './types/summary.js';
 import { join } from 'node:path';
 
 export class MoveModuleBuilder extends FileBuilder {
@@ -29,17 +26,6 @@ export class MoveModuleBuilder extends FileBuilder {
 		this.#addressMappings = addressMappings;
 	}
 
-	static async fromBytecodeFile(file: string) {
-		const bytes = await readFile(file);
-		const deserialized: DeserializedModule = deserialize(bytes);
-
-		const builder = new MoveModuleBuilder({
-			summary: summaryFromDeserializedModule(deserialized),
-		});
-
-		return builder;
-	}
-
 	static async fromSummaryFile(file: string, addressMappings: Record<string, string>) {
 		const summary = JSON.parse(await readFile(file, 'utf-8'));
 
@@ -51,6 +37,14 @@ export class MoveModuleBuilder extends FileBuilder {
 
 	#resolveAddress(address: string) {
 		return this.#addressMappings[address] ?? address;
+	}
+
+	override async getHeader() {
+		if (!this.summary.doc) {
+			return super.getHeader();
+		}
+
+		return `${await super.getHeader()}\n\n/*${await formatComment(this.summary.doc)}*/\n\n`;
 	}
 
 	includeType(name: string, moduleBuilders: Record<string, MoveModuleBuilder>) {
@@ -117,10 +111,12 @@ export class MoveModuleBuilder extends FileBuilder {
 		Object.keys(this.summary.enums).forEach((name) => this.includeType(name, moduleBuilders));
 	}
 
-	renderBCSTypes() {
-		this.addImport('@mysten/sui/bcs', 'bcs');
-		this.renderStructs();
-		this.renderEnums();
+	async renderBCSTypes() {
+		if (this.hasBcsTypes()) {
+			this.addImport('@mysten/sui/bcs', 'bcs');
+		}
+		await this.renderStructs();
+		await this.renderEnums();
 	}
 
 	hasBcsTypes() {
@@ -137,17 +133,20 @@ export class MoveModuleBuilder extends FileBuilder {
 		return this.hasBcsTypes() || this.hasFunctions();
 	}
 
-	renderStructs() {
-		for (const [name, struct] of Object.entries(this.summary.structs)) {
-			this.exports.push(name);
-
-			const fields = Object.entries(struct.fields.fields);
-			const fieldObject = mapToObject(fields, ([name, field]) => [
+	async #renderFieldsAsStruct(
+		name: string,
+		{ fields }: Fields,
+		typeParameters: TypeParameter[] = [],
+	) {
+		const fieldObject = await mapToObject({
+			items: Object.entries(fields),
+			getComment: ([_name, field]) => field.doc,
+			mapper: ([name, field]) => [
 				name,
 				renderTypeSignature(field.type_, {
 					format: 'bcs',
 					summary: this.summary,
-					typeParameters: struct.type_parameters,
+					typeParameters,
 					resolveAddress: (address) => this.#resolveAddress(address),
 					onDependency: (address, mod) => {
 						if (address !== this.summary.id.address || mod !== this.summary.id.name) {
@@ -160,14 +159,52 @@ export class MoveModuleBuilder extends FileBuilder {
 						}
 					},
 				}),
-			]);
+			],
+		});
+
+		return parseTS/* ts */ `bcs.struct('${name}', ${fieldObject})`;
+	}
+
+	async #renderFieldsAsTuple(
+		name: string,
+		{ fields }: Fields,
+		typeParameters: TypeParameter[] = [],
+	) {
+		const values = Object.values(fields).map((field) =>
+			renderTypeSignature(field.type_, {
+				format: 'bcs',
+				summary: this.summary,
+				typeParameters,
+				resolveAddress: (address) => this.#resolveAddress(address),
+				onDependency: (address, mod) =>
+					this.addStarImport(
+						address === this.summary.id.address ? `./${mod}.js` : `~root/deps/${address}/${mod}.js`,
+						mod,
+					),
+			}),
+		);
+
+		return parseTS/* ts */ `bcs.tuple([${values.join(', ')}], { name: '${name}' })`;
+	}
+
+	async renderStructs() {
+		for (const [name, struct] of Object.entries(this.summary.structs)) {
+			if (!this.#includedTypes.has(name)) {
+				continue;
+			}
+
+			this.exports.push(name);
 
 			const params = struct.type_parameters.filter((param) => !param.phantom);
 
 			if (params.length === 0) {
 				this.statements.push(
 					...parseTS/* ts */ `export function ${name}() {
-						return bcs.struct('${name}', ${fieldObject})
+						return ${
+							struct.fields.positional_fields
+								? await this.#renderFieldsAsTuple(name, struct.fields, struct.type_parameters)
+								: await this.#renderFieldsAsStruct(name, struct.fields, struct.type_parameters)
+						}
 					}`,
 				);
 			} else {
@@ -177,55 +214,89 @@ export class MoveModuleBuilder extends FileBuilder {
 				const typeGenerics = `${params.map((param, i) => `${param.name ?? `T${i}`} extends BcsType<any>`).join(', ')}`;
 
 				this.statements.push(
-					...parseTS/* ts */ `export function ${name}<${typeGenerics}>(${typeParams}) {
-						return bcs.struct('${name}', ${fieldObject})
+					...(await withComment(
+						struct,
+						parseTS/* ts */ `export function ${name}<${typeGenerics}>(${typeParams}) {
+						return ${
+							struct.fields.positional_fields
+								? await this.#renderFieldsAsTuple(name, struct.fields, struct.type_parameters)
+								: await this.#renderFieldsAsStruct(name, struct.fields, struct.type_parameters)
+						}
 					}`,
+					)),
 				);
 			}
 		}
 	}
 
-	renderEnums() {
+	async renderEnums() {
+		function isPositional(fields: Fields) {
+			if (fields.positional_fields === true) {
+				return true;
+			}
+
+			if (Object.keys(fields.fields).every((field, i) => field === `pos${i}`)) {
+				return true;
+			}
+
+			return false;
+		}
+
 		for (const [name, enumDef] of Object.entries(this.summary.enums)) {
+			if (!this.#includedTypes.has(name)) {
+				continue;
+			}
 			this.exports.push(name);
 
-			const variants = Object.entries(enumDef.variants).map(([variantName, variant]) => ({
-				name: variantName,
-				fields: Object.entries(variant.fields.fields).map(([fieldName, field]) => ({
-					name: fieldName,
-					signature: renderTypeSignature(field.type_, {
-						format: 'bcs',
-						summary: this.summary,
-						typeParameters: enumDef.type_parameters,
-						resolveAddress: (address) => this.#resolveAddress(address),
-						onDependency: (address, mod) =>
-							this.addStarImport(
-								address === this.summary.id.address
-									? `./${mod}.js`
-									: `~root/deps/${address}/${mod}.js`,
-								mod,
-							),
-					}),
-				})),
-			}));
-
-			const variantsObject = mapToObject(variants, (variant) => [
-				variant.name,
-				variant.fields.length === 0
-					? 'null'
-					: variant.fields.length === 1
-						? variant.fields[0].signature
-						: `bcs.tuple([${variant.fields.map((field) => field.signature).join(', ')}])`,
-			]);
+			const variantsObject = await mapToObject({
+				items: Object.entries(enumDef.variants),
+				getComment: ([_name, variant]) => variant.doc,
+				mapper: async ([variantName, variant]) => [
+					variantName,
+					Object.keys(variant.fields.fields).length === 0
+						? 'null'
+						: isPositional(variant.fields)
+							? Object.keys(variant.fields.fields).length === 1
+								? renderTypeSignature(Object.values(variant.fields.fields)[0].type_, {
+										format: 'bcs',
+										summary: this.summary,
+										typeParameters: enumDef.type_parameters,
+										resolveAddress: (address) => this.#resolveAddress(address),
+										onDependency: (address, mod) => {
+											if (address !== this.summary.id.address || mod !== this.summary.id.name) {
+												this.addStarImport(
+													address === this.summary.id.address
+														? `./${mod}.js`
+														: `~root/deps/${address}/${mod}.js`,
+													mod,
+												);
+											}
+										},
+									})
+								: await this.#renderFieldsAsTuple(
+										`${name}.${variantName}`,
+										variant.fields,
+										enumDef.type_parameters,
+									)
+							: await this.#renderFieldsAsStruct(
+									`${name}.${variantName}`,
+									variant.fields,
+									enumDef.type_parameters,
+								),
+				],
+			});
 
 			const params = enumDef.type_parameters.filter((param) => !param.phantom);
 
 			if (params.length === 0) {
 				this.statements.push(
-					...parseTS/* ts */ `
-					export function ${name}( ) {
+					...(await withComment(
+						enumDef,
+						parseTS/* ts */ `
+					export function ${name}() {
 						return bcs.enum('${name}', ${variantsObject})
 					}`,
+					)),
 				);
 			} else {
 				this.addImport('@mysten/sui/bcs', 'type BcsType');
@@ -234,16 +305,19 @@ export class MoveModuleBuilder extends FileBuilder {
 				const typeGenerics = `${params.map((param, i) => `${param.name ?? `T${i}`} extends BcsType<any>`).join(', ')}`;
 
 				this.statements.push(
-					...parseTS/* ts */ `
+					...(await withComment(
+						enumDef,
+						parseTS/* ts */ `
 					export function ${name}<${typeGenerics}>(${typeParams}) {
 						return bcs.enum('${name}', ${variantsObject})
 					}`,
+					)),
 				);
 			}
 		}
 	}
 
-	renderFunctions() {
+	async renderFunctions() {
 		const statements = [];
 		const names = [];
 
@@ -261,7 +335,9 @@ export class MoveModuleBuilder extends FileBuilder {
 			const fnName = getSafeName(name);
 
 			this.addImport('~root/../utils/index.js', 'normalizeMoveArguments');
-			this.addImport('~root/../utils/index.js', 'type RawTransactionArgument');
+			if (parameters.length > 0) {
+				this.addImport('~root/../utils/index.js', 'type RawTransactionArgument');
+			}
 
 			names.push(fnName);
 
@@ -277,19 +353,30 @@ export class MoveModuleBuilder extends FileBuilder {
 						onTypeParameter: (typeParameter) => usedTypeParameters.add(typeParameter),
 					}),
 				)
-				.map((type) => `RawTransactionArgument<${type}>`)
+				.map((type, i) =>
+					parameters[i].name
+						? `${parameters[i].name}: RawTransactionArgument<${type}>`
+						: `RawTransactionArgument<${type}>`,
+				)
 				.join(',\n');
 
 			if (usedTypeParameters.size > 0) {
 				this.addImport('@mysten/sui/bcs', 'type BcsType');
 			}
 
+			const filteredTypeParameters = func.type_parameters.filter(
+				(param, i) =>
+					usedTypeParameters.has(i) || (param.name && usedTypeParameters.has(param.name)),
+			);
+
 			statements.push(
-				...parseTS/* ts */ `function
+				...(await withComment(
+					func,
+					parseTS/* ts */ `function
 					${fnName}${
-						usedTypeParameters.size > 0
+						filteredTypeParameters.length > 0
 							? `<
-							${func.type_parameters.map((param, i) => `${param.name ?? `T${i}`} extends BcsType<any>`)}
+							${filteredTypeParameters.map((param, i) => `${param.name ?? `T${i}`} extends BcsType<any>`)}
 						>`
 							: ''
 					}(options: {
@@ -314,7 +401,7 @@ export class MoveModuleBuilder extends FileBuilder {
 							)
 							.map((tag) => (tag.includes('{') ? `\`${tag}\`` : `'${tag}'`))
 							.join(',\n')}
-					]
+					] satisfies string[]
 					return (tx: Transaction) => tx.moveCall({
 						package: packageAddress,
 						module: '${this.summary.id.name}',
@@ -323,6 +410,7 @@ export class MoveModuleBuilder extends FileBuilder {
 						${func.type_parameters.length ? 'typeArguments: options.typeArguments' : ''}
 					})
 				}`,
+				)),
 			);
 		}
 
@@ -346,7 +434,11 @@ export class MoveModuleBuilder extends FileBuilder {
 		}
 
 		if ('Datatype' in type) {
-			return this.#resolveAddress(type.Datatype.module.address) === SUI_FRAMEWORK_ADDRESS;
+			return (
+				this.#resolveAddress(type.Datatype.module.address) === SUI_FRAMEWORK_ADDRESS &&
+				type.Datatype.module.name === 'tx_context' &&
+				type.Datatype.name === 'TxContext'
+			);
 		}
 
 		return false;

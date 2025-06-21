@@ -67,7 +67,7 @@ export function blobIdToInt(blobId: string): bigint {
 }
 
 export const BlobMetadataWithId = bcs.struct('BlobMetadataWithId', {
-	blob_id: BlobId,
+	blobId: BlobId,
 	metadata: BlobMetadata,
 });
 
@@ -136,3 +136,13 @@ export const StorageConfirmationBody = bcs.struct('StorageConfirmationBody', {
 });
 
 export const StorageConfirmation = ProtocolMessage(StorageConfirmationBody);
+
+export function Field<T0 extends BcsType<any>, T1 extends BcsType<any>>(
+	...typeParameters: [T0, T1]
+) {
+	return bcs.struct('Field', {
+		id: bcs.Address,
+		name: typeParameters[0],
+		value: typeParameters[1],
+	});
+}

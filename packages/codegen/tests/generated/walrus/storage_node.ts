@@ -25,14 +25,18 @@ export function StorageNodeCap() {
 		node_id: bcs.Address,
 		last_epoch_sync_done: bcs.u32(),
 		last_event_blob_attestation: bcs.option(event_blob.EventBlobAttestation()),
+		/** Stores the Merkle root of the deny list for the storage node. */
 		deny_list_root: bcs.u256(),
+		/** Stores the sequence number of the deny list for the storage node. */
 		deny_list_sequence: bcs.u64(),
+		/** Stores the size of the deny list for the storage node. */
 		deny_list_size: bcs.u64(),
 	});
 }
 export function init(packageAddress: string) {
-	function id(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeInfo`];
+	/** Return the node ID of the storage node. */
+	function id(options: { arguments: [cap: RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeInfo`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -41,8 +45,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function node_id(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`];
+	/** Return the pool ID of the storage node. */
+	function node_id(options: { arguments: [cap: RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -51,8 +56,12 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function last_epoch_sync_done(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`];
+	/**
+	 * Return the last epoch in which the storage node attested that it has finished
+	 * syncing.
+	 */
+	function last_epoch_sync_done(options: { arguments: [cap: RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -61,8 +70,11 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function last_event_blob_attestation(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`];
+	/** Return the latest event blob attestion. */
+	function last_event_blob_attestation(options: {
+		arguments: [cap: RawTransactionArgument<string>];
+	}) {
+		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -71,8 +83,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function deny_list_root(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`];
+	/** Return the deny list root of the storage node. */
+	function deny_list_root(options: { arguments: [cap: RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,
@@ -81,8 +94,9 @@ export function init(packageAddress: string) {
 				arguments: normalizeMoveArguments(options.arguments, argumentsTypes),
 			});
 	}
-	function deny_list_sequence(options: { arguments: [RawTransactionArgument<string>] }) {
-		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`];
+	/** Return the deny list sequence number of the storage node. */
+	function deny_list_sequence(options: { arguments: [cap: RawTransactionArgument<string>] }) {
+		const argumentsTypes = [`${packageAddress}::storage_node::StorageNodeCap`] satisfies string[];
 		return (tx: Transaction) =>
 			tx.moveCall({
 				package: packageAddress,

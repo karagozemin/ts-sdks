@@ -31,14 +31,14 @@ async function uploadFile() {
 
 	const file = new TextEncoder().encode('Hello from the TS SDK!!!\n');
 
-	const { blobId } = await client.walrus.writeBlob({
+	const { blobId, blobObject } = await client.walrus.writeBlob({
 		blob: file,
-		deletable: false,
+		deletable: true,
 		epochs: 3,
 		signer: keypair,
 	});
 
-	console.log(blobId);
+	console.log(blobId, blobObject);
 }
 
 uploadFile().catch(console.error);

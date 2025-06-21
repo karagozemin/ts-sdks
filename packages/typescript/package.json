@@ -1,9 +1,9 @@
 {
 	"name": "@mysten/sui",
 	"author": "Mysten Labs <build@mystenlabs.com>",
-	"description": "Sui TypeScript API(Work in Progress)",
+	"description": "Sui TypeScript API",
 	"homepage": "https://sdk.mystenlabs.com",
-	"version": "1.33.0",
+	"version": "1.34.0",
 	"license": "Apache-2.0",
 	"sideEffects": false,
 	"files": [

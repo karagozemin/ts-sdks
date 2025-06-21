@@ -1,10 +1,11 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { fromBase64, toBase64 } from '@mysten/bcs';
 import type { InferBcsType } from '@mysten/bcs';
 import type { SuiMoveNormalizedType } from '@mysten/sui/client';
 
-import type { Committee } from '../contracts/committee.js';
+import type { Committee } from '../contracts/walrus/committee.js';
 import type { EncodingType } from '../types.js';
 import { BlobId } from './bcs.js';
 
@@ -102,7 +103,7 @@ export function signersToBitmap(signers: number[], committeeSize: number): Uint8
 export function getShardIndicesByNodeId(committee: InferBcsType<ReturnType<typeof Committee>>) {
 	const shardIndicesByNodeId = new Map<string, number[]>();
 
-	for (const node of committee.pos0.contents) {
+	for (const node of committee[0].contents) {
 		if (!shardIndicesByNodeId.has(node.key)) {
 			shardIndicesByNodeId.set(node.key, []);
 		}
@@ -115,7 +116,7 @@ export function getShardIndicesByNodeId(committee: InferBcsType<ReturnType<typeo
 export function nodesByShardIndex(committee: InferBcsType<ReturnType<typeof Committee>>) {
 	const nodesByShardIndex = new Map<number, string>();
 
-	for (const node of committee.pos0.contents) {
+	for (const node of committee[0].contents) {
 		for (const shardIndex of node.value) {
 			nodesByShardIndex.set(shardIndex, node.key);
 		}
@@ -173,4 +174,12 @@ export function toTypeString(type: SuiMoveNormalizedType): string {
 	}
 
 	throw new Error(`Unexpected type ${JSON.stringify(type)}`);
+}
+
+export function urlSafeBase64(bytes: Uint8Array): string {
+	return toBase64(bytes).replace(/=*$/, '').replaceAll('+', '-').replaceAll('/', '_');
+}
+
+export function fromUrlSafeBase64(base64: string): Uint8Array {
+	return fromBase64(base64.replaceAll('-', '+').replaceAll('_', '/'));
 }

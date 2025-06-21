@@ -1,7 +1,6 @@
 {
-	"private": true,
 	"name": "@mysten/codegen",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"description": "typescript codegen for sui move",
 	"license": "Apache-2.0",
 	"author": "Mysten Labs <build@mystenlabs.com>",
@@ -57,11 +56,11 @@
 	},
 	"dependencies": {
 		"@mysten/bcs": "workspace:*",
-		"@mysten/move-bytecode-template": "workspace:*",
 		"@mysten/sui": "workspace:*",
 		"@stricli/auto-complete": "^1.1.2",
 		"@stricli/core": "^1.1.2",
 		"@types/node": "^22.15.29",
+		"prettier": "^3.5.3",
 		"typescript": "^5.8.3"
 	}
 }

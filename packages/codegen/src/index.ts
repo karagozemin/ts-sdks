@@ -3,72 +3,20 @@
 
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { normalizeSuiAddress } from '@mysten/sui/utils';
 import { MoveModuleBuilder } from './move-module-builder.js';
 import { existsSync, statSync } from 'node:fs';
-
-export async function generateBuiltPackage({
-	source,
-	destination,
-	name,
-}: {
-	source: string;
-	destination: string;
-	name: string;
-}) {
-	const modules = (await readdir(join(source, 'build', name, 'bytecode_modules')))
-		.map((mod) => join(source, 'build', name, 'bytecode_modules', mod))
-		.filter((mod) => mod.endsWith('.mv'));
-
-	const builders = await Promise.all(modules.map((mod) => MoveModuleBuilder.fromBytecodeFile(mod)));
-
-	for (const builder of builders) {
-		if (!builder.hasTypesOrFunctions()) {
-			continue;
-		}
-
-		builder.renderBCSTypes();
-		builder.renderFunctions();
-
-		await mkdir(join(destination, name), { recursive: true });
-		await writeFile(
-			join(destination, `${name}/${builder.summary.id.name}.ts`),
-			builder.toString('./', `./${name}/${builder.summary.id.name}.ts`),
-		);
-	}
-
-	const depsPath = join(source, 'build', name, 'bytecode_modules', 'dependencies');
-	const depDirs = await readdir(depsPath);
-
-	for (const dir of depDirs) {
-		const modules = await readdir(join(depsPath, dir));
-
-		for (const modFile of modules) {
-			const builder = await MoveModuleBuilder.fromBytecodeFile(join(depsPath, dir, modFile));
-
-			if (!builder.hasBcsTypes()) {
-				continue;
-			}
-
-			const moduleAddress = normalizeSuiAddress(builder.summary.id.address);
-			builder.renderBCSTypes();
-			await mkdir(join(destination, 'deps', moduleAddress), { recursive: true });
-			await writeFile(
-				join(destination, 'deps', moduleAddress, `${builder.summary.id.name}.ts`),
-				builder.toString('./', `./deps/${moduleAddress}/${builder.summary.id.name}.ts`),
-			);
-		}
-	}
-}
+import { utilsContent } from './generate-utils.js';
 
 export async function generateFromPackageSummary({
 	source,
 	destination,
 	name,
+	noPrune,
 }: {
 	source: string;
 	destination: string;
 	name: string;
+	noPrune?: boolean;
 }) {
 	const summaryDir = join(source, 'package_summaries');
 
@@ -107,20 +55,22 @@ export async function generateFromPackageSummary({
 	);
 
 	modules.forEach((mod) => {
-		if (mod.isMainPackage) {
+		if (mod.isMainPackage || noPrune) {
 			mod.builder.includeAllTypes(moduleBuilders);
 		}
 	});
 
+	await generateUtils({ destination });
+
 	await Promise.all(
 		modules.map(async (mod) => {
-			if (mod.isMainPackage && mod.builder.hasTypesOrFunctions()) {
-				mod.builder.renderBCSTypes();
-				mod.builder.renderFunctions();
+			if ((mod.isMainPackage || noPrune) && mod.builder.hasTypesOrFunctions()) {
+				await mod.builder.renderBCSTypes();
+				await mod.builder.renderFunctions();
 			} else if (mod.isMainPackage) {
 				return;
 			} else if (mod.builder.hasBcsTypes()) {
-				mod.builder.renderBCSTypes();
+				await mod.builder.renderBCSTypes();
 			} else {
 				return;
 			}
@@ -134,11 +84,16 @@ export async function generateFromPackageSummary({
 				mod.isMainPackage
 					? join(destination, name, `${mod.module}.ts`)
 					: join(destination, name, 'deps', mod.package, `${mod.module}.ts`),
-				mod.builder.toString(
+				await mod.builder.toString(
 					'./',
 					mod.isMainPackage ? `./${mod.module}.ts` : `./deps/${mod.package}/${mod.module}.ts`,
 				),
 			);
 		}),
 	);
+}
+
+async function generateUtils({ destination }: { destination: string }) {
+	await mkdir(join(destination, 'utils'), { recursive: true });
+	await writeFile(join(destination, 'utils', 'index.ts'), utilsContent);
 }
