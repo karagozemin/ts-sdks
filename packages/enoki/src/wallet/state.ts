@@ -10,7 +10,7 @@ import { createDefaultEncryption } from '../encryption.js';
 import type { EnokiClientConfig } from '../EnokiClient/index.js';
 import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui/experimental';
 import type { SyncStore } from '../stores.js';
-import { createSessionStorage } from '../stores.js';
+import { createLocalStorage, createSessionStorage } from '../stores.js';
 
 import type { EnokiSessionContext, ZkLoginSession, ZkLoginState } from './types.js';
 
@@ -122,10 +122,11 @@ export class EnokiWalletState {
 	}
 
 	#createZkLoginState() {
+		const storage = createLocalStorage();
 		let storedState: ZkLoginState | null = null;
 
 		try {
-			const rawStoredValue = localStorage.getItem(this.#stateStorageKey);
+			const rawStoredValue = storage.get(this.#stateStorageKey);
 			if (rawStoredValue) {
 				storedState = JSON.parse(rawStoredValue);
 			}
@@ -136,7 +137,7 @@ export class EnokiWalletState {
 		const $zkLoginState = atom<ZkLoginState>(storedState || {});
 
 		onSet($zkLoginState, ({ newValue }) => {
-			localStorage.setItem(this.#stateStorageKey, JSON.stringify(newValue));
+			storage.set(this.#stateStorageKey, JSON.stringify(newValue));
 		});
 
 		return $zkLoginState;
