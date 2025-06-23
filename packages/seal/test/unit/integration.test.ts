@@ -360,11 +360,11 @@ describe('Integration test', () => {
 
 		objectIds = [
 			{
-				objectId: '0x2304dd255b13eaf5cb471bd5188df946a64f1715ee2b7b02fecf306bd12ceebc',
+				objectId: '0x62d0c718883c84d7648f6f69c3c64851c8bbf69545f6f6b0e0fa7d72856efb91',
 				weight: 2,
 			},
 			{
-				objectId: '0x81aeaa8c25d2c912e1dc23b4372305b7a602c4ec4cc3e510963bc635e500aa37',
+				objectId: '0xe1dc8ee4e360654fe7df071d1ab3e767ba4a85102b57e2deb7d1783a5e3ccfe8',
 				weight: 1,
 			},
 		];
@@ -428,11 +428,11 @@ describe('Integration test', () => {
 		// client with different weights should fail even though the threshold could be achieved
 		objectIds = [
 			{
-				objectId: '0x2304dd255b13eaf5cb471bd5188df946a64f1715ee2b7b02fecf306bd12ceebc',
+				objectId: '0x62d0c718883c84d7648f6f69c3c64851c8bbf69545f6f6b0e0fa7d72856efb91',
 				weight: 1,
 			},
 			{
-				objectId: '0x81aeaa8c25d2c912e1dc23b4372305b7a602c4ec4cc3e510963bc635e500aa37',
+				objectId: '0xe1dc8ee4e360654fe7df071d1ab3e767ba4a85102b57e2deb7d1783a5e3ccfe8',
 				weight: 1,
 			},
 		];
@@ -560,11 +560,11 @@ describe('Integration test', () => {
 		global.fetch = globalFetch;
 		objectIds = [
 			{
-				objectId: '0x2304dd255b13eaf5cb471bd5188df946a64f1715ee2b7b02fecf306bd12ceebc',
+				objectId: '0x62d0c718883c84d7648f6f69c3c64851c8bbf69545f6f6b0e0fa7d72856efb91',
 				weight: 3,
 			},
 			{
-				objectId: '0x81aeaa8c25d2c912e1dc23b4372305b7a602c4ec4cc3e510963bc635e500aa37',
+				objectId: '0xe1dc8ee4e360654fe7df071d1ab3e767ba4a85102b57e2deb7d1783a5e3ccfe8',
 				weight: 2,
 			},
 		];
