@@ -119,7 +119,7 @@ describe('Integration test', () => {
 		);
 		suiAddress = keypair.getPublicKey().toSuiAddress();
 		suiClient = new SuiClient({ url: getFullnodeUrl('testnet') });
-		TESTNET_PACKAGE_ID = '0xfa52157d4d230f5012665aceaa55a99a00cd15f84a8ce83e755747ccb9a916ff';
+		TESTNET_PACKAGE_ID = '0x8afa5d31dbaa0a8fb07082692940ca3d56b5e856c5126cb5a3693f0a4de63b82';
 		// Object ids pointing to ci key servers' urls
 		objectIds = [
 			{
