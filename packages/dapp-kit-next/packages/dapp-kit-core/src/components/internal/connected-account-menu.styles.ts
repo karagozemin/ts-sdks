@@ -192,10 +192,10 @@ export const styles = [
 			position: absolute;
 			top: 50%;
 			left: 50%;
-			width: 0.5rem;
-			height: 0.5rem;
+			width: 8px;
+			height: 8px;
 			background-color: var(--dapp-kit-positive);
-			border-radius: 9999px;
+			border-radius: 100%;
 			transform: translate(-50%, -50%) scale(0);
 			transition: transform 0.2s ease;
 		}
