@@ -70,3 +70,16 @@ export function getAccountFeature<TAccount extends UiWalletAccount>({
 		);
 	}
 }
+
+export function tryGetAccountFeature<TAccount extends UiWalletAccount>(
+	...args: Parameters<typeof getAccountFeature<TAccount>>
+) {
+	try {
+		return getAccountFeature(...args);
+	} catch (error) {
+		if (error instanceof FeatureNotSupportedError) {
+			return null;
+		}
+		throw error;
+	}
+}
