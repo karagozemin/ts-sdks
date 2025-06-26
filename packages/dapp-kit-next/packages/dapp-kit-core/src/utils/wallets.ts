@@ -5,7 +5,9 @@ import {
 	StandardConnect,
 	StandardEvents,
 	SuiSignAndExecuteTransaction,
+	SuiSignAndExecuteTransactionBlock,
 	SuiSignTransaction,
+	SuiSignTransactionBlock,
 	WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
 	WalletStandardError,
 } from '@mysten/wallet-standard';
@@ -19,7 +21,10 @@ export const requiredWalletFeatures = [
 	StandardEvents,
 	SuiSignTransaction,
 	SuiSignAndExecuteTransaction,
+	SuiSignAndExecuteTransactionBlock,
 ] as const;
+
+export const signingFeatures = [SuiSignTransaction, SuiSignTransactionBlock] as const;
 
 export function getAssociatedWalletOrThrow(account: UiWalletAccount, wallets: UiWallet[]) {
 	const wallet = wallets.find((wallet) => uiWalletAccountBelongsToUiWallet(account, wallet));
