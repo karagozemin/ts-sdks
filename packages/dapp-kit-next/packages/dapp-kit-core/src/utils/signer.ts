@@ -27,6 +27,8 @@ export class CurrentAccountSigner extends Signer {
 
 	override getPublicKey(): PublicKey {
 		const { account } = this.#dAppKit.stores.$connection.get();
+		const client = this.#dAppKit.stores.$currentClient.get();
+
 		if (!account) {
 			throw new Error('No account is connected.');
 		}
@@ -37,6 +39,7 @@ export class CurrentAccountSigner extends Signer {
 
 		const publicKey = publicKeyFromSuiBytes(new Uint8Array(account.publicKey), {
 			address: account.address,
+			client,
 		});
 
 		this.#publicKeyCache.set(account.address, publicKey);
