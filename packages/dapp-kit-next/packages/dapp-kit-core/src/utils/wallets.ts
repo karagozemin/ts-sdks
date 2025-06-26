@@ -4,8 +4,6 @@
 import {
 	StandardConnect,
 	StandardEvents,
-	SuiSignAndExecuteTransaction,
-	SuiSignAndExecuteTransactionBlock,
 	SuiSignTransaction,
 	SuiSignTransactionBlock,
 	WALLET_STANDARD_ERROR__FEATURES__WALLET_ACCOUNT_CHAIN_UNSUPPORTED,
@@ -16,13 +14,7 @@ import { getWalletAccountFeature, uiWalletAccountBelongsToUiWallet } from '@wall
 import { getWalletForHandle_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as getWalletForHandle } from '@wallet-standard/ui-registry';
 import { ChainNotSupportedError, DAppKitError, FeatureNotSupportedError } from './errors.js';
 
-export const requiredWalletFeatures = [
-	StandardConnect,
-	StandardEvents,
-	SuiSignTransaction,
-	SuiSignAndExecuteTransaction,
-	SuiSignAndExecuteTransactionBlock,
-] as const;
+export const requiredWalletFeatures = [StandardConnect, StandardEvents] as const;
 
 export const signingFeatures = [SuiSignTransaction, SuiSignTransactionBlock] as const;
 
