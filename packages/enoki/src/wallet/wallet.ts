@@ -135,6 +135,8 @@ export class EnokiWallet implements Wallet {
 		extraParams,
 		windowFeatures,
 		getCurrentNetwork,
+		sessionStore,
+		stateStore,
 		apiKey,
 		apiUrl,
 		clients,
@@ -143,7 +145,7 @@ export class EnokiWallet implements Wallet {
 		this.#name = name;
 		this.#icon = icon;
 		this.#enokiClient = new EnokiClient({ apiKey, apiUrl });
-		this.#state = new EnokiWalletState({ apiKey, clientId, clients });
+		this.#state = new EnokiWalletState({ apiKey, clientId, clients, sessionStore, stateStore });
 		this.#provider = provider;
 		this.#clientId = clientId;
 		this.#redirectUrl = redirectUrl || window.location.href.split('#')[0];

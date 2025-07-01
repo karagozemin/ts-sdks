@@ -10,6 +10,7 @@ import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui
 import type { ZkLoginSignatureInputs } from '@mysten/sui/zklogin';
 import type { UseStore } from 'idb-keyval';
 import type { WritableAtom } from 'nanostores';
+import type { SyncStore } from '../stores.js';
 
 export type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
@@ -35,13 +36,44 @@ export type EnokiSessionContext = {
 	$zkLoginSession: WritableAtom<{ initialized: boolean; value: ZkLoginSession | null }>;
 };
 
-export type EnokiWalletOptions = {
-	provider: AuthProvider;
-	windowFeatures?: string | (() => string);
+type ClientConfig = {
+	/**
+	 * A list of client instances to use when building and executing transactions.
+	 */
 	clients: ClientWithCoreApi[];
+
+	/**
+	 * A function that returns the current network that the application is acting on.
+	 */
 	getCurrentNetwork: () => Experimental_SuiClientTypes.Network;
+};
+
+export type EnokiWalletOptions = {
+	/**
+	 * The window features to use when opening the authorization popup.
+	 * https://developer.mozilla.org/en-US/docs/Web/API/Window/open#windowfeatures
+	 */
+	windowFeatures?: string | (() => string);
+
+	/**
+	 * The storage interface to persist Enoki session data locally.
+	 * If not provided, it will default to `sessionStorage` if available.
+	 */
+	sessionStore?: SyncStore;
+
+	/**
+	 * The storage interface to persist Enoki wallet data locally.
+	 * If not provided, it will default to `localStorage` if available.
+	 */
+	stateStore?: SyncStore;
+
+	/**
+	 * The authentication provider to register the wallet for.
+	 */
+	provider: AuthProvider;
 } & AuthProviderOptions &
 	EnokiClientConfig &
+	ClientConfig &
 	Pick<Wallet, 'name' | 'icon'>;
 
 export type AuthProviderOptions = {
@@ -61,27 +93,17 @@ export type AuthProviderOptions = {
 	extraParams?: Record<string, string>;
 };
 
-export type RegisterEnokiWalletsOptions = EnokiClientConfig & {
+export type RegisterEnokiWalletsOptions = {
 	/**
 	 * Configuration for each OAuth provider.
 	 */
 	providers: Partial<Record<AuthProvider, AuthProviderOptions>>;
-
-	/**
-	 * The window features to use when opening the authorization popup.
-	 * https://developer.mozilla.org/en-US/docs/Web/API/Window/open#windowfeatures
-	 */
-	windowFeatures?: string | (() => string);
-} & (
-		| {
-				/**
-				 * A list of client instances to use when building and executing transactions.
-				 */
-				clients: ClientWithCoreApi[];
-
-				/** A function that returns the current network that the application is acting on. */
-				getCurrentNetwork: () => Experimental_SuiClientTypes.Network;
-		  }
+} & Pick<
+	EnokiWalletOptions,
+	'apiKey' | 'apiUrl' | 'sessionStore' | 'stateStore' | 'windowFeatures'
+> &
+	(
+		| ClientConfig
 		| {
 				/**
 				 * The SuiClient instance to use when building and executing transactions.
