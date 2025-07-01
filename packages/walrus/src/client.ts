@@ -1414,6 +1414,7 @@ export class WalrusClient {
 						arguments: [
 							blob,
 							metadata._new({
+								package: walrusPackageId,
 								arguments: [],
 							}),
 						],
