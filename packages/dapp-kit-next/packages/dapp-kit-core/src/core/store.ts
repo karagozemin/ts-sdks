@@ -6,7 +6,11 @@ import type { StoreValue } from 'nanostores';
 import { atom, computed, map } from 'nanostores';
 import { getChain } from '../utils/networks.js';
 import type { Networks } from '../utils/networks.js';
-import { getAssociatedWalletOrThrow, requiredWalletFeatures } from '../utils/wallets.js';
+import {
+	getAssociatedWalletOrThrow,
+	requiredWalletFeatures,
+	signingFeatures,
+} from '../utils/wallets.js';
 import type { DAppKitCompatibleClient } from './types.js';
 
 type InternalWalletConnection =
@@ -48,11 +52,15 @@ export function createStores<TNetworks extends Networks>({
 					(chain) => getChain(currentNetwork) === chain,
 				);
 
-				const areFeaturesCompatible = requiredWalletFeatures.every((featureName) =>
+				const hasRequiredFeatures = requiredWalletFeatures.every((featureName) =>
 					wallet.features.includes(featureName),
 				);
 
-				return areChainsCompatible && areFeaturesCompatible;
+				const canSignTransactions = signingFeatures.some((featureName) =>
+					wallet.features.includes(featureName),
+				);
+
+				return areChainsCompatible && hasRequiredFeatures && canSignTransactions;
 			});
 		},
 	);
