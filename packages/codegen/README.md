@@ -28,7 +28,7 @@ const config: SuiCodegenConfig = {
 export default config;
 ```
 
-The `package` field should be the MVR name for your move package. If you have not registered you
+The `package` field should be the MVR name for your move package. If you have not registered your
 package on MVR yet, you can use the `@local-pkg` scope, and set up an override in your `SuiClient`
 to resolve it to the correct address.
 
