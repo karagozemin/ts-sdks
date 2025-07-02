@@ -73,15 +73,6 @@ export function createWalletStore({
 					}));
 				},
 				setWalletConnected(wallet, connectedAccounts, selectedAccount, supportedIntents = []) {
-					console.log('CONNECTED', {
-						accounts: connectedAccounts,
-						currentWallet: wallet,
-						currentAccount: selectedAccount,
-						lastConnectedWalletName: getWalletUniqueIdentifier(wallet),
-						lastConnectedAccountAddress: selectedAccount?.address,
-						connectionStatus: 'connected',
-						supportedIntents,
-					});
 					set(() => ({
 						accounts: connectedAccounts,
 						currentWallet: wallet,
@@ -93,7 +84,6 @@ export function createWalletStore({
 					}));
 				},
 				setWalletDisconnected() {
-					console.log('DISOCNNECTED');
 					set(() => ({
 						accounts: [],
 						currentWallet: null,
@@ -115,8 +105,6 @@ export function createWalletStore({
 				},
 				setWalletUnregistered(updatedWallets, unregisteredWallet) {
 					if (unregisteredWallet === get().currentWallet) {
-						console.log('UNREGISTERED');
-
 						set(() => ({
 							wallets: updatedWallets,
 							accounts: [],
