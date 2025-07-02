@@ -55,6 +55,7 @@ export function useConnectWallet({
 				);
 				const selectedAccount = getSelectedAccount(connectedSuiAccounts, accountAddress);
 
+				console.log('CONNECTED', connectedSuiAccounts, connectResult);
 				setWalletConnected(
 					wallet,
 					connectedSuiAccounts,

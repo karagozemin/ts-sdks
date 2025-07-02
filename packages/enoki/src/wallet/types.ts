@@ -10,15 +10,14 @@ import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui
 import type { ZkLoginSignatureInputs } from '@mysten/sui/zklogin';
 import type { UseStore } from 'idb-keyval';
 import type { WritableAtom } from 'nanostores';
-import type { SyncStore } from '../stores.js';
 
 export type WalletEventsMap = {
 	[E in keyof StandardEventsListeners]: Parameters<StandardEventsListeners[E]>[0];
 };
 
 export type ZkLoginState = {
-	address?: string;
-	publicKey?: string;
+	address: string;
+	publicKey: string;
 };
 
 export type ZkLoginSession = {
@@ -32,7 +31,6 @@ export type ZkLoginSession = {
 export type EnokiSessionContext = {
 	idbStore: UseStore;
 	client: ClientWithCoreApi;
-	storageKey: string;
 	$zkLoginSession: WritableAtom<{ initialized: boolean; value: ZkLoginSession | null }>;
 };
 
@@ -54,18 +52,6 @@ export type EnokiWalletOptions = {
 	 * https://developer.mozilla.org/en-US/docs/Web/API/Window/open#windowfeatures
 	 */
 	windowFeatures?: string | (() => string);
-
-	/**
-	 * The storage interface to persist Enoki session data locally.
-	 * If not provided, it will default to `sessionStorage` if available.
-	 */
-	sessionStore?: SyncStore;
-
-	/**
-	 * The storage interface to persist Enoki wallet data locally.
-	 * If not provided, it will default to `localStorage` if available.
-	 */
-	stateStore?: SyncStore;
 
 	/**
 	 * The authentication provider to register the wallet for.
@@ -98,10 +84,7 @@ export type RegisterEnokiWalletsOptions = {
 	 * Configuration for each OAuth provider.
 	 */
 	providers: Partial<Record<AuthProvider, AuthProviderOptions>>;
-} & Pick<
-	EnokiWalletOptions,
-	'apiKey' | 'apiUrl' | 'sessionStore' | 'stateStore' | 'windowFeatures'
-> &
+} & Pick<EnokiWalletOptions, 'apiKey' | 'apiUrl' | 'windowFeatures'> &
 	(
 		| ClientConfig
 		| {

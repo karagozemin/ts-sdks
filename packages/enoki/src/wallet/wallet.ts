@@ -32,7 +32,12 @@ import type { Emitter } from 'mitt';
 import mitt from 'mitt';
 
 import type { AuthProvider } from '../EnokiClient/type.js';
-import type { EnokiWalletOptions, WalletEventsMap, EnokiSessionContext } from './types.js';
+import type {
+	EnokiWalletOptions,
+	WalletEventsMap,
+	EnokiSessionContext,
+	ZkLoginState,
+} from './types.js';
 import type { EnokiGetMetadataFeature, EnokiGetMetadataMethod } from './feature.js';
 import { EnokiGetMetadata } from './feature.js';
 import type { Experimental_SuiClientTypes } from '@mysten/sui/experimental';
@@ -135,8 +140,6 @@ export class EnokiWallet implements Wallet {
 		extraParams,
 		windowFeatures,
 		getCurrentNetwork,
-		sessionStore,
-		stateStore,
 		apiKey,
 		apiUrl,
 		clients,
@@ -145,7 +148,7 @@ export class EnokiWallet implements Wallet {
 		this.#name = name;
 		this.#icon = icon;
 		this.#enokiClient = new EnokiClient({ apiKey, apiUrl });
-		this.#state = new EnokiWalletState({ apiKey, clientId, clients, sessionStore, stateStore });
+		this.#state = new EnokiWalletState({ apiKey, clientId, clients });
 		this.#provider = provider;
 		this.#clientId = clientId;
 		this.#redirectUrl = redirectUrl || window.location.href.split('#')[0];
@@ -153,6 +156,11 @@ export class EnokiWallet implements Wallet {
 		this.#windowFeatures = windowFeatures;
 		this.#getCurrentNetwork = getCurrentNetwork;
 		this.#accounts = this.#getAuthorizedAccounts();
+
+		this.#state.zkLoginState.listen(() => {
+			console.log('GOT VAL FOR STATE IN LISTE');
+			this.#accounts = this.#getAuthorizedAccounts();
+		});
 	}
 
 	#signTransaction: SuiSignTransactionMethod = async ({ transaction, chain, account, signal }) => {
@@ -237,6 +245,8 @@ export class EnokiWallet implements Wallet {
 	};
 
 	#connect: StandardConnectMethod = async (input) => {
+		const zkLoginState = await this.#state.zkLoginState;
+
 		if (input?.silent || this.#accounts.length > 0) {
 			return { accounts: this.#accounts };
 		}
@@ -252,21 +262,22 @@ export class EnokiWallet implements Wallet {
 
 	#disconnect: StandardDisconnectMethod = async () => {
 		await this.#state.logout();
-
 		this.#accounts = [];
 		this.#events.emit('change', { accounts: this.#accounts });
 	};
 
-	#getAuthorizedAccounts() {
-		const { address, publicKey } = this.#state.zkLoginState.get();
-		if (address && publicKey) {
+	async #getAuthorizedAccounts() {
+		const zkLoginState = await this.#state.zkLoginState;
+		const state = zkLoginState.get();
+
+		if (zkLoginState) {
 			return [
 				new ReadonlyWalletAccount({
-					address,
+					address: zkLoginState.address,
 					chains: this.chains,
 					icon: this.icon,
 					features: [SuiSignPersonalMessage, SuiSignTransaction, SuiSignAndExecuteTransaction],
-					publicKey: fromBase64(publicKey),
+					publicKey: fromBase64(zkLoginState.publicKey),
 				}),
 			];
 		}
@@ -315,8 +326,8 @@ export class EnokiWallet implements Wallet {
 
 		const zkp = await this.#state.getSession(sessionContext);
 
-		const { address } = this.#state.zkLoginState.get();
-		if (!address || !zkp || !zkp.proof) {
+		const zkLoginState = this.#state.zkLoginState.get();
+		if (!zkLoginState || !zkp || !zkp.proof) {
 			throw new Error('Missing required data for keypair generation.');
 		}
 
@@ -336,7 +347,7 @@ export class EnokiWallet implements Wallet {
 		const ephemeralKeypair = WebCryptoSigner.import(storedNativeSigner);
 
 		return new EnokiKeypair({
-			address,
+			address: zkLoginState.address,
 			ephemeralKeypair,
 			maxEpoch: zkp.maxEpoch,
 			proof: zkp.proof,
@@ -475,7 +486,9 @@ export class EnokiWallet implements Wallet {
 
 		const { address, publicKey } = await this.#enokiClient.getZkLogin({ jwt });
 
-		this.#state.zkLoginState.set({ address, publicKey });
+		const zkLoginState = await this.#state.zkLoginState;
+		zkLoginState.set({ address, publicKey });
+
 		await this.#state.setSession(sessionContext, { ...zkp, jwt });
 
 		return params.get('state');
