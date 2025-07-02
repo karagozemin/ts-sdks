@@ -2,4 +2,4 @@
 '@mysten/enoki': minor
 ---
 
-Add `stateStore` and `sessionStore` options on `registerEnokiWallets` for customizing storage preferences
+Use IndexedDB for persisting zkLogin state and session data
