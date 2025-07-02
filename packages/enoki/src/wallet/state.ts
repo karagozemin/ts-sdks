@@ -18,6 +18,10 @@ export type EnokiWalletStateConfig = EnokiClientConfig & {
 	clientId: string;
 };
 
+const sessionKey = 'zklogin-session';
+
+const stateKey = 'zklogin-state';
+
 export class EnokiWalletState {
 	#encryption: Encryption;
 	#encryptionKey: string;
@@ -85,9 +89,9 @@ export class EnokiWalletState {
 				JSON.stringify(newValue),
 			);
 
-			await set('zklogin-session', storedValue, context.idbStore);
+			await set(sessionKey, storedValue, context.idbStore);
 		} else {
-			await del('zklogin-session', context.idbStore);
+			await del(sessionKey, context.idbStore);
 		}
 
 		context.$zkLoginSession.set({ initialized: true, value: newValue });
@@ -99,7 +103,7 @@ export class EnokiWalletState {
 		}
 
 		try {
-			const storedValue = await get('zklogin-session', idbStore);
+			const storedValue = await get(sessionKey, idbStore);
 			if (!storedValue) return null;
 
 			const state: ZkLoginSession = JSON.parse(
@@ -124,7 +128,7 @@ export class EnokiWalletState {
 		onMount($zkLoginState, () => {
 			task(async () => {
 				try {
-					const rawStoredValue = await get<string>('zklogin-state', this.#stateStore);
+					const rawStoredValue = await get<string>(stateKey, this.#stateStore);
 					if (rawStoredValue) {
 						$zkLoginState.set(JSON.parse(rawStoredValue));
 					}
@@ -135,7 +139,7 @@ export class EnokiWalletState {
 		});
 
 		onSet($zkLoginState, ({ newValue }) => {
-			set('zklogin-state', JSON.stringify(newValue), this.#stateStore);
+			set(stateKey, JSON.stringify(newValue), this.#stateStore);
 		});
 
 		return $zkLoginState;
