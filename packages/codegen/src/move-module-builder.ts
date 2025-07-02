@@ -391,7 +391,6 @@ export class MoveModuleBuilder extends FileBuilder {
 
 			if (parameters.length > 0) {
 				this.addImport('~root/../utils/index.js', 'normalizeMoveArguments');
-				this.addImport('~root/../utils/index.js', 'type RawTransactionArgument');
 			}
 
 			names.push(fnName);
@@ -414,6 +413,10 @@ export class MoveModuleBuilder extends FileBuilder {
 						: `RawTransactionArgument<${type}>`,
 				)
 				.join(',\n');
+
+			if (argumentsTypes.length > 0) {
+				this.addImport('~root/../utils/index.js', 'type RawTransactionArgument');
+			}
 
 			if (usedTypeParameters.size > 0) {
 				this.addImport('@mysten/sui/bcs', 'type BcsType');
