@@ -481,9 +481,7 @@ export class EnokiWallet implements Wallet {
 
 		const { address, publicKey } = await this.#enokiClient.getZkLogin({ jwt });
 
-		const zkLoginState = await this.#state.zkLoginState;
-		zkLoginState.set({ address, publicKey });
-
+		this.#state.zkLoginState.set({ address, publicKey });
 		await this.#state.setSession(sessionContext, { ...zkp, jwt });
 
 		return params.get('state');

@@ -126,7 +126,6 @@ export class EnokiWalletState {
 				try {
 					const rawStoredValue = await get<string>('zklogin-state', this.#stateStore);
 					if (rawStoredValue) {
-						console.log('SETTING', rawStoredValue, JSON.parse(rawStoredValue));
 						$zkLoginState.set(JSON.parse(rawStoredValue));
 					}
 				} catch {
@@ -135,9 +134,8 @@ export class EnokiWalletState {
 			});
 		});
 
-		onSet($zkLoginState, async ({ newValue }) => {
-			console.log('SETTT', newValue);
-			await set('zklogin-state', JSON.stringify(newValue), this.#stateStore);
+		onSet($zkLoginState, ({ newValue }) => {
+			set('zklogin-state', JSON.stringify(newValue), this.#stateStore);
 		});
 
 		return $zkLoginState;
