@@ -4,7 +4,7 @@
 import type { UseStore } from 'idb-keyval';
 import { clear, createStore, del, get, set } from 'idb-keyval';
 import type { WritableAtom } from 'nanostores';
-import { atom, onMount, onSet } from 'nanostores';
+import { atom, onMount, onSet, task } from 'nanostores';
 
 import type { Encryption } from '../encryption.js';
 import { createDefaultEncryption } from '../encryption.js';
@@ -24,14 +24,14 @@ export class EnokiWalletState {
 
 	#stateStore: UseStore;
 	#sessionContextByNetwork: Map<Experimental_SuiClientTypes.Network, EnokiSessionContext>;
-	#zkLoginState: Promise<WritableAtom<ZkLoginState | null>>;
+	#zkLoginState: WritableAtom<ZkLoginState | null>;
 
 	constructor(config: EnokiWalletStateConfig) {
 		this.#encryptionKey = config.apiKey;
 		this.#encryption = createDefaultEncryption();
 
 		this.#stateStore = createStore(`${config.apiKey}_${config.clientId}`, 'enoki');
-		this.#zkLoginState = this.#hydrateZkLoginState();
+		this.#zkLoginState = this.#createZkLoginState();
 
 		this.#sessionContextByNetwork = config.clients.reduce((accumulator, client) => {
 			const network = client.network;
@@ -70,9 +70,7 @@ export class EnokiWalletState {
 
 	async logout() {
 		await clear(this.#stateStore);
-
-		const zkLoginState = await this.zkLoginState;
-		zkLoginState.set(null);
+		this.#zkLoginState.set(null);
 
 		for (const context of this.#sessionContextByNetwork.values()) {
 			await clear(context.idbStore);
@@ -120,22 +118,26 @@ export class EnokiWalletState {
 		return $zkLoginSession.get().value;
 	}
 
-	async #hydrateZkLoginState() {
-		let storedState: ZkLoginState | null = null;
+	#createZkLoginState() {
+		const $zkLoginState = atom<ZkLoginState | null>(null);
 
-		try {
-			const rawStoredValue = await get<string>('zklogin-state', this.#stateStore);
-			if (rawStoredValue) {
-				storedState = JSON.parse(rawStoredValue);
-			}
-		} catch {
-			// Ignore errors
-		}
+		onMount($zkLoginState, () => {
+			task(async () => {
+				try {
+					const rawStoredValue = await get<string>('zklogin-state', this.#stateStore);
+					if (rawStoredValue) {
+						console.log('SETTING', rawStoredValue, JSON.parse(rawStoredValue));
+						$zkLoginState.set(JSON.parse(rawStoredValue));
+					}
+				} catch {
+					// Ignore errors
+				}
+			});
+		});
 
-		const $zkLoginState = atom<ZkLoginState | null>(storedState);
-
-		onSet($zkLoginState, ({ newValue }) => {
-			set('zklogin-state', JSON.stringify(newValue), this.#stateStore);
+		onSet($zkLoginState, async ({ newValue }) => {
+			console.log('SETTT', newValue);
+			await set('zklogin-state', JSON.stringify(newValue), this.#stateStore);
 		});
 
 		return $zkLoginState;

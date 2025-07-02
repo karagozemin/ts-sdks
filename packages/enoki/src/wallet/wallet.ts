@@ -32,12 +32,7 @@ import type { Emitter } from 'mitt';
 import mitt from 'mitt';
 
 import type { AuthProvider } from '../EnokiClient/type.js';
-import type {
-	EnokiWalletOptions,
-	WalletEventsMap,
-	EnokiSessionContext,
-	ZkLoginState,
-} from './types.js';
+import type { EnokiWalletOptions, WalletEventsMap, EnokiSessionContext } from './types.js';
 import type { EnokiGetMetadataFeature, EnokiGetMetadataMethod } from './feature.js';
 import { EnokiGetMetadata } from './feature.js';
 import type { Experimental_SuiClientTypes } from '@mysten/sui/experimental';
@@ -51,6 +46,7 @@ import type { EnokiNetwork } from '../EnokiClient/type.js';
 import { EnokiKeypair } from '../EnokiKeypair.js';
 
 import { EnokiWalletState } from './state.js';
+import { allTasks } from 'nanostores';
 
 export class EnokiWallet implements Wallet {
 	#events: Emitter<WalletEventsMap>;
@@ -155,11 +151,11 @@ export class EnokiWallet implements Wallet {
 		this.#extraParams = extraParams;
 		this.#windowFeatures = windowFeatures;
 		this.#getCurrentNetwork = getCurrentNetwork;
-		this.#accounts = this.#getAuthorizedAccounts();
+		this.#accounts = [];
 
-		this.#state.zkLoginState.listen(() => {
-			console.log('GOT VAL FOR STATE IN LISTE');
+		this.#state.zkLoginState.subscribe(() => {
 			this.#accounts = this.#getAuthorizedAccounts();
+			this.#events.emit('change', { accounts: this.#accounts });
 		});
 	}
 
@@ -245,7 +241,11 @@ export class EnokiWallet implements Wallet {
 	};
 
 	#connect: StandardConnectMethod = async (input) => {
-		const zkLoginState = await this.#state.zkLoginState;
+		// NOTE: This is a hackfix for the old version of dApp Kit where auto-connection logic
+		// only fires on initial mount of the WalletProvider component. Since hydrating the
+		// zkLogin state from IndexedDB is an asynchronous process, we need to make sure it
+		// is populated before the connect logic runs.
+		await allTasks();
 
 		if (input?.silent || this.#accounts.length > 0) {
 			return { accounts: this.#accounts };
@@ -253,9 +253,6 @@ export class EnokiWallet implements Wallet {
 
 		const currentNetwork = this.#getCurrentNetwork();
 		await this.#createSession({ network: currentNetwork });
-
-		this.#accounts = this.#getAuthorizedAccounts();
-		this.#events.emit('change', { accounts: this.#accounts });
 
 		return { accounts: this.#accounts };
 	};
@@ -266,10 +263,8 @@ export class EnokiWallet implements Wallet {
 		this.#events.emit('change', { accounts: this.#accounts });
 	};
 
-	async #getAuthorizedAccounts() {
-		const zkLoginState = await this.#state.zkLoginState;
-		const state = zkLoginState.get();
-
+	#getAuthorizedAccounts() {
+		const zkLoginState = this.#state.zkLoginState.get();
 		if (zkLoginState) {
 			return [
 				new ReadonlyWalletAccount({
