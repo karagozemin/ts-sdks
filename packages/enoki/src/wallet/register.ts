@@ -5,7 +5,6 @@ import { EnokiWallet } from './wallet.js';
 import type { RegisterEnokiWalletsOptions } from './types.js';
 import { getWallets } from '@mysten/wallet-standard';
 import type { ClientWithCoreApi } from '@mysten/sui/experimental';
-import type { AuthProvider } from '../EnokiClient/type.js';
 import { isEnokiNetwork } from '../utils.js';
 import { ENOKI_PROVIDER_WALLETS_INFO } from './providers.js';
 
@@ -28,13 +27,28 @@ export function registerEnokiWallets({
 		'clients' in config ? config.getCurrentNetwork : () => clients[0].network;
 
 	const walletsApi = getWallets();
-	const wallets: Partial<Record<AuthProvider, EnokiWallet>> = {};
+	const wallets: Record<string, EnokiWallet> = {};
 
-	for (const { name, icon, provider } of ENOKI_PROVIDER_WALLETS_INFO) {
+	for (const { name, icon, provider, authenticationUrl, extraParams } of [
+		...(config.additionalProvidersWalletInfo ?? []),
+		...ENOKI_PROVIDER_WALLETS_INFO,
+	]) {
 		const providerOptions = providers[provider];
+		let adjustedExtraParams = providerOptions?.extraParams;
+
+		if (adjustedExtraParams && extraParams) {
+			adjustedExtraParams = () => {
+				if (typeof adjustedExtraParams === 'function') {
+					return { ...adjustedExtraParams(), ...extraParams };
+				}
+				return { ...adjustedExtraParams, ...extraParams };
+			};
+		}
+
 		if (providerOptions) {
 			wallets[provider] = new EnokiWallet({
 				...providerOptions,
+				extraParams: adjustedExtraParams,
 				name,
 				icon,
 				provider,
@@ -43,6 +57,7 @@ export function registerEnokiWallets({
 				apiKey: config.apiKey,
 				apiUrl: config.apiUrl,
 				clients: enokiCompatibleClients,
+				authenticationUrl,
 			});
 		}
 	}

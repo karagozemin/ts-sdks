@@ -5,7 +5,7 @@ import type { SuiClient } from '@mysten/sui/client';
 import type { StandardEventsListeners, Wallet } from '@mysten/wallet-standard';
 
 import type { EnokiClientConfig } from '../EnokiClient/index.js';
-import type { AuthProvider, EnokiNetwork } from '../EnokiClient/type.js';
+import type { EnokiNetwork } from '../EnokiClient/type.js';
 import type { ClientWithCoreApi, Experimental_SuiClientTypes } from '@mysten/sui/experimental';
 import type { ZkLoginSignatureInputs } from '@mysten/sui/zklogin';
 import type { UseStore } from 'idb-keyval';
@@ -36,13 +36,15 @@ export type EnokiSessionContext = {
 };
 
 export type EnokiWalletOptions = {
-	provider: AuthProvider;
+	provider: string;
 	windowFeatures?: string | (() => string);
 	clients: ClientWithCoreApi[];
 	getCurrentNetwork: () => Experimental_SuiClientTypes.Network;
 } & AuthProviderOptions &
 	EnokiClientConfig &
-	Pick<Wallet, 'name' | 'icon'>;
+	Pick<Wallet, 'name' | 'icon'> & {
+		authenticationUrl: string;
+	};
 
 export type AuthProviderOptions = {
 	/**
@@ -65,13 +67,22 @@ export type RegisterEnokiWalletsOptions = EnokiClientConfig & {
 	/**
 	 * Configuration for each OAuth provider.
 	 */
-	providers: Partial<Record<AuthProvider, AuthProviderOptions>>;
-
+	providers: Record<string, AuthProviderOptions>;
 	/**
 	 * The window features to use when opening the authorization popup.
 	 * https://developer.mozilla.org/en-US/docs/Web/API/Window/open#windowfeatures
 	 */
 	windowFeatures?: string | (() => string);
+	/**
+	 * Wallet info for any additional providers, that are not available in Enoki sdk yet.
+	 */
+	additionalProvidersWalletInfo?: {
+		provider: string;
+		name: string;
+		icon: Wallet['icon'];
+		authenticationUrl: string;
+		extraParams?: Record<string, string>;
+	}[];
 } & (
 		| {
 				/**

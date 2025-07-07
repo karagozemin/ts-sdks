@@ -31,7 +31,6 @@ import {
 import type { Emitter } from 'mitt';
 import mitt from 'mitt';
 
-import type { AuthProvider } from '../EnokiClient/type.js';
 import type { EnokiWalletOptions, WalletEventsMap, EnokiSessionContext } from './types.js';
 import type { EnokiGetMetadataFeature, EnokiGetMetadataMethod } from './feature.js';
 import { EnokiGetMetadata } from './feature.js';
@@ -54,12 +53,13 @@ export class EnokiWallet implements Wallet {
 	#icon: Wallet['icon'];
 	#enokiClient: EnokiClient;
 	#state: EnokiWalletState;
-	#provider: AuthProvider;
+	#provider: string;
 	#clientId: string;
 	#redirectUrl: string;
 	#extraParams: Record<string, string> | (() => Record<string, string>) | undefined;
 	#getCurrentNetwork: () => Experimental_SuiClientTypes.Network;
 	#windowFeatures?: string | (() => string);
+	#authenticationUrl: string;
 
 	get name() {
 		return this.#name;
@@ -138,6 +138,7 @@ export class EnokiWallet implements Wallet {
 		apiKey,
 		apiUrl,
 		clients,
+		authenticationUrl,
 	}: EnokiWalletOptions) {
 		this.#events = mitt();
 		this.#name = name;
@@ -151,6 +152,7 @@ export class EnokiWallet implements Wallet {
 		this.#windowFeatures = windowFeatures;
 		this.#getCurrentNetwork = getCurrentNetwork;
 		this.#accounts = this.#getAuthorizedAccounts();
+		this.#authenticationUrl = authenticationUrl;
 	}
 
 	#signTransaction: SuiSignTransactionMethod = async ({ transaction, chain, account, signal }) => {
@@ -425,21 +427,7 @@ export class EnokiWallet implements Wallet {
 				.join(' '),
 		});
 
-		let oauthUrl: string;
-		switch (this.#provider) {
-			case 'google':
-				oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-				break;
-			case 'facebook':
-				oauthUrl = `https://www.facebook.com/v17.0/dialog/oauth?${params}`;
-				break;
-			case 'twitch':
-				params.set('force_verify', 'true');
-				oauthUrl = `https://id.twitch.tv/oauth2/authorize?${params}`;
-				break;
-			default:
-				throw new Error(`Invalid provider: ${this.#provider}`);
-		}
+		const oauthUrl = `${this.#authenticationUrl}?${params}`;
 
 		await set('ephemeralKeyPair', ephemeralKeyPair.export(), sessionContext.idbStore);
 		await this.#state.setSession(sessionContext, {

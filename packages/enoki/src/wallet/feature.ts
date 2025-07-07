@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { decodeJwt } from '@mysten/sui/zklogin';
-import type { AuthProvider } from '../EnokiClient/type.js';
 
 /** Name of the feature. */
 export const EnokiGetMetadata = 'enoki:getMetadata';
@@ -30,7 +29,7 @@ export interface EnokiGetMetadataInput {}
 /** Output of retrieving metadata about the wallet. */
 export interface EnokiGetMetadataOutput {
 	/** The social provider for the wallet. */
-	provider: AuthProvider;
+	provider: string;
 
 	/** Metadata pertaining to the active session. */
 	activeSession?: {
