@@ -279,55 +279,10 @@ export class EnokiWallet implements Wallet {
 		return [];
 	}
 
-	async #getProof(sessionContext: EnokiSessionContext) {
-		const zkp = await this.#state.getSession(sessionContext);
-
-		if (zkp?.proof) {
-			if (zkp.expiresAt && Date.now() > zkp.expiresAt) {
-				throw new Error('Stored proof is expired.');
-			}
-
-			return zkp.proof;
-		}
-
-		if (!zkp?.jwt) {
-			throw new Error('Missing required parameters for proof generation');
-		}
-
-		const storedNativeSigner = await get<ExportedWebCryptoKeypair>(
-			'ephemeralKeyPair',
-			sessionContext.idbStore,
-		);
-		if (!storedNativeSigner) {
-			throw new Error('Native signer not found in store.');
-		}
-
-		const ephemeralKeyPair = WebCryptoSigner.import(storedNativeSigner);
-
-		const proof = await this.#enokiClient.createZkLoginZkp({
-			network: sessionContext.client.network as EnokiNetwork,
-			jwt: zkp.jwt,
-			maxEpoch: zkp.maxEpoch,
-			randomness: zkp.randomness,
-			ephemeralPublicKey: ephemeralKeyPair.getPublicKey(),
-		});
-
-		await this.#state.setSession(sessionContext, { ...zkp, proof });
-		return proof;
-	}
-
 	async #getKeypair(sessionContext: EnokiSessionContext) {
-		await this.#getProof(sessionContext);
-
-		const zkp = await this.#state.getSession(sessionContext);
-
-		const zkLoginState = this.#state.zkLoginState.get();
-		if (!zkLoginState || !zkp || !zkp.proof) {
-			throw new Error('Missing required data for keypair generation.');
-		}
-
-		if (Date.now() > zkp.expiresAt) {
-			throw new Error('Stored proof is expired.');
+		const session = await this.#state.getSession(sessionContext);
+		if (!session?.jwt || (session.proof && Date.now() > session.expiresAt)) {
+			await this.#createSession({ network: sessionContext.client.network });
 		}
 
 		const storedNativeSigner = await get<ExportedWebCryptoKeypair>(
@@ -337,15 +292,29 @@ export class EnokiWallet implements Wallet {
 
 		if (!storedNativeSigner) {
 			throw new Error('Native signer not found in store.');
+		}
+
+		const updatedSession = await this.#state.getSession(sessionContext);
+		if (!updatedSession?.jwt) {
+			throw new Error('Failed to retrieve an active session.');
 		}
 
 		const ephemeralKeypair = WebCryptoSigner.import(storedNativeSigner);
+		const proof = await this.#enokiClient.createZkLoginZkp({
+			network: sessionContext.client.network as EnokiNetwork,
+			jwt: updatedSession.jwt,
+			maxEpoch: updatedSession.maxEpoch,
+			randomness: updatedSession.randomness,
+			ephemeralPublicKey: ephemeralKeypair.getPublicKey(),
+		});
+
+		await this.#state.setSession(sessionContext, { ...updatedSession, proof });
 
 		return new EnokiKeypair({
-			address: zkLoginState.address,
+			address: this.accounts[0].address,
+			maxEpoch: updatedSession.maxEpoch,
 			ephemeralKeypair,
-			maxEpoch: zkp.maxEpoch,
-			proof: zkp.proof,
+			proof,
 		});
 	}
 
@@ -357,13 +326,7 @@ export class EnokiWallet implements Wallet {
 			);
 		}
 
-		const zkLoginSession = await this.#state.getSession(sessionContext);
-		if (!zkLoginSession) {
-			await this.#createSession({ network: sessionContext.client.network });
-		}
-
 		const keypair = await this.#getKeypair(sessionContext);
-
 		return { client: sessionContext.client, keypair };
 	}
 
