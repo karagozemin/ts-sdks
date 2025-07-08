@@ -1,6 +1,6 @@
 {
 	"name": "@mysten/signers",
-	"version": "0.2.18",
+	"version": "0.3.0",
 	"description": "A collection of signers for various providers",
 	"license": "Apache-2.0",
 	"author": "Mysten Labs <build@mystenlabs.com>",
@@ -55,7 +55,7 @@
 	"bugs": {
 		"url": "https://github.com/mystenlabs/ts-sdks/issues"
 	},
-	"homepage": "https://github.com/mystenlabs/ts-sdks#readme",
+	"homepage": "https://github.com/MystenLabs/ts-sdks/tree/main/packages/signers#readme",
 	"devDependencies": {
 		"@mysten/build-scripts": "workspace:*",
 		"@types/node": "^22.15.29",

@@ -1,5 +1,31 @@
 # @mysten/enoki
 
+## 0.9.1
+
+### Patch Changes
+
+- 1c4a82d: update links in package.json
+- Updated dependencies [1c4a82d]
+- Updated dependencies [783bb9e]
+- Updated dependencies [783bb9e]
+- Updated dependencies [5cbbb21]
+  - @mysten/signers@0.3.0
+  - @mysten/sui@1.36.0
+  - @mysten/wallet-standard@0.16.5
+
+## 0.9.0
+
+### Minor Changes
+
+- eba589c: AuthProviderOptions extraParams can also be a function
+
+### Patch Changes
+
+- Updated dependencies [888afe6]
+  - @mysten/sui@1.35.0
+  - @mysten/signers@0.2.19
+  - @mysten/wallet-standard@0.16.4
+
 ## 0.8.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
 	"name": "@mysten/seal",
-	"version": "0.4.14",
+	"version": "0.4.16",
 	"description": "Seal SDK",
 	"license": "Apache-2.0",
 	"author": "Mysten Labs <build@mystenlabs.com>",
@@ -42,7 +42,7 @@
 	"bugs": {
 		"url": "https://github.com/mystenlabs/ts-sdks/issues"
 	},
-	"homepage": "https://github.com/mystenlabs/ts-sdks#readme",
+	"homepage": "https://github.com/MystenLabs/seal#readme",
 	"devDependencies": {
 		"@hey-api/openapi-ts": "^0.69.2",
 		"@mysten/build-scripts": "workspace:*",

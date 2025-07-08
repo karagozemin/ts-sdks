@@ -1,6 +1,6 @@
 {
 	"name": "@mysten/enoki",
-	"version": "0.8.0",
+	"version": "0.9.1",
 	"description": "TODO: Description",
 	"license": "Apache-2.0",
 	"author": "Mysten Labs <build@mystenlabs.com>",
@@ -42,7 +42,7 @@
 	"bugs": {
 		"url": "https://github.com/mystenlabs/ts-sdks/issues"
 	},
-	"homepage": "https://github.com/mystenlabs/ts-sdks#readme",
+	"homepage": "https://docs.enoki.mystenlabs.com",
 	"devDependencies": {
 		"@mysten/build-scripts": "workspace:*",
 		"@mysten/dapp-kit": "workspace:*",

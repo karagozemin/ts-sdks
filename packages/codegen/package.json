@@ -1,6 +1,6 @@
 {
 	"name": "@mysten/codegen",
-	"version": "0.1.0",
+	"version": "0.2.1",
 	"description": "typescript codegen for sui move",
 	"license": "Apache-2.0",
 	"author": "Mysten Labs <build@mystenlabs.com>",
@@ -30,6 +30,7 @@
 		"build": "build-package",
 		"codegen": "pnpm tsx src/bin/cli.ts generate && pnpm lint:fix",
 		"prepublishOnly": "pnpm turbo build",
+		"test": "vitest run",
 		"test:watch": "vitest",
 		"prettier:check": "prettier -c --ignore-unknown .",
 		"prettier:fix": "prettier -w --ignore-unknown .",
@@ -40,7 +41,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/mystenlabs/sui.git"
+		"url": "git+https://github.com/mystenlabs/ts-sdks.git"
 	},
 	"keywords": [
 		"move",
@@ -48,9 +49,9 @@
 		"sui"
 	],
 	"bugs": {
-		"url": "https://github.com/mystenlabs/sui/issues"
+		"url": "https://github.com/mystenlabs/ts-sdks/issues"
 	},
-	"homepage": "https://github.com/mystenlabs/sui#readme",
+	"homepage": "https://github.com/MystenLabs/ts-sdks/blob/main/packages/codegen#readme",
 	"devDependencies": {
 		"@mysten/build-scripts": "workspace:*",
 		"vitest": "^3.2.1"

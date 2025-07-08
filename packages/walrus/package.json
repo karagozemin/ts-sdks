@@ -1,6 +1,6 @@
 {
 	"name": "@mysten/walrus",
-	"version": "0.2.0",
+	"version": "0.2.2",
 	"private": false,
 	"description": "Walrus SDK",
 	"license": "Apache-2.0",
@@ -39,7 +39,7 @@
 	"bugs": {
 		"url": "https://github.com/mystenlabs/ts-sdks/issues"
 	},
-	"homepage": "https://github.com/mystenlabs/ts-sdks#readme",
+	"homepage": "https://sdk.mystenlabs.com/walrus",
 	"devDependencies": {
 		"@hono/node-server": "^1.14.3",
 		"@mysten/build-scripts": "workspace:*",

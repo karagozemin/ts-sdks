@@ -58,7 +58,7 @@ export class EnokiWallet implements Wallet {
 	#provider: AuthProvider;
 	#clientId: string;
 	#redirectUrl: string;
-	#extraParams: Record<string, string> | undefined;
+	#extraParams: Record<string, string> | (() => Record<string, string>) | undefined;
 	#getCurrentNetwork: () => Experimental_SuiClientTypes.Network;
 	#windowFeatures?: string | (() => string);
 
@@ -382,13 +382,16 @@ export class EnokiWallet implements Wallet {
 				ephemeralPublicKey: ephemeralKeyPair.getPublicKey(),
 			});
 
+		const extraParams =
+			typeof this.#extraParams === 'function' ? this.#extraParams() : this.#extraParams;
+
 		const params = new URLSearchParams({
-			...this.#extraParams,
+			...extraParams,
 			nonce,
 			client_id: this.#clientId,
 			redirect_uri: this.#redirectUrl,
 			response_type: 'id_token',
-			scope: ['openid', ...(this.#extraParams?.scope ? this.#extraParams.scope.split(' ') : [])]
+			scope: ['openid', ...(extraParams?.scope ? extraParams.scope.split(' ') : [])]
 				.filter(Boolean)
 				.join(' '),
 		});
@@ -404,6 +407,9 @@ export class EnokiWallet implements Wallet {
 			case 'twitch':
 				params.set('force_verify', 'true');
 				oauthUrl = `https://id.twitch.tv/oauth2/authorize?${params}`;
+				break;
+			case 'onefc':
+				oauthUrl = `https://login.onepassport.onefc.com/de3ee5c1-5644-4113-922d-e8336569a462/b2c_1a_prod_signupsignin_onesuizklogin/oauth2/v2.0/authorize?${params}`;
 				break;
 			default:
 				throw new Error(`Invalid provider: ${this.#provider}`);

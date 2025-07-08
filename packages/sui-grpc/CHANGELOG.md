@@ -1,5 +1,25 @@
 # @mysten/sui-grpc
 
+## 0.0.8
+
+### Patch Changes
+
+- 783bb9e: update grpc defintions for beta2
+- 1c4a82d: update links in package.json
+- Updated dependencies [1c4a82d]
+- Updated dependencies [783bb9e]
+- Updated dependencies [783bb9e]
+- Updated dependencies [5cbbb21]
+  - @mysten/utils@0.1.1
+  - @mysten/sui@1.36.0
+
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies [888afe6]
+  - @mysten/sui@1.35.0
+
 ## 0.0.6
 
 ### Patch Changes

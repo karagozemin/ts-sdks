@@ -60,7 +60,7 @@ export type TipStrategy =
 	| {
 			linear: {
 				base: number | bigint;
-				multiplier: number | bigint;
+				perEncodedKb: number | bigint;
 			};
 	  };
 
@@ -172,6 +172,11 @@ export type GetCertificationEpochOptions = ReadBlobOptions;
 export type GetBlobMetadataOptions = ReadBlobOptions;
 
 export type GetSliversOptions = ReadBlobOptions;
+
+export interface GetSecondarySliverOptions extends WalrusClientRequestOptions {
+	blobId: string;
+	index: number;
+}
 
 export type GetVerifiedBlobStatusOptions = ReadBlobOptions;
 
