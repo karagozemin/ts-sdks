@@ -26,7 +26,6 @@
 			"import": "./dist/esm/ui/index.js",
 			"require": "./dist/cjs/ui/index.js"
 		}
-		
 	},
 	"scripts": {
 		"clean": "rm -rf tsconfig.tsbuildinfo ./dist",
