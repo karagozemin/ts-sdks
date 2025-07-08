@@ -2,6 +2,7 @@ packages:
   - 'packages/**'
   - '!**/dist/**'
   - '!**/.next/**'
+  - '!packages/move-bytecode-template/pkg'
   - '!packages/codegen/tests/move/**'
   - '!packages/create-dapp/templates'
   - '!packages/typescript/scripts'
