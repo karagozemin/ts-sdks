@@ -73,12 +73,12 @@ export class EnokiWalletState {
 	}
 
 	async logout() {
-		await clear(this.#stateStore);
 		this.#zkLoginState.set(null);
+		await clear(this.#stateStore);
 
 		for (const context of this.#sessionContextByNetwork.values()) {
-			await clear(context.idbStore);
 			await this.setSession(context, null);
+			await clear(context.idbStore);
 		}
 	}
 
