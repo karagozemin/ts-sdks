@@ -549,7 +549,7 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  packages/dapp-kit-next/packages/dapp-kit-core/ui: {}
+  packages/dapp-kit-next/packages/dapp-kit-core/web: {}
 
   packages/dapp-kit-next/packages/dapp-kit-react:
     dependencies:
