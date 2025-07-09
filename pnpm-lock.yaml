@@ -1083,8 +1083,6 @@ importers:
         specifier: ^0.13.1
         version: 0.13.1
 
-  packages/move-bytecode-template/pkg: {}
-
   packages/mvr-static:
     dependencies:
       '@mysten/sui':
