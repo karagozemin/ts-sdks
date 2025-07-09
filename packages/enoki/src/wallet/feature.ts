@@ -3,6 +3,7 @@
 
 import type { decodeJwt } from '@mysten/sui/zklogin';
 import type { AuthProvider } from '../EnokiClient/type.js';
+import type { ZkLoginSession } from './types.js';
 
 /** Name of the feature. */
 export const EnokiGetMetadata = 'enoki:getMetadata';
@@ -34,7 +35,11 @@ export interface EnokiGetMetadataOutput {
 
 	/** Metadata pertaining to the active session. */
 	activeSession?: {
-		/** The decoded JWT for the session. */
+		/**
+		 * The decoded JWT for the session.
+		 **/
 		decodedJwt: ReturnType<typeof decodeJwt>;
-	};
+
+		jwt: string;
+	} & ZkLoginSession;
 }

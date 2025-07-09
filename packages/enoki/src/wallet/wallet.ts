@@ -226,12 +226,17 @@ export class EnokiWallet implements Wallet {
 
 	#getMetadata: EnokiGetMetadataMethod = () => {
 		const sessionContext = this.#state.getSessionContext(this.#getCurrentNetwork());
-		const session = sessionContext?.$zkLoginSession.get();
-		const decodedJwt = session?.value?.jwt ? decodeJwt(session.value.jwt) : undefined;
+		const session = sessionContext.$zkLoginSession.get();
 
 		return {
 			provider: this.#provider,
-			activeSession: decodedJwt ? { decodedJwt } : undefined,
+			activeSession: session.value?.jwt
+				? {
+						...session.value,
+						jwt: session.value.jwt,
+						decodedJwt: decodeJwt(session.value.jwt),
+					}
+				: undefined,
 		};
 	};
 
