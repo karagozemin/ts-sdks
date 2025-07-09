@@ -1,6 +1,0 @@
-{
-	"private": true,
-	"import": "../dist/esm/ui/index.js",
-	"main": "../dist/cjs/ui/index.js",
-	"sideEffects": true
-}
