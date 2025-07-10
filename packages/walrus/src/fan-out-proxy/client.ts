@@ -81,7 +81,7 @@ export class FanOutProxyClient {
 					  }
 					| {
 							base: number;
-							encoded_size_mul_per_kb: number;
+							encoded_size_mul_per_kib: number;
 					  };
 			};
 		};
