@@ -100,7 +100,7 @@ export class FanOutProxyClient {
 			kind: {
 				linear: {
 					base: data.send_tip.kind.base,
-					perEncodedKb: data.send_tip.kind.encoded_size_mul_per_kb,
+					perEncodedKb: data.send_tip.kind.encoded_size_mul_per_kib,
 				},
 			},
 		};
