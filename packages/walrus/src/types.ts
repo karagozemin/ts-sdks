@@ -60,7 +60,7 @@ export type TipStrategy =
 	| {
 			linear: {
 				base: number | bigint;
-				perEncodedKb: number | bigint;
+				perEncodedKiB: number | bigint;
 			};
 	  };
 
