@@ -22,9 +22,9 @@ export type InstallableWallet = {
 	/**
 	 * An installation link that redirects users to the appropriate
 	 * platform-specific installation target, such as:
-	 * - A mobile app store (iOS or Android)
+	 * - A universal link pointing to a download page or native application.
 	 * - A browser extension page (e.g., Chrome Web Store)
-	 * - A wallet website with platform detection
+	 * - A native app store (iOS or Android)
 	 */
 	installUrl: string;
 };
