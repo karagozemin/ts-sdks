@@ -250,7 +250,7 @@ export class DAppKitConnectModal
 				data: wallet,
 			})) ?? [];
 
-		const walletItems = [...detectedWallets, ...installableWallets];
+		const walletItems = [...installableWallets, ...detectedWallets];
 		const uniqueWalletItems = Array.from(
 			new Map(walletItems.map((wallet) => [wallet.data.name, wallet])).values(),
 		);
