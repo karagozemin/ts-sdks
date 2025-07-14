@@ -9,4 +9,5 @@ import './dapp-kit-connect-modal.js';
 export { DAppKitConnectButton } from './dapp-kit-connect-button.js';
 export { DAppKitConnectModal } from './dapp-kit-connect-modal.js';
 
+export type { InstallableWallet, WalletItem } from './internal/wallet-list-item.js';
 export type { DAppKitConnectModalOptions } from './dapp-kit-connect-modal.js';

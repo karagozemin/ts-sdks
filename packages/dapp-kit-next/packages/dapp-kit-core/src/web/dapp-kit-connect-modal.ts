@@ -10,7 +10,11 @@ import { BaseModal } from './internal/base-modal.js';
 import type { UiWallet } from '@wallet-standard/ui';
 import { closeIcon } from './internal/icons/close-icon.js';
 import { backIcon } from './internal/icons/back-icon.js';
-import type { WalletSelectedEvent } from './internal/wallet-list-item.js';
+import type {
+	InstallableWallet,
+	WalletItem,
+	WalletSelectedEvent,
+} from './internal/wallet-list-item.js';
 import { ConnectionStatus } from './internal/connection-status.js';
 import {
 	isWalletStandardError,
@@ -27,8 +31,9 @@ type ModalViewState =
 	| { view: 'error'; wallet: UiWallet; error: unknown };
 
 export type DAppKitConnectModalOptions = {
-	filterFn?: (value: UiWallet, index: number, array: UiWallet[]) => boolean;
-	sortFn?: (a: UiWallet, b: UiWallet) => number;
+	installableWallets?: InstallableWallet[];
+	filterFn?: (value: WalletItem, index: number, array: WalletItem[]) => boolean;
+	sortFn?: (a: WalletItem, b: WalletItem) => number;
 };
 
 /**
@@ -102,6 +107,12 @@ export class DAppKitConnectModal
 	@property({ attribute: false })
 	sortFn: DAppKitConnectModalOptions['sortFn'];
 
+	/**
+	 * List of preset wallets available for installation, shown alongside registered wallets.
+	 */
+	@property({ attribute: false })
+	installableWallets?: InstallableWallet[] = [];
+
 	#abortController?: AbortController;
 
 	override render() {
@@ -134,7 +145,7 @@ export class DAppKitConnectModal
 		</dialog>`;
 	}
 
-	#renderModalView(wallets: UiWallet[]) {
+	#renderModalView(wallets: WalletItem[]) {
 		switch (this._state.view) {
 			case 'wallet-selection':
 				return html`<wallet-list
@@ -228,7 +239,23 @@ export class DAppKitConnectModal
 
 	#getWallets() {
 		const wallets = this.instance.stores.$wallets.get();
-		const filtered = this.filterFn ? wallets.filter(this.filterFn) : wallets;
+		const detectedWallets: WalletItem[] = wallets.map((wallet) => ({
+			type: 'detected',
+			data: wallet,
+		}));
+
+		const installableWallets: WalletItem[] =
+			this.installableWallets?.map((wallet) => ({
+				type: 'installable',
+				data: wallet,
+			})) ?? [];
+
+		const walletItems = [...installableWallets, ...detectedWallets];
+		const uniqueWalletItems = Array.from(
+			new Map(walletItems.map((wallet) => [wallet.data.name, wallet])).values(),
+		);
+
+		const filtered = this.filterFn ? uniqueWalletItems.filter(this.filterFn) : uniqueWalletItems;
 		const sorted = this.sortFn ? filtered.toSorted(this.sortFn) : filtered;
 		return sorted;
 	}
