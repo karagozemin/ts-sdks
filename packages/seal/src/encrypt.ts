@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { fromHex } from '@mysten/bcs';
-import { isValidSuiObjectId } from '@mysten/sui/utils';
 
 import type { IBEEncryptions } from './bcs.js';
 import { EncryptedObject } from './bcs.js';
@@ -52,8 +51,7 @@ export async function encrypt({
 		keyServers.length < threshold ||
 		threshold === 0 ||
 		keyServers.length > MAX_U8 ||
-		threshold > MAX_U8 ||
-		!isValidSuiObjectId(packageId)
+		threshold > MAX_U8
 	) {
 		throw new UserError(
 			`Invalid key servers or threshold ${threshold} for ${keyServers.length} key servers for package ${packageId}`,
