@@ -709,7 +709,7 @@ describe('MultisigKeypair', () => {
 			},
 			{
 				publicKey: passkeyPublicKey,
-				weight: 2,
+				weight: 3,
 			},
 		];
 
@@ -722,7 +722,7 @@ describe('MultisigKeypair', () => {
 
 		const signer = publicKey.getSigner(k3);
 		const signer2 = new MultiSigSigner(publicKey, [k1, k2]);
-		const signer3 = new MultiSigSigner(publicKey, [k1, k2, passkeyKeypair]);
+		const signer3 = new MultiSigSigner(publicKey, [passkeyKeypair]);
 
 		const multisig = await signer.signPersonalMessage(bytes);
 		const multisig2 = await signer2.signPersonalMessage(bytes);
