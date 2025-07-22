@@ -3,13 +3,13 @@
 
 import type { WalrusClient } from '../client.js';
 import type { BlobReader } from './readers/blob.js';
-import type { BlobStatus } from '../storage-node/types.js';
 import { WalrusFile } from './file.js';
+import { ClientCache } from '@mysten/sui/experimental';
 
 export class WalrusBlob {
 	#reader: BlobReader;
 	#client: WalrusClient;
-	#status: Promise<BlobStatus> | null = null;
+	#cache = new ClientCache();
 
 	constructor({ reader, client }: { reader: BlobReader; client: WalrusClient }) {
 		this.#reader = reader;
@@ -21,8 +21,7 @@ export class WalrusBlob {
 		return new WalrusFile({ reader: this.#reader });
 	}
 
-	async blobId() {
-		// TODO: implement for local blobs
+	async blobId(): Promise<string | null> {
 		return this.#reader.blobId;
 	}
 
@@ -64,16 +63,9 @@ export class WalrusBlob {
 	}
 
 	async #blobStatus() {
-		if (!this.#status) {
-			this.#status = this.#client.getVerifiedBlobStatus({ blobId: await this.blobId() });
-		}
-
-		try {
-			return await this.#status;
-		} catch (error) {
-			this.#status = null;
-			throw error;
-		}
+		return this.#cache.read(['blobStatus', this.#reader.blobId], () =>
+			this.#client.getVerifiedBlobStatus({ blobId: this.#reader.blobId }),
+		);
 	}
 
 	async exists() {
@@ -81,15 +73,13 @@ export class WalrusBlob {
 		return status.type === 'permanent' || status.type === 'deletable';
 	}
 
-	async storageEpochs() {
+	async storedUntil() {
 		const status = await this.#blobStatus();
-		const systemState = await this.#client.systemState();
-		const currentEpoch = systemState.committee.epoch;
 
 		if (status.type === 'permanent') {
-			return status.endEpoch - currentEpoch;
+			return status.endEpoch;
 		}
 
-		return 0;
+		return null;
 	}
 }

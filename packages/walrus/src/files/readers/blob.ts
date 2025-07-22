@@ -10,7 +10,6 @@ export interface BlobReaderOptions {
 	client: WalrusClient;
 	blobId: string;
 	numShards: number;
-	bytes?: Uint8Array;
 }
 
 export class BlobReader implements FileReader {
@@ -20,14 +19,13 @@ export class BlobReader implements FileReader {
 
 	#client: WalrusClient;
 	#secondarySlivers = new Map<number, Uint8Array | Promise<Uint8Array>>();
-	#blobBytes: Uint8Array | Promise<Uint8Array> | null = null;
-	// TODO: not sure if/when we can actually set this.  Would be useful for getting the size of quilts
-	#isQuilt?: boolean;
+	hasStartedLoadingFullBlob = false;
+	#numShards: number;
 
-	constructor({ client, blobId, bytes }: BlobReaderOptions) {
+	constructor({ client, blobId, numShards }: BlobReaderOptions) {
 		this.#client = client;
 		this.blobId = blobId;
-		this.#blobBytes = bytes ?? null;
+		this.#numShards = numShards;
 	}
 
 	async getIdentifier() {
@@ -35,24 +33,24 @@ export class BlobReader implements FileReader {
 	}
 
 	async getTags() {
-		return null;
+		return {};
 	}
 
-	// TODO: this is currently async incase we want to do some validation or check to ensure this is actually a quilt
-	async getQuiltReader() {
+	getQuiltReader() {
 		return new QuiltReader({ blob: this });
 	}
 
 	async getBytes() {
-		if (!this.#blobBytes) {
-			this.#blobBytes = this.#client.readBlob({ blobId: this.blobId });
-		}
-
-		return this.#blobBytes;
-	}
-
-	get isLoadingFullBlob() {
-		return this.#blobBytes !== null;
+		return this.#cache.read(['getBytes'], async () => {
+			this.hasStartedLoadingFullBlob = true;
+			try {
+				const blob = await this.#client.readBlob({ blobId: this.blobId });
+				return blob;
+			} catch (error) {
+				this.hasStartedLoadingFullBlob = false;
+				throw error;
+			}
+		});
 	}
 
 	getMetadata() {
@@ -61,42 +59,51 @@ export class BlobReader implements FileReader {
 		);
 	}
 
-	getSize() {
-		return this.#cache.read(['getSize'], async () => {
-			if (this.#blobBytes && !('then' in this.#blobBytes)) {
-				return this.#blobBytes.length;
-			}
+	async getColumnSize() {
+		return this.#cache.read(['getColumnSize'], async () => {
+			const loadingSlivers = [...this.#secondarySlivers.values()];
 
-			// This calculation only works for blobs that have a size that is a multiple of primarySymbols * secondarySymbols
-			if (this.#isQuilt && this.#secondarySlivers.size > 0) {
-				try {
-					const sliver = await Promise.any(this.#secondarySlivers.values());
-					const columnSize = sliver.length;
-					const { committee } = await this.#client.systemState();
-					const { secondarySymbols } = getSourceSymbols(committee.n_shards);
+			if (loadingSlivers.length > 0) {
+				const sliver = await Promise.any(loadingSlivers).catch(() => null);
 
-					return columnSize * secondarySymbols;
-				} catch (error) {
-					// fallback to other methods
+				if (sliver) {
+					return sliver.length;
 				}
 			}
 
-			if (this.isLoadingFullBlob) {
+			if (this.hasStartedLoadingFullBlob) {
 				const blob = await this.getBytes();
-				return blob.length;
+				const { columnSize } = getSizes(blob.length, this.#numShards);
+				return columnSize;
 			}
 
 			const metadata = await this.getMetadata();
-			return Number(metadata.metadata.V1.unencoded_length);
+			const { columnSize } = getSizes(
+				Number(metadata.metadata.V1.unencoded_length),
+				this.#numShards,
+			);
+
+			return columnSize;
 		});
 	}
 
-	async getSizes() {
-		const { committee } = await this.#client.systemState();
-		return getSizes(await this.getSize(), committee.n_shards);
+	async getSymbolSize() {
+		const columnSize = await this.getColumnSize();
+		const { primarySymbols } = getSourceSymbols(this.#numShards);
+
+		if (columnSize % primarySymbols !== 0) {
+			throw new Error('column size should be divisible by primary symbols');
+		}
+
+		return columnSize / primarySymbols;
 	}
 
-	// TODO: We should handle retries and epoch changes
+	async getRowSize() {
+		const symbolSize = await this.getSymbolSize();
+		const { secondarySymbols } = getSourceSymbols(this.#numShards);
+		return symbolSize * secondarySymbols;
+	}
+
 	async getSecondarySliver({ sliverIndex, signal }: { sliverIndex: number; signal?: AbortSignal }) {
 		if (this.#secondarySlivers.has(sliverIndex)) {
 			return this.#secondarySlivers.get(sliverIndex)!;

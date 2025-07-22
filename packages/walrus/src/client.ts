@@ -444,7 +444,9 @@ export class WalrusClient {
 		}
 	}
 
-	async getSecondarySliver({ blobId, index, signal }: GetSecondarySliverOptions) {
+	getSecondarySliver = this.#retryOnPossibleEpochChange(this.internalGetSecondarySliver);
+
+	async internalGetSecondarySliver({ blobId, index, signal }: GetSecondarySliverOptions) {
 		const committee = await this.#getActiveCommittee();
 		const stakingState = await this.stakingState();
 		const numShards = stakingState.n_shards;
@@ -2077,7 +2079,7 @@ export class WalrusClient {
 			reader: new BlobReader({
 				client: this,
 				blobId,
-				numShards: (await this.#getActiveCommittee()).nodes.length,
+				numShards: (await this.systemState()).committee.n_shards,
 			}),
 			client: this,
 		});
@@ -2087,7 +2089,7 @@ export class WalrusClient {
 		const readersByBlobId = new Map<string, BlobReader>();
 		const quiltReadersByBlobId = new Map<string, QuiltReader>();
 		const parsedIds = ids.map((id) => parseWalrusId(id));
-		const numShards = (await this.#getActiveCommittee()).nodes.length;
+		const numShards = (await this.systemState()).committee.n_shards;
 
 		for (const id of parsedIds) {
 			const blobId = id.kind === 'blob' ? id.id : id.id.quiltId;

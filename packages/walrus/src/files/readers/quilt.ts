@@ -34,7 +34,7 @@ export class QuiltReader {
 
 		// start loading the first sliver, but don't wait for it (may improve columnSize lookup)
 		this.#blob.getSecondarySliver({ sliverIndex: sliver }).catch(() => {});
-		columnSize = columnSize ?? (await this.#blob.getSizes()).columnSize;
+		columnSize = columnSize ?? (await this.#blob.getColumnSize());
 		const columnOffset = Math.floor(offset / columnSize);
 		let remainingOffset = offset % columnSize;
 		const bytes = new Uint8Array(length);
@@ -73,10 +73,11 @@ export class QuiltReader {
 		if (!length) {
 			return result;
 		}
+		const blob = await this.#blob.getBytes();
 
-		const [blob, { rowSize, symbolSize }] = await Promise.all([
-			this.#blob.getBytes(),
-			this.#blob.getSizes(),
+		const [rowSize, symbolSize] = await Promise.all([
+			this.#blob.getRowSize(),
+			this.#blob.getSymbolSize(),
 		]);
 
 		const nRows = blob.length / rowSize;
@@ -117,7 +118,7 @@ export class QuiltReader {
 	}
 
 	async #readBytes(sliver: number, length: number, offset = 0, columnSize?: number) {
-		if (this.#blob.isLoadingFullBlob) {
+		if (this.#blob.hasStartedLoadingFullBlob) {
 			return this.#readBytesFromBlob(sliver, length, offset);
 		}
 
@@ -202,7 +203,7 @@ export class QuiltReader {
 
 		const indexSize = header.getUint32(1, true);
 		const indexBytes = await this.#readBytes(0, indexSize, 5);
-		const { columnSize } = await this.#blob.getSizes();
+		const columnSize = await this.#blob.getColumnSize();
 		const indexSlivers = Math.ceil(indexSize / columnSize);
 		const index = QuiltIndexV1.parse(indexBytes);
 

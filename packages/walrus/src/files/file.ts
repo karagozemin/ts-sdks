@@ -5,7 +5,7 @@ import { LocalReader } from './readers/local.js';
 
 export interface FileReader {
 	getIdentifier(): Promise<string | null>;
-	getTags(): Promise<Record<string, string> | null>;
+	getTags(): Promise<Record<string, string>>;
 	getBytes(): Promise<Uint8Array>;
 }
 

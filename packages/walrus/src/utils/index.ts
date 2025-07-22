@@ -224,14 +224,13 @@ export function fromUrlSafeBase64(base64: string): Uint8Array {
 export function getSizes(blobSize: number, numShards: number) {
 	const encodedBlobSize = encodedSliverSize(blobSize, numShards);
 	const { primarySymbols, secondarySymbols } = getSourceSymbols(numShards);
-	const totalSymbols = primarySymbols * secondarySymbols;
-	const totalSymbols2 = (primarySymbols + secondarySymbols) * numShards;
+	const totalSymbols = (primarySymbols + secondarySymbols) * numShards;
 
-	if (encodedBlobSize % totalSymbols2 !== 0) {
+	if (encodedBlobSize % totalSymbols !== 0) {
 		throw new Error('encoded blob size should be divisible by total symbols');
 	}
 
-	const symbolSize = encodedBlobSize / totalSymbols2;
+	const symbolSize = encodedBlobSize / totalSymbols;
 
 	if (blobSize % totalSymbols !== 0) {
 		throw new Error('blob length should be divisible by total symbols');

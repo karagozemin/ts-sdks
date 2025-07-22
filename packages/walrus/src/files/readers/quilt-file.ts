@@ -16,7 +16,7 @@ export class QuiltFileReader implements FileReader {
 	#quilt: QuiltReader;
 	#sliverIndex: number;
 	#identifier: string | null;
-	#tags?: Record<string, string> | null;
+	#tags?: Record<string, string>;
 
 	constructor({
 		quilt,
@@ -38,7 +38,7 @@ export class QuiltFileReader implements FileReader {
 	async getBytes(): Promise<Uint8Array> {
 		const { blobContents, identifier, tags } = await this.#quilt.readBlob(this.#sliverIndex);
 		this.#identifier = identifier;
-		this.#tags = tags;
+		this.#tags = tags ?? {};
 		return blobContents;
 	}
 
@@ -59,7 +59,7 @@ export class QuiltFileReader implements FileReader {
 		}
 
 		const header = await this.#quilt.getBlobHeader(this.#sliverIndex);
-		this.#tags = header.tags;
-		return header.tags;
+		this.#tags = header.tags ?? {};
+		return this.#tags;
 	}
 }

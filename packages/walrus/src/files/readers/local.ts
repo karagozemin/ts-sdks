@@ -6,7 +6,7 @@ import type { FileReader } from '../file.js';
 export class LocalReader implements FileReader {
 	#contents: Uint8Array | Blob;
 	#identifier: string | null;
-	#tags: Record<string, string> | null;
+	#tags: Record<string, string>;
 
 	constructor({
 		contents,
@@ -19,7 +19,7 @@ export class LocalReader implements FileReader {
 	}) {
 		this.#contents = contents;
 		this.#identifier = identifier ?? null;
-		this.#tags = tags ?? null;
+		this.#tags = tags ?? {};
 	}
 
 	async getBytes() {
