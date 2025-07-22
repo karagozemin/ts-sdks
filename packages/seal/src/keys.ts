@@ -45,7 +45,11 @@ export async function fetchKeysForAllIds(
 	const timeoutSignal = AbortSignal.timeout(timeout);
 	const combinedSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
 
+	let x = JSON.stringify(body);
+	console.log('url', url + '/v1/fetch_key');
+	console.log('body', x);
 	const requestId = crypto.randomUUID();
+	console.log('requestId', requestId);
 	const response = await fetch(url + '/v1/fetch_key', {
 		method: 'POST',
 		headers: {
@@ -55,9 +59,10 @@ export async function fetchKeysForAllIds(
 			'Client-Sdk-Version': PACKAGE_VERSION,
 			...(apiKeyName && apiKey ? { apiKeyName: apiKey } : {}),
 		},
-		body: JSON.stringify(body),
+		body: x,
 		signal: combinedSignal,
 	});
+	console.log('response', response);
 	await SealAPIError.assertResponse(response, requestId);
 	const resp = await response.json();
 	verifyKeyServerVersion(response);
