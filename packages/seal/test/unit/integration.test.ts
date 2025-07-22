@@ -151,6 +151,8 @@ describe('Integration test', () => {
 		// Ruby Nodes Permissioned
 		// serverObjectId = '0x1dd69f90dbd5beae19275eb730f33960f0bca61210f36115941148cb35791e2a';
 		
+		// triton one
+		// serverObjectId = '0x4cded1abeb52a22b6becb42a91d3686a4c901cf52eee16234214d0b5b2da4c46';
 		// Object ids pointing to ci key servers' urls
 		serverObjectId2 = '0x81aeaa8c25d2c912e1dc23b4372305b7a602c4ec4cc3e510963bc635e500aa37';
 		objectIds = [
