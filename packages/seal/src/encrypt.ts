@@ -134,5 +134,7 @@ function encryptBatched(
 				baseKey,
 				threshold,
 			);
+		default:
+			throw new Error(`Invalid KEM type ${kemType}`);
 	}
 }
