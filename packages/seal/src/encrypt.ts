@@ -11,10 +11,8 @@ import { UserError } from './error.js';
 import { BonehFranklinBLS12381Services } from './ibe.js';
 import { deriveKey, KeyPurpose } from './kdf.js';
 import type { KeyServer } from './key-server.js';
-import { createFullId } from './utils.js';
+import { createFullId, MAX_U8 } from './utils.js';
 import { split } from './shamir.js';
-
-export const MAX_U8 = 255;
 
 /**
  * Given full ID and what key servers to use, return the encrypted message under the identity and return the bcs bytes of the encrypted object.
