@@ -48,10 +48,10 @@ export async function encrypt({
 }> {
 	// Check inputs
 	if (
-		keyServers.length < threshold ||
-		threshold === 0 ||
-		keyServers.length > MAX_U8 ||
+		threshold <= 0 ||
 		threshold > MAX_U8 ||
+		keyServers.length < threshold ||
+		keyServers.length > MAX_U8 ||
 		!isValidSuiObjectId(packageId)
 	) {
 		throw new UserError(
