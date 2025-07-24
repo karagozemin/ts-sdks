@@ -165,6 +165,8 @@ export class SealClient {
 	 *
 	 * If checkShareConsistency is true, the decrypted shares are checked for consistency, meaning that
 	 * any combination of at least threshold shares should either succesfully combine to the plaintext or fail.
+	 * This is useful in case the encryptor is not trusted and the decryptor wants to ensure all decryptors
+	 * receive the same output (e.g., for onchain encrypted voting).
 	 *
 	 * @param data - The encrypted bytes to decrypt.
 	 * @param sessionKey - The session key to use.
